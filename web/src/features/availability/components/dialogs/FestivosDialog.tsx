@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useLogger } from '@/lib/logger';
-import { http } from '@/lib/http';
+import { useApiQuery, useApiMutation } from '@/lib/apiQuery';
+import { queryKeys } from '@/lib/queryKeys';
+import { useEscuadrilla } from '@/providers/UserProvider';
 import {
     Dialog,
     DialogContent,
@@ -55,44 +56,50 @@ interface FestivosDialogProps {
 type FormMode = 'list' | 'create' | 'edit';
 
 export default function FestivosDialog({ open, onOpenChange }: FestivosDialogProps): React.ReactElement {
-    const log = useLogger('FestivosDialog');
-    const [festivos, setFestivos] = useState<Festivo[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    const { id: escId } = useEscuadrilla();
+    const festivosKey = queryKeys.availability.festivos(escId ?? 0);
 
     // Estado del formulario
     const [mode, setMode] = useState<FormMode>('list');
     const [editingFestivo, setEditingFestivo] = useState<Festivo | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
     const [festivoMotivo, setFestivoMotivo] = useState<string>('');
-    const [saving, setSaving] = useState<boolean>(false);
+    const [formError, setFormError] = useState<string | null>(null);
     const [calendarOpen, setCalendarOpen] = useState<boolean>(false);
 
     // Estado para confirmación de eliminación
     const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
     const [festivoToDelete, setFestivoToDelete] = useState<Festivo | null>(null);
-    const [deleting, setDeleting] = useState<boolean>(false);
 
-    // Cargar festivos
-    const fetchFestivos = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const result = await http<Festivo[]>('GET', '/festivos');
-            setFestivos(result || []);
-        } catch (err) {
-            log.error(`Error fetching festivos: ${err}`);
-            setError(err instanceof Error ? err.message : String(err));
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Datos vía TanStack Query (los errores HTTP los notifica el toast de useApiMutation).
+    const {
+        data: festivosData,
+        isLoading: loading,
+        error: queryError,
+    } = useApiQuery<Festivo[]>('GET', '/festivos', { enabled: open }, festivosKey);
+    const festivos = festivosData ?? [];
+
+    const saveMutation = useApiMutation<unknown, { festivo_sk?: number; festivo_dia: string; festivo_motivo: string }>(
+        mode === 'edit' ? 'PUT' : 'POST',
+        (vars) => (mode === 'edit' ? `/festivos/${vars.festivo_sk}` : '/festivos'),
+        { invalidateKeys: [festivosKey] },
+    );
+
+    const deleteMutation = useApiMutation<void, { festivo_sk: number }>(
+        'DELETE',
+        (vars) => `/festivos/${vars.festivo_sk}`,
+        { invalidateKeys: [festivosKey] },
+    );
+
+    const saving = saveMutation.isPending;
+    const deleting = deleteMutation.isPending;
+    const error = formError ?? queryError?.message ?? null;
 
     useEffect(() => {
         if (open) {
-            fetchFestivos();
             resetForm();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const resetForm = () => {
@@ -100,7 +107,7 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
         setEditingFestivo(null);
         setSelectedDate(undefined);
         setFestivoMotivo('');
-        setError(null);
+        setFormError(null);
         setCalendarOpen(false);
     };
 
@@ -126,18 +133,12 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
 
     const handleDeleteConfirm = async () => {
         if (!festivoToDelete) return;
-
-        setDeleting(true);
         try {
-            await http('DELETE', `/festivos/${festivoToDelete.festivo_sk}`);
-            await fetchFestivos();
+            await deleteMutation.mutateAsync({ festivo_sk: festivoToDelete.festivo_sk });
             setDeleteDialogOpen(false);
             setFestivoToDelete(null);
-        } catch (err) {
-            log.error(`Error deleting festivo: ${err}`);
-            setError(err instanceof Error ? err.message : String(err));
-        } finally {
-            setDeleting(false);
+        } catch {
+            // El toast de useApiMutation ya notifica el error.
         }
     };
 
@@ -145,42 +146,20 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
         e.preventDefault();
 
         if (!selectedDate || !festivoMotivo.trim()) {
-            setError('Todos los campos son obligatorios');
+            setFormError('Todos los campos son obligatorios');
             return;
         }
-
-        setSaving(true);
-        setError(null);
+        setFormError(null);
 
         try {
-            // Formatear la fecha como YYYY-MM-DD
-            const festivoDia = format(selectedDate, 'yyyy-MM-dd');
-
-            if (mode === 'create') {
-                // POST /festivos con body snake_case
-                await http('POST', '/festivos', {
-                    body: {
-                        festivo_dia: festivoDia,
-                        festivo_motivo: festivoMotivo.trim(),
-                    },
-                });
-            } else if (mode === 'edit' && editingFestivo) {
-                // PUT /festivos/:id
-                await http('PUT', `/festivos/${editingFestivo.festivo_sk}`, {
-                    body: {
-                        festivo_dia: festivoDia,
-                        festivo_motivo: festivoMotivo.trim(),
-                    },
-                });
-            }
-
-            await fetchFestivos();
+            await saveMutation.mutateAsync({
+                ...(mode === 'edit' && editingFestivo ? { festivo_sk: editingFestivo.festivo_sk } : {}),
+                festivo_dia: format(selectedDate, 'yyyy-MM-dd'),
+                festivo_motivo: festivoMotivo.trim(),
+            });
             resetForm();
-        } catch (err) {
-            log.error(`Error saving festivo: ${err}`);
-            setError(err instanceof Error ? err.message : String(err));
-        } finally {
-            setSaving(false);
+        } catch {
+            // El toast de useApiMutation ya notifica el error.
         }
     };
 

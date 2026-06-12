@@ -132,22 +132,35 @@ normalizar el contrato, no de fosilizarlo.
 
 ---
 
-## Orden de ataque propuesto
+## Orden de ataque propuesto — estado (2026-06-12)
 
-1. **Autorización por nivel de permiso en backend** (seguridad real).
-2. **Error handler centralizado** (quita las 98 fugas y simplifica handlers).
-3. **PR de "operabilidad"**: middleware de request logging con request ID, endpoint
-   `/logs`, purga periódica de sesiones, graceful shutdown, timeouts HTTP y
-   BodyLimit.
-4. **`internal/config` con validación fatal al arranque + rate limit en login.**
-5. **CI con build/lint/tests + check anti-filtración.**
-6. **Primeros tests de service** (flights, auth, dashboard) contra Postgres efímero.
-7. Después, con red de seguridad: partir los dominios gigantes, unificar auth con
-   sqlc, generación de tipos TS, refactor de componentes grandes, fix del bug de
-   ratings.
-
-Los puntos 1–5 son días de trabajo, no semanas, y convierten el proyecto de
-"migración funcional" a "aplicación defendible".
+1. ✅ **Autorización por nivel de permiso en backend** — `auth.RequirePermission`
+   en todas las escrituras (commit f40db61).
+2. ✅ **Error handler centralizado** — `internal/httpx/errors.go` (f40db61).
+3. ✅ **Operabilidad** — request logging, `POST /logs`, purga de sesiones,
+   graceful shutdown, timeouts, BodyLimit (f40db61).
+4. ✅ **`internal/config` + rate limit en login** (f40db61).
+5. ✅ **CI con build/lint/tests + leak-guard RGPD** (f40db61).
+6. ✅ **Tests** — unitarios (auth, config, httpx, dashboard) y de integración
+   contra BD efímera (`internal/testdb`; auth + festivos). El test de
+   caducidad destapó un bug real de zonas horarias en sesiones, corregido
+   con la migración 0006 (timestamptz).
+7. Punto 7, parcialmente completado:
+   - ✅ Fix del bug intercambiado de ratings crew/not-crew (13ed76a).
+   - ✅ Dominios gigantes partidos a dto/service/handlers (flights,
+     comisiones, ratings) (13ed76a).
+   - ✅ Auth unificado con sqlc; `Validate` en 1 round-trip (e4fc94c).
+   - ✅ Generación de tipos TS con tygo (`make types` + check en CI);
+     `types/dashboard.ts` adoptado como patrón (e4fc94c).
+   - ✅ `FestivosDialog` estandarizado a TanStack Query.
+   - ⬜ **Pendiente**: refactor de los componentes React de 700+ líneas
+     (`RegisterAbsenceDialog` 855, `ManageFlightDataDialog` 762,
+     `GeneralTacticalRatings` 745...): extraer la lógica de datos/formulario
+     a hooks por feature, siguiendo el patrón de `FestivosDialog`. Conviene
+     hacerlo con la app corriendo para verificar visualmente cada uno.
+   - ⬜ **Pendiente**: adoptar los tipos generados en el resto de
+     `web/src/types/*` (flights, comisiones, ratings) como se hizo con
+     dashboard.
 
 ---
 
