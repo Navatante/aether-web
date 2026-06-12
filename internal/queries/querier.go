@@ -64,6 +64,7 @@ type Querier interface {
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
 	CountPersons(ctx context.Context, personEscuadrillaFk int32) (int32, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	// Calificaciones por persona, filtradas por (type, role[]) y escuadrilla.
 	// Sólo las que tienen date_qualified, ordenadas por crew_ratings_fk.
 	CrewQualificationsByPersonAndType(ctx context.Context, arg CrewQualificationsByPersonAndTypeParams) ([]CrewQualificationsByPersonAndTypeRow, error)
@@ -80,6 +81,7 @@ type Querier interface {
 	DeleteNotCrewRating(ctx context.Context, arg DeleteNotCrewRatingParams) (int64, error)
 	DeletePersonComisionBySk(ctx context.Context, arg DeletePersonComisionBySkParams) (int64, error)
 	DeletePersonFromComision(ctx context.Context, arg DeletePersonFromComisionParams) (int64, error)
+	DeleteSessionByTokenHash(ctx context.Context, tokenHash []byte) error
 	// =============== sp_get_dias_comision ===============
 	// $1 = fechaFin (NULL → CURRENT_DATE en handler). fechaInicio = fechaFin - 365.
 	// Devuelve per-persona días totales por categoría de comisión:
@@ -142,6 +144,8 @@ type Querier interface {
 	// operations.event no tiene escuadrilla_fk → catálogo global.
 	// ============================================================
 	GetEventsAll(ctx context.Context) ([]OperationsEvent, error)
+	// Queries de autenticación y sesiones (internal/auth).
+	GetLoginPerson(ctx context.Context, personUser string) (GetLoginPersonRow, error)
 	GetStaticAdministrativosStats(ctx context.Context, personEscuadrillaFk int32) (GetStaticAdministrativosStatsRow, error)
 	// Airflow medio: por persona (rol piloto/dotación), si días sin volar >= 60 → 0,
 	// en otro caso 100 - dias/60 * 100. Promedio global.
@@ -327,6 +331,7 @@ type Querier interface {
 	PersonHasOverlapComision(ctx context.Context, arg PersonHasOverlapComisionParams) (bool, error)
 	// Personas activas filtradas por rol[] dentro de una escuadrilla.
 	PersonsByRoles(ctx context.Context, arg PersonsByRolesParams) ([]PersonsByRolesRow, error)
+	PurgeExpiredSessions(ctx context.Context) (int64, error)
 	// =============== sp_get_modelRatings ===============
 	// Catálogo filtrable por type/role para componer múltiples sub-listas.
 	// $1 = type (NULL/empty = todos), $2 = role[] (NULL/empty = todos).
@@ -349,6 +354,10 @@ type Querier interface {
 	ResolveComisionType(ctx context.Context, name string) (int32, error)
 	// Una sola query para alta/baja con verificación del estado deseado.
 	SetPersonCurrentFlag(ctx context.Context, arg SetPersonCurrentFlagParams) (int64, error)
+	SetPersonPassword(ctx context.Context, arg SetPersonPasswordParams) (int64, error)
+	// Valida la sesión, actualiza last_seen_at y devuelve el usuario en un solo
+	// round-trip (antes eran un UPDATE + un SELECT separados).
+	TouchSessionAndGetUser(ctx context.Context, tokenHash []byte) (TouchSessionAndGetUserRow, error)
 	UpdateAbsence(ctx context.Context, arg UpdateAbsenceParams) (int64, error)
 	// Devuelve el flag persistido para que el handler pueda verificar.
 	UpdateAircraftCurrentFlag(ctx context.Context, arg UpdateAircraftCurrentFlagParams) (bool, error)

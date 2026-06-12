@@ -53,7 +53,14 @@
       "Bash(sed -n 95,145p web/src/features/ratings/pages/MaintenanceRatings.tsx)",
       "Bash(sed -n 95,140p web/src/features/ratings/pages/LeadershipRatings.tsx)",
       "Bash(awk 'NR>=300 && NR<=875' internal/domain/flights/flights.go)",
-      "Bash(awk 'NR>=868 && NR<=960' internal/domain/flights/flights.go)"
+      "Bash(awk 'NR>=868 && NR<=960' internal/domain/flights/flights.go)",
+      "Bash(sqlc generate *)",
+      "Bash(go install *)",
+      "Bash(tygo --help)",
+      "Bash(tygo generate *)",
+      "Bash(sed -n 48,200p web/src/types/dashboard.ts)",
+      "Bash(sed -n 58,130p web/src/types/generated/dashboard.ts)",
+      "Bash(npx tsc *)"
     ]
   }
 }

@@ -10,13 +10,16 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/14esc/aether-web/internal/queries"
 )
 
 var (
-	ErrUnknownUser       = errors.New("auth: usuario desconocido")
-	ErrSessionNotFound   = errors.New("auth: sesión no encontrada o expirada")
-	ErrPasswordNotSet    = errors.New("auth: el usuario no tiene contraseña configurada")
+	ErrUnknownUser     = errors.New("auth: usuario desconocido")
+	ErrSessionNotFound = errors.New("auth: sesión no encontrada o expirada")
+	ErrPasswordNotSet  = errors.New("auth: el usuario no tiene contraseña configurada")
 )
 
 // User es el sujeto autenticado. Lo pone el middleware en echo.Context.
@@ -34,43 +37,28 @@ type User struct {
 }
 
 type Service struct {
-	pool       *pgxpool.Pool
+	q          *queries.Queries
 	sessionTTL time.Duration
 }
 
 func NewService(pool *pgxpool.Pool, sessionTTL time.Duration) *Service {
-	return &Service{pool: pool, sessionTTL: sessionTTL}
+	return &Service{q: queries.New(pool), sessionTTL: sessionTTL}
 }
 
 // Login verifica credenciales y crea una sesión. Devuelve el token claro
 // (que va al cliente en cookie) y el usuario asociado.
 func (s *Service) Login(ctx context.Context, username, password, ipAddress string) (string, *User, error) {
-	const q = `
-		SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
-		       p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-		       p.person_permission_level, p.person_password_hash
-		FROM detall.person p
-		JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
-		WHERE p.person_user = $1 AND p.person_current_flag = TRUE`
-	var (
-		u    User
-		hash *string
-	)
-	err := s.pool.QueryRow(ctx, q, username).Scan(
-		&u.ID, &u.Username, &u.Name, &u.LastName1, &u.LastName2,
-		&u.Nk, &u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
-		&u.PermissionLevel, &hash,
-	)
+	row, err := s.q.GetLoginPerson(ctx, username)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, ErrUnknownUser
 	}
 	if err != nil {
 		return "", nil, fmt.Errorf("load person: %w", err)
 	}
-	if hash == nil || *hash == "" {
+	if row.PersonPasswordHash == nil || *row.PersonPasswordHash == "" {
 		return "", nil, ErrPasswordNotSet
 	}
-	if err := VerifyPassword(password, *hash); err != nil {
+	if err := VerifyPassword(password, *row.PersonPasswordHash); err != nil {
 		return "", nil, err
 	}
 
@@ -80,13 +68,26 @@ func (s *Service) Login(ctx context.Context, username, password, ipAddress strin
 	}
 	expires := time.Now().Add(s.sessionTTL)
 
-	_, err = s.pool.Exec(ctx,
-		`INSERT INTO detall.session (token_hash, person_fk, ip_address, expires_at)
-		 VALUES ($1, $2, NULLIF($3, ''), $4)`,
-		tokenHash, u.ID, ipAddress, expires,
-	)
-	if err != nil {
+	if err := s.q.CreateSession(ctx, queries.CreateSessionParams{
+		TokenHash: tokenHash,
+		PersonFk:  row.PersonSk,
+		IpAddress: ipAddress,
+		ExpiresAt: pgtype.Timestamp{Time: expires, Valid: true},
+	}); err != nil {
 		return "", nil, fmt.Errorf("create session: %w", err)
+	}
+
+	u := User{
+		ID:              int(row.PersonSk),
+		Username:        row.PersonUser,
+		Name:            row.PersonName,
+		LastName1:       row.PersonLastName1,
+		LastName2:       row.PersonLastName2,
+		Nk:              row.PersonNk,
+		EscuadrillaID:   int(row.PersonEscuadrillaFk),
+		EscuadrillaCode: row.EscuadrillaCode,
+		EscuadrillaName: row.EscuadrillaName,
+		PermissionLevel: row.PersonPermissionLevel,
 	}
 	return token, &u, nil
 }
@@ -96,49 +97,34 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 	if token == "" {
 		return nil
 	}
-	hash := hashToken(token)
-	_, err := s.pool.Exec(ctx, `DELETE FROM detall.session WHERE token_hash = $1`, hash)
-	return err
+	return s.q.DeleteSessionByTokenHash(ctx, hashToken(token))
 }
 
-// Validate busca la sesión por token, comprueba expires_at y actualiza last_seen_at.
-// Devuelve el User asociado.
+// Validate busca la sesión por token, comprueba expires_at, actualiza
+// last_seen_at y devuelve el User asociado — todo en un único round-trip.
 func (s *Service) Validate(ctx context.Context, token string) (*User, error) {
 	if token == "" {
 		return nil, ErrSessionNotFound
 	}
-	hash := hashToken(token)
-
-	const q = `
-		UPDATE detall.session
-		SET last_seen_at = CURRENT_TIMESTAMP
-		WHERE token_hash = $1 AND expires_at > CURRENT_TIMESTAMP
-		RETURNING person_fk`
-	var personID int
-	err := s.pool.QueryRow(ctx, q, hash).Scan(&personID)
+	row, err := s.q.TouchSessionAndGetUser(ctx, hashToken(token))
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrSessionNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("touch session: %w", err)
 	}
-
-	const qUser = `
-		SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
-		       p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-		       p.person_permission_level
-		FROM detall.person p
-		JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
-		WHERE p.person_sk = $1 AND p.person_current_flag = TRUE`
-	var u User
-	if err := s.pool.QueryRow(ctx, qUser, personID).Scan(
-		&u.ID, &u.Username, &u.Name, &u.LastName1, &u.LastName2,
-		&u.Nk, &u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
-		&u.PermissionLevel,
-	); err != nil {
-		return nil, fmt.Errorf("load person: %w", err)
-	}
-	return &u, nil
+	return &User{
+		ID:              int(row.PersonSk),
+		Username:        row.PersonUser,
+		Name:            row.PersonName,
+		LastName1:       row.PersonLastName1,
+		LastName2:       row.PersonLastName2,
+		Nk:              row.PersonNk,
+		EscuadrillaID:   int(row.PersonEscuadrillaFk),
+		EscuadrillaCode: row.EscuadrillaCode,
+		EscuadrillaName: row.EscuadrillaName,
+		PermissionLevel: row.PersonPermissionLevel,
+	}, nil
 }
 
 // SetPassword actualiza el hash de contraseña de un usuario existente.
@@ -148,23 +134,15 @@ func (s *Service) SetPassword(ctx context.Context, username, password string) (i
 	if err != nil {
 		return 0, err
 	}
-	tag, err := s.pool.Exec(ctx,
-		`UPDATE detall.person SET person_password_hash = $1 WHERE person_user = $2`,
-		hash, username,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return tag.RowsAffected(), nil
+	return s.q.SetPersonPassword(ctx, queries.SetPersonPasswordParams{
+		PersonPasswordHash: &hash,
+		PersonUser:         username,
+	})
 }
 
-// PurgeExpired elimina sesiones caducadas. Útil para un job periódico.
+// PurgeExpired elimina sesiones caducadas. Lo llama el job periódico de main.
 func (s *Service) PurgeExpired(ctx context.Context) (int64, error) {
-	tag, err := s.pool.Exec(ctx, `DELETE FROM detall.session WHERE expires_at <= CURRENT_TIMESTAMP`)
-	if err != nil {
-		return 0, err
-	}
-	return tag.RowsAffected(), nil
+	return s.q.PurgeExpiredSessions(ctx)
 }
 
 // ============================================================

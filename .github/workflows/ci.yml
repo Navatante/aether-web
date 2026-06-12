@@ -54,6 +54,11 @@ jobs:
         run: go build ./...
       - name: Tests
         run: go test ./...
+      - name: Tipos TS generados al día (tygo)
+        run: |
+          go run github.com/gzuidhof/tygo@latest generate
+          git diff --exit-code web/src/types/generated/ \
+            || { echo "::error::web/src/types/generated/ desactualizado: ejecuta 'make types' y commitea"; exit 1; }
 
   frontend:
     runs-on: ubuntu-latest

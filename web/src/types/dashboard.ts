@@ -1,114 +1,23 @@
-// ======================================
-// Tipos para las estadísticas estáticas
-// ======================================
+// Tipos del dashboard. La forma de la API viene GENERADA desde los structs
+// Go (web/src/types/generated/dashboard.ts, regenerar con `make types`).
+// Aquí solo se re-exportan con los nombres históricos del frontend y se
+// añaden los tipos puramente de UI.
 
-export interface DashboardStaticStats {
-    pilotos: PilotStats;
-    tripulacion_cabina: TripulacionCabinaStats;
-    mantenedores: MantenedoresStats;
-    administrativos: AdministrativosStats;
-    personal_total: PersonalTotalStats;
-    crp: number;
-    airflow: number
-}
-
-export interface PilotStats {
-    total: number;
-    pqm: number;
-    h2p: number;
-    hac: number;
-    ip: number;
-    fcp: number;
-    ip_fcp: number;
-}
-
-export interface TripulacionCabinaStats {
-    total: number;
-    alumnos:number;
-    dotaciones:number;
-    cabezas:number;
-    dv_instructores:number;
-    dv_pruebas:number;
-    dv_instructores_y_pruebas:number;
-    nadadores:number;
-}
-
-export interface MantenedoresStats {
-    total: number;
-    b1: number;
-    b2: number;
-    lv: number;
-}
-
-export interface AdministrativosStats {
-    total: number;
-    detall: number;
-    operaciones: number;
-    mantenimiento: number;
-}
-
-export interface PersonalTotalStats {
-    total: number;
-    oficiales: number;
-    suboficiales: number;
-    tropa_marineria: number;
-}
-
-// ======================================
-// Tipos para las estadísticas dinamicas
-// ======================================
-export interface DashboardDynamicStats {
-    fechaInicio: string;
-    fechaFin: string;
-    resumenGeneral: ResumenGeneral;
-    horasDeVuelo: HorasDeVuelo[];
-    horasPorHelicoptero: HorasPorHelicoptero[];
-    horasPorAutoridad: HorasPorAutoridad[];
-    horasPorEventoLugar: HorasPorEventoLugar[];
-    horasPorPeriodo: HorasPorPeriodo;
-}
-
-export interface ResumenGeneral {
-    totalHoras: number;
-    totalVuelos: number;
-    horasSimulador: number;
-    vuelosSimulador: number;
-}
-
-export interface HorasDeVuelo {
-    date: string;
-    real: number;
-    simulador: number;
-}
-
-export interface HorasPorHelicoptero {
-    helo: string;
-    horas: number;
-}
-
-export interface HorasPorAutoridad {
-    horas: number;
-    autoridad: string;
-    abreviatura: string;
-}
-
-export interface HorasPorEventoLugar {
-    evento: string;
-    lugares: Record<string, number>;
-}
-
-export interface HorasPorPeriodo {
-    dia_real: number;
-    dia_simulado: number;
-    noche_sin_gafas_real: number;
-    noche_sin_gafas_simulado: number;
-    gvn_real: number;
-    anvis_real: number;
-    iit_real: number;
-    gvn_simulado: number;
-    anvis_simulado: number;
-    iit_simulado: number;
-}
+export type {
+    StaticStats as DashboardStaticStats,
+    PilotStats,
+    TripulacionStats as TripulacionCabinaStats,
+    MantenedoresStats,
+    AdministrativosStats,
+    PersonalTotalStats,
+    DynamicStats as DashboardDynamicStats,
+    ResumenGeneral,
+    HorasDeVuelo,
+    HorasHelicoptero as HorasPorHelicoptero,
+    HorasAutoridad as HorasPorAutoridad,
+    HorasEventoLugar as HorasPorEventoLugar,
+    HorasPeriodo as HorasPorPeriodo,
+} from './generated/dashboard';
 
 // ======================================
 // Tipos para los parámetros de consulta
@@ -135,7 +44,7 @@ export interface DashboardStatsParams {
 }
 
 // ======================================
-// Tipos para los datos transformados de los gráficos
+// Tipos para los datos transformados de los gráficos (solo UI)
 // ======================================
 export interface ChartDataPoint {
     date: string;

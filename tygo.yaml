@@ -1,0 +1,29 @@
+# Genera tipos TypeScript desde los DTOs Go (make types).
+# Salida: web/src/types/generated/*.ts — NO editar a mano.
+# Solo se procesan los archivos dto.go; service/handlers se excluyen.
+packages:
+  - path: "github.com/14esc/aether-web/internal/domain/flights"
+    output_path: "web/src/types/generated/flights.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/flights/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/comisiones"
+    output_path: "web/src/types/generated/comisiones.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/comisiones/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/ratings"
+    output_path: "web/src/types/generated/ratings.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/ratings/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/dashboard"
+    output_path: "web/src/types/generated/dashboard.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/dashboard/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/lookups"
+    output_path: "web/src/types/generated/lookups.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/lookups/dto.go. NO EDITAR.

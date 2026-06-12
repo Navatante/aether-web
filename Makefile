@@ -99,6 +99,11 @@ vet:
 lint:
 	golangci-lint run
 
+# Regenera los tipos TypeScript desde los DTOs Go (tygo.yaml).
+# Instalar con: go install github.com/gzuidhof/tygo@latest
+types:
+	tygo generate
+
 # ---------- Producción (Linux/amd64) ----------
 
 # 1) build del frontend → web/dist (embebido en el binario via web/embed.go)
