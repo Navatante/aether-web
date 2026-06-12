@@ -76,6 +76,19 @@ func run(logger *slog.Logger) error {
 
 	e := echo.New()
 	e.HideBanner = true
+	// La IP del cliente alimenta la auditoría (sesiones, tr_audit_flight) y los
+	// logs: no puede ser falsificable. Sin proxy se usa la IP de la conexión TCP
+	// e ignoramos X-Forwarded-For. Con AETHER_TRUSTED_PROXY=true se honra el XFF,
+	// pero confiando solo en loopback (el default de Echo incluye rangos privados,
+	// que en una intranet son los propios clientes).
+	if cfg.TrustedProxy {
+		e.IPExtractor = echo.ExtractIPFromXFFHeader(
+			echo.TrustLinkLocal(false),
+			echo.TrustPrivateNet(false),
+		)
+	} else {
+		e.IPExtractor = echo.ExtractIPDirect()
+	}
 	e.HTTPErrorHandler = httpx.NewHTTPErrorHandler(logger)
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())

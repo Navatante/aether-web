@@ -135,13 +135,46 @@ para SPA fallback — el handler `spaHandler` ya devuelve `index.html` para ruta
 desconocidas. Si quieres ponerle nginx delante (TLS, host header), basta con
 `proxy_pass http://127.0.0.1:8080;`.
 
+## TLS (Caddy como reverse proxy)
+
+Recomendado incluso en intranet: el login y la cookie de sesión viajan en
+claro por HTTP, y hay datos personales (RGPD). En una red sin salida a
+internet no hay Let's Encrypt, pero Caddy genera y renueva certificados con
+una CA interna propia sin mantenimiento (`tls internal`).
+
+1. Instala Caddy (paquete del SO: `apt install caddy`).
+2. `/etc/caddy/Caddyfile` (sustituye `aether.local` por el hostname o IP con
+   el que los usuarios acceden):
+   ```
+   aether.local {
+       tls internal
+       reverse_proxy 127.0.0.1:8080
+   }
+   ```
+3. `sudo systemctl enable --now caddy`
+4. **Distribuye la CA raíz a los PCs cliente** (una vez, por GPO o a mano),
+   importándola como autoridad de confianza. Está en:
+   `/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt`
+5. En `/etc/aether-web/env`:
+   ```
+   AETHER_ADDR=127.0.0.1:8080   # deja de escuchar en 0.0.0.0; solo entra el proxy
+   AETHER_COOKIE_SECURE=true
+   AETHER_TRUSTED_PROXY=true    # auditoría con la IP real del usuario, no 127.0.0.1
+   ```
+   y `sudo systemctl restart aether-web`.
+
+Los health checks de `update.sh` y el diagnóstico siguen funcionando igual:
+atacan `127.0.0.1:8080` por HTTP desde la propia máquina.
+
 ## Variables de entorno
 
 | Variable               | Default | Descripción                                                |
 |------------------------|---------|------------------------------------------------------------|
 | `AETHER_DATABASE_URL`  | —       | DSN pgx (`postgres://user:pass@host:5432/db?sslmode=...`). |
-| `AETHER_ADDR`          | `:8080` | Host:puerto del HTTP (sin host = 0.0.0.0).                 |
+| `AETHER_ADDR`          | `:8080` | Host:puerto del HTTP (sin host = 0.0.0.0). Con proxy local: `127.0.0.1:8080`. |
 | `AETHER_SESSION_TTL`   | `8h`    | TTL de la sesión. Duración Go o segundos.                  |
+| `AETHER_COOKIE_SECURE` | `false` | `true` = cookie de sesión con flag `Secure`. Activar con TLS. |
+| `AETHER_TRUSTED_PROXY` | `false` | `true` = IP del cliente desde `X-Forwarded-For`, confiando solo en un proxy en loopback. Solo con reverse proxy local. |
 
 ## Rollback manual
 
@@ -161,9 +194,13 @@ sudo systemctl start aether-web
 
 - `NoNewPrivileges=true`, `PrivateTmp=true`, `ProtectSystem=strict`.
 - `ProtectHome=true`, `MemoryDenyWriteExecute=true`.
+- `SystemCallFilter=@system-service`, `SystemCallArchitectures=native`.
+- `CapabilityBoundingSet=` (vacío), `RestrictSUIDSGID=true`, `UMask=0077`.
+- `RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX` (sin netlink/raw).
 - Solo `/opt/aether-web/data` es escribible (resto del FS está r/o para el servicio).
 - El servicio corre como `aether:aether` (UID/GID de sistema, sin shell).
 - `/etc/aether-web/env` solo es legible por `root:aether` con perms 600.
+- `systemd-analyze security aether-web` da la puntuación de exposición actual.
 
 Para PostgreSQL: recomendado usar `sslmode=verify-full` cuando la BD es remota,
 y limitar `pg_hba.conf` al rango de IPs del servidor.

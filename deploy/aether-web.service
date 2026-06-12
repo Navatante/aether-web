@@ -1,9 +1,10 @@
 [Unit]
 Description=aether-web — backend HTTP de la 14ª Escuadrilla
 Documentation=file:///opt/aether-web/deploy/README.md
+# Wants (no Requires): si la BD es remota o tarda, el binario reintenta solo
+# vía Restart=on-failure en vez de impedir el arranque de la unit.
 After=network-online.target postgresql.service
-Wants=network-online.target
-Requires=postgresql.service
+Wants=network-online.target postgresql.service
 # Reinicio robusto pero sin loops infinitos (van en [Unit], no en [Service])
 StartLimitBurst=5
 StartLimitIntervalSec=60s
@@ -46,6 +47,15 @@ RestrictRealtime=true
 LockPersonality=true
 MemoryDenyWriteExecute=true
 SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# Solo sockets de red TCP/UDP y unix (journald); sin netlink ni raw.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# No necesita ninguna capability (puerto >1024, usuario sin privilegios).
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+ProtectClock=true
+ProtectHostname=true
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

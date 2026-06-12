@@ -17,6 +17,7 @@ func TestLoadDefaults(t *testing.T) {
 	t.Setenv("AETHER_ADDR", "")
 	t.Setenv("AETHER_SESSION_TTL", "")
 	t.Setenv("AETHER_COOKIE_SECURE", "")
+	t.Setenv("AETHER_TRUSTED_PROXY", "")
 
 	cfg, err := Load()
 	if err != nil {
@@ -30,6 +31,23 @@ func TestLoadDefaults(t *testing.T) {
 	}
 	if cfg.CookieSecure {
 		t.Error("CookieSecure default debería ser false")
+	}
+	if cfg.TrustedProxy {
+		t.Error("TrustedProxy default debería ser false")
+	}
+}
+
+func TestLoadTrustedProxyOnlyTrue(t *testing.T) {
+	for raw, want := range map[string]bool{"true": true, "1": false, "yes": false, "TRUE": false} {
+		t.Setenv("AETHER_DATABASE_URL", "postgres://u:p@localhost/db")
+		t.Setenv("AETHER_TRUSTED_PROXY", raw)
+		cfg, err := Load()
+		if err != nil {
+			t.Fatalf("Load con AETHER_TRUSTED_PROXY=%q: %v", raw, err)
+		}
+		if cfg.TrustedProxy != want {
+			t.Errorf("AETHER_TRUSTED_PROXY=%q: got %v, want %v", raw, cfg.TrustedProxy, want)
+		}
 	}
 }
 

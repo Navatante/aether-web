@@ -27,6 +27,10 @@ type Config struct {
 	// CookieSecure marca la cookie de sesión como Secure
 	// (AETHER_COOKIE_SECURE=true; requiere HTTPS).
 	CookieSecure bool
+	// TrustedProxy indica que hay un reverse proxy de confianza en loopback
+	// (AETHER_TRUSTED_PROXY=true): la IP del cliente se lee de X-Forwarded-For.
+	// Sin proxy debe quedar a false: la cabecera la puede enviar cualquiera.
+	TrustedProxy bool
 }
 
 // Load lee el entorno y valida. Falla (en vez de usar defaults silenciosos)
@@ -37,6 +41,7 @@ func Load() (Config, error) {
 		DatabaseURL:  os.Getenv("AETHER_DATABASE_URL"),
 		SessionTTL:   defaultSessionTTL,
 		CookieSecure: os.Getenv("AETHER_COOKIE_SECURE") == "true",
+		TrustedProxy: os.Getenv("AETHER_TRUSTED_PROXY") == "true",
 	}
 	if cfg.Addr == "" {
 		cfg.Addr = defaultAddr
