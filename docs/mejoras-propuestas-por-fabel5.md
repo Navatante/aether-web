@@ -162,12 +162,16 @@ normalizar el contrato, no de fosilizarlo.
      entrada de `transformFlightsFromDB` (antes `any[]`); eliminado el hook
      muerto `useRatings` y utilidades sin uso de `features/ratings`
      (~370 líneas) (bbe981d).
-   - ⬜ **Pendiente (menor)**: mismo tratamiento para los siguientes
-     componentes grandes si se quiere seguir: `GeneralTacticalRatings`
-     (744), `Disponibilidad` (697), `RegisterComisionForm` (686),
-     `Personnel` (575). El patrón está establecido (modelo + hook + render,
-     o tabs por archivo). Conviene verificar visualmente cada uno con
-     `npm run dev` al refactorizarlo.
+   - ✅ Cola de componentes grandes completada (3e68d4a):
+     `GeneralTacticalRatings` (744 → 177 + hook + tooltip),
+     `Disponibilidad` (697 → 421 + `useDisponibilidad`),
+     `RegisterComisionForm` (686 → 454 + `useComisionForm`),
+     `Personnel` (575 → 370 + `usePersonnel`). Refactor mecánico
+     (la lógica se movió sin reescribirse); verificado con `tsc -b` y
+     build de Vite. Recomendado un repaso visual de estas 4 pantallas
+     con `npm run dev` en la próxima sesión de uso.
+
+**El plan está completo.** No queda nada pendiente del análisis original.
 
 ---
 
