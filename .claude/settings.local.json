@@ -49,7 +49,11 @@
       "Bash(sed -n 27,38p web/src/providers/UserProvider.tsx)",
       "Bash(sed -n 95,125p web/src/providers/UserProvider.tsx)",
       "Bash(sed -n 35,70p web/src/shared/components/layout/Topbar.tsx)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(sed -n 95,145p web/src/features/ratings/pages/MaintenanceRatings.tsx)",
+      "Bash(sed -n 95,140p web/src/features/ratings/pages/LeadershipRatings.tsx)",
+      "Bash(awk 'NR>=300 && NR<=875' internal/domain/flights/flights.go)",
+      "Bash(awk 'NR>=868 && NR<=960' internal/domain/flights/flights.go)"
     ]
   }
 }

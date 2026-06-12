@@ -97,10 +97,10 @@ function useMaintenanceRatings() {
         });
     })();
 
-    // Add mutation → POST /ratings/crew (preservado del original Tauri)
+    // Las calificaciones de mantenimiento viven en detall.notcrew_qualification.
     const addMutation = useApiMutation<{ id: number }, { person_fk: number; crew_ratings_fk: number; date_qualified: string }>(
         'POST',
-        '/ratings/crew',
+        '/ratings/not-crew',
         {
             invalidateKeys: escuadrillaId != null ? [queryKeys.ratings.maintenance(escuadrillaId)] : [],
         },
@@ -132,10 +132,9 @@ function useMaintenanceRatings() {
         }
     };
 
-    // Delete mutation → DELETE /ratings/crew/:id (preservado, recibe notCrew_ratings_sk como id)
     const deleteMutation = useApiMutation<void, { notCrewRatingsSk: number }>(
         'DELETE',
-        (vars) => `/ratings/crew/${vars.notCrewRatingsSk}`,
+        (vars) => `/ratings/not-crew/${vars.notCrewRatingsSk}`,
         {
             invalidateKeys: escuadrillaId != null ? [queryKeys.ratings.maintenance(escuadrillaId)] : [],
         },

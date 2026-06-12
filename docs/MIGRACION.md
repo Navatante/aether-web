@@ -1104,8 +1104,8 @@ Para actualizaciones posteriores: `sudo ./deploy/update.sh` desde el tarball nue
 | SQL Server                                     | PostgreSQL.                                                  |
 | Stored procedures con lógica de negocio        | Lógica de negocio en Go (service); SQL solo lee/escribe.    |
 
-**Bugs heredados deliberadamente preservados** (porque arreglarlos durante la migración aumentaba el riesgo):
-- En `MaintenanceRatings.tsx`, las calificaciones de mantenimiento van a `/ratings/crew` aunque deberían ir a `/ratings/not-crew`. En `LeadershipRatings.tsx` y `GeneralTacticalRatings.tsx` ocurre lo contrario. Si la app funcionaba antes, sigue funcionando. Cuando quieras arreglarlo, intercambia los endpoints en esos tres archivos.
+**Bugs heredados ya corregidos tras la migración:**
+- Los endpoints de calificaciones estaban intercambiados: `MaintenanceRatings.tsx` escribía en `/ratings/crew` (tabla de tripulantes) y `LeadershipRatings.tsx`/`GeneralTacticalRatings.tsx` en `/ratings/not-crew` (tabla de mantenimiento). Corregido en 2026-06: cada página escribe ahora en su tabla (`operations.crew_qualification` para tripulantes, `detall.notcrew_qualification` para mantenimiento). Se verificó que no había datos contaminados por el bug.
 
 ---
 

@@ -40,3 +40,7 @@ migrations/0005_seed_productive_data.down.sql
 # Virtualenvs locales para los scripts Python.
 /.venv/
 database-utils/.venv/
+
+# Artefactos de tsc -b (emit de tsconfig.node.json).
+web/vite.config.js
+web/vite.config.d.ts

@@ -107,10 +107,10 @@ function useGeneralTacticalRatings() {
         });
     })();
 
-    // Add mutation → POST /ratings/not-crew (mapping preservado del original Tauri)
+    // Las calificaciones tácticas viven en operations.crew_qualification.
     const addMutation = useApiMutation<{ id: number }, { person_fk: number; crew_ratings_fk: number; date_qualified: string }>(
         'POST',
-        '/ratings/not-crew',
+        '/ratings/crew',
         {
             invalidateKeys: escuadrillaId != null ? [queryKeys.ratings.generalTactical(escuadrillaId)] : [],
         },
@@ -134,10 +134,9 @@ function useGeneralTacticalRatings() {
         }
     };
 
-    // Delete mutation → DELETE /ratings/not-crew/:id
     const deleteMutation = useApiMutation<void, { crewRatingSk: number }>(
         'DELETE',
-        (vars) => `/ratings/not-crew/${vars.crewRatingSk}`,
+        (vars) => `/ratings/crew/${vars.crewRatingSk}`,
         {
             invalidateKeys: escuadrillaId != null ? [queryKeys.ratings.generalTactical(escuadrillaId)] : [],
         },
