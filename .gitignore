@@ -1,0 +1,42 @@
+/bin/
+/dist/
+*.test
+*.out
+coverage.*
+
+# Local env / config
+.env
+.env.*
+!.env.example
+config.enc
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+
+# JetBrains (project-level .idea is at workspace root)
+*.iml
+
+# Frontend build output is tracked because go:embed needs it,
+# but node_modules and intermediate vite caches are not.
+web/node_modules/
+web/.vite/
+
+# Datos productivos SQLite — binarios, no van al repo.
+database-utils/Aether.db
+
+# Mapeo person_sk → person_user (asocia identidades a SKs reales).
+database-utils/person_users.json
+!database-utils/person_users.example.json
+
+# Migraciones con datos sensibles (catálogo escuadrilla + datos productivos).
+# Las plantillas .example sí van al repo.
+migrations/0002_seed_lookups.up.sql
+migrations/0002_seed_lookups.down.sql
+migrations/0005_seed_productive_data.up.sql
+migrations/0005_seed_productive_data.down.sql
+
+# Virtualenvs locales para los scripts Python.
+/.venv/
+database-utils/.venv/

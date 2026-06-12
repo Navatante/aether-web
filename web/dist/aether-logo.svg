@@ -1,0 +1,32 @@
+<svg width="484.2" height="472.16" viewBox="0 0 484.2 472.16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient1" x1="22.12" y1="446.95" x2="339.7" y2="250.55" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#18b9ab"/>
+      <stop offset="0.24" stop-color="#16b6af"/>
+      <stop offset="0.5" stop-color="#12afbb"/>
+      <stop offset="0.65" stop-color="#0ea9c7"/>
+      <stop offset="0.77" stop-color="#0c9aab"/>
+      <stop offset="0.89" stop-color="#0a8f96"/>
+      <stop offset="0.97" stop-color="#0a8b8f"/>
+    </linearGradient>
+    <linearGradient id="gradient2" x1="174.01" y1="337.35" x2="303.72" y2="336.4" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.25"/>
+      <stop offset="0.05" stop-color="#060606" stop-opacity="0.25"/>
+      <stop offset="0.12" stop-color="#191919" stop-opacity="0.25"/>
+      <stop offset="0.2" stop-color="#383838" stop-opacity="0.25"/>
+      <stop offset="0.29" stop-color="#636363" stop-opacity="0.25"/>
+      <stop offset="0.38" stop-color="#9a9a9a" stop-opacity="0.25"/>
+      <stop offset="0.49" stop-color="#dcdcdc" stop-opacity="0.25"/>
+      <stop offset="0.54" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="0.59" stop-color="#e7e7e7" stop-opacity="0.25"/>
+      <stop offset="0.71" stop-color="#aaaaaa" stop-opacity="0.25"/>
+      <stop offset="0.88" stop-color="#4a4a4a" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.25"/>
+    </linearGradient>
+  </defs>
+
+  <g>
+    <path fill="url(#gradient1)" d="M484.2,472.16h-107.13l-46.88-91.48-45.1-87.99-96.55-188.39L241.99,0l242.21,472.16ZM285.09,292.69h-85.98l-45.1,87.99h176.18l-45.1-87.99ZM168.97,142.47L0,472.16h107.13l46.88-91.48,45.1-87.99,22.8-44.48-52.94-105.74Z"/>
+    <polygon fill="url(#gradient2)" points="285.09,292.69 199.11,292.69 154.01,380.68 330.19,380.68"/>
+  </g>
+</svg>

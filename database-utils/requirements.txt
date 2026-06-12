@@ -1,0 +1,2 @@
+pyodbc>=5.1
+psycopg[binary]>=3.2

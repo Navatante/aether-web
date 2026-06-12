@@ -1,0 +1,31 @@
+-- ============================================================
+-- PLANTILLA. La migración real (0002_seed_lookups.up.sql) contiene
+-- datos específicos de la escuadrilla (escuadrillas concretas, CAPBA,
+-- papeletas históricas, lookups operacionales) y vive en un repo
+-- privado por confidencialidad. Esta plantilla muestra solo qué
+-- tablas se rellenan, no los valores.
+--
+-- Para desarrollar contra esta app necesitas:
+--   - Acceso al repo privado con los datos reales, O
+--   - Crear tu propio 0002 con tus datos.
+--
+-- Tablas que rellena el 0002 real:
+--   detall.rank, detall.localidad, detall.especialidad, detall.division,
+--   detall.person_rol, detall.escuadrilla,
+--   operations.event_name, operations.papeleta_block, operations.papeleta_plan,
+--   operations.period, operations.capba_group, operations.capba,
+--   operations.escuadrilla_capba, operations.departure_arrival_place,
+--   operations.crew_rating_type,
+--   detall.absence_reason, detall.comision_type, detall.comision_lugar,
+--   detall.notcrew_rating_type,
+--   flightsafety.medical_exam_result, flightsafety.medical_exam_place,
+--   operations.fuel_place, operations.fuel_payer, operations.fuel_phase,
+--   operations.fuel_type.
+--
+-- Al final reseteamos las secuencias de las tablas con SK explícito
+-- (detall.escuadrilla, operations.papeleta, operations.period).
+-- ============================================================
+
+-- INSERT INTO detall.rank (...) VALUES ...
+-- INSERT INTO detall.escuadrilla (...) OVERRIDING SYSTEM VALUE VALUES ...
+-- ... etc.

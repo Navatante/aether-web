@@ -1,0 +1,6 @@
+{
+    "_comment": "Mapeo person_sk → person_user. El person_sk es el del SQLite de origen. El person_user es el nombre que se inserta en detall.person.person_user y que se usa para login. Si no defines un SK aquí, el script asigna 'user_<sk>' automáticamente. Este archivo (sin _example) está gitignored — el real con datos identificativos vive solo en local o en el repo privado de datos.",
+    "1": "user_one",
+    "2": "user_two",
+    "66": "admin"
+}

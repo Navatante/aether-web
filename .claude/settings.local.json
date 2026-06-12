@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 *)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('database-utils/migrationSQLiteToPostgres.py'\\).read\\(\\)\\); print\\('Python OK'\\)\")",
+      "Bash(docker exec *)",
+      "Bash(python3 -c \"import psycopg; print\\('psycopg OK', psycopg.__version__\\)\")",
+      "Bash(pip install *)",
+      "Bash(python3 -m venv .venv)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/python -c \"import psycopg; print\\('psycopg', psycopg.__version__, 'OK en .venv'\\)\")",
+      "Bash(cd *)",
+      "Bash(export DATABASE_URL=\"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\")",
+      "Bash(make migrate-up *)",
+      "Bash(.venv/bin/python database-utils/migrationSQLiteToPostgres.py --help)"
+    ]
+  }
+}

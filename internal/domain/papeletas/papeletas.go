@@ -1,0 +1,259 @@
+// Package papeletas implementa el CRUD del catálogo operations.papeleta,
+// con RLS por escuadrilla (fix del bug original que no inyectaba escuadrilla_fk).
+package papeletas
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/echo/v4"
+
+	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/queries"
+)
+
+// ===== DTOs =====
+
+// Papeleta es el contrato JSON. Los Option<T> originales del Rust se
+// representan como *T (omitidos cuando null no es relevante).
+type Papeleta struct {
+	PapeletaSk            int32    `json:"papeleta_sk"`
+	PapeletaName          string   `json:"papeleta_name"`
+	PapeletaDescription   string   `json:"papeleta_description"`
+	PapeletaBlock         string   `json:"papeleta_block"`
+	PapeletaPlan          *string  `json:"papeleta_plan"`
+	PapeletaTv            *float64 `json:"papeleta_tv"`
+	PapeletaPilotCrpValue *int32   `json:"papeleta_pilot_crp_value"`
+	PapeletaDvCrpValue    *int32   `json:"papeleta_dv_crp_value"`
+	PapeletaExpiration    *int32   `json:"papeleta_expiration"`
+}
+
+type ListResult struct {
+	Items      []Papeleta `json:"items"`
+	TotalCount int32      `json:"total_count"`
+}
+
+// WriteReq espeja CreatePapeletaDto del Rust.
+type WriteReq struct {
+	PapeletaName          string   `json:"papeleta_name"`
+	PapeletaDescription   string   `json:"papeleta_description"`
+	PapeletaBlock         string   `json:"papeleta_block"`
+	PapeletaPlan          *string  `json:"papeleta_plan"`
+	PapeletaTv            *float64 `json:"papeleta_tv"`
+	PapeletaPilotCrpValue *int32   `json:"papeleta_pilot_crp_value"`
+	PapeletaDvCrpValue    *int32   `json:"papeleta_dv_crp_value"`
+	PapeletaExpiration    *int32   `json:"papeleta_expiration"`
+}
+
+// ===== Sentinel errors =====
+
+var (
+	ErrNotFound     = errors.New("papeletas: not found")
+	ErrDuplicate    = errors.New("papeletas: duplicate papeleta_name")
+	ErrInvalidInput = errors.New("papeletas: invalid input")
+)
+
+// ===== Service =====
+
+type Service struct {
+	pool *pgxpool.Pool
+	q    *queries.Queries
+}
+
+func NewService(pool *pgxpool.Pool) *Service { return &Service{pool: pool, q: queries.New(pool)} }
+
+func (s *Service) List(ctx context.Context, esc int32) (ListResult, error) {
+	rows, err := s.q.ListPapeletas(ctx, esc)
+	if err != nil {
+		return ListResult{}, err
+	}
+	total, err := s.q.CountPapeletas(ctx, esc)
+	if err != nil {
+		return ListResult{}, err
+	}
+	items := make([]Papeleta, 0, len(rows))
+	for _, r := range rows {
+		items = append(items, Papeleta{
+			PapeletaSk:            r.PapeletaSk,
+			PapeletaName:          r.PapeletaName,
+			PapeletaDescription:   r.PapeletaDescription,
+			PapeletaBlock:         r.PapeletaBlock,
+			PapeletaPlan:          r.PapeletaPlan,
+			PapeletaTv:            numericPtr(r.PapeletaTv),
+			PapeletaPilotCrpValue: r.PapeletaPilotCrpValue,
+			PapeletaDvCrpValue:    r.PapeletaDvCrpValue,
+			PapeletaExpiration:    r.PapeletaExpiration,
+		})
+	}
+	return ListResult{Items: items, TotalCount: total}, nil
+}
+
+func (s *Service) Create(ctx context.Context, esc int32, req WriteReq) (int32, error) {
+	name := strings.TrimSpace(req.PapeletaName)
+	if name == "" || req.PapeletaBlock == "" {
+		return 0, ErrInvalidInput
+	}
+	id, err := s.q.InsertPapeleta(ctx, queries.InsertPapeletaParams{
+		PapeletaName:          name,
+		PapeletaDescription:   req.PapeletaDescription,
+		PapeletaBlock:         req.PapeletaBlock,
+		PapeletaPlan:          req.PapeletaPlan,
+		PapeletaTv:            numericFromFloat(req.PapeletaTv),
+		PapeletaPilotCrpValue: req.PapeletaPilotCrpValue,
+		PapeletaDvCrpValue:    req.PapeletaDvCrpValue,
+		PapeletaExpiration:    req.PapeletaExpiration,
+		PapeletaEscuadrillaFk: esc,
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return 0, ErrDuplicate
+		}
+		return 0, err
+	}
+	return id, nil
+}
+
+func (s *Service) Update(ctx context.Context, esc int32, id int32, req WriteReq) error {
+	name := strings.TrimSpace(req.PapeletaName)
+	if name == "" || req.PapeletaBlock == "" {
+		return ErrInvalidInput
+	}
+	n, err := s.q.UpdatePapeleta(ctx, queries.UpdatePapeletaParams{
+		PapeletaName:          name,
+		PapeletaDescription:   req.PapeletaDescription,
+		PapeletaBlock:         req.PapeletaBlock,
+		PapeletaPlan:          req.PapeletaPlan,
+		PapeletaTv:            numericFromFloat(req.PapeletaTv),
+		PapeletaPilotCrpValue: req.PapeletaPilotCrpValue,
+		PapeletaDvCrpValue:    req.PapeletaDvCrpValue,
+		PapeletaExpiration:    req.PapeletaExpiration,
+		PapeletaSk:            id,
+		PapeletaEscuadrillaFk: esc,
+	})
+	if err != nil {
+		if isUniqueViolation(err) {
+			return ErrDuplicate
+		}
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// ===== Handlers =====
+
+type Handlers struct{ svc *Service }
+
+func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
+
+func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
+	mw := auth.RequireAuth(authSvc)
+	g.GET("/papeletas", h.List, mw)
+	g.POST("/papeletas", h.Create, mw)
+	g.PUT("/papeletas/:id", h.Update, mw)
+}
+
+func (h *Handlers) List(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	res, err := h.svc.List(c.Request().Context(), int32(user.EscuadrillaID))
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) Create(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	var req WriteReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	id, err := h.svc.Create(c.Request().Context(), int32(user.EscuadrillaID), req)
+	switch {
+	case errors.Is(err, ErrInvalidInput):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrDuplicate):
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	case err != nil:
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusCreated, map[string]int32{"id": id})
+}
+
+func (h *Handlers) Update(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, herr := parseID(c)
+	if herr != nil {
+		return herr
+	}
+	var req WriteReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	err := h.svc.Update(c.Request().Context(), int32(user.EscuadrillaID), id, req)
+	switch {
+	case errors.Is(err, ErrInvalidInput):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrDuplicate):
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	case errors.Is(err, ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case err != nil:
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+// ===== Helpers =====
+
+func parseID(c echo.Context) (int32, error) {
+	raw := c.Param("id")
+	n, err := strconv.ParseInt(raw, 10, 32)
+	if err != nil || n <= 0 {
+		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
+	}
+	return int32(n), nil
+}
+
+func isUniqueViolation(err error) bool {
+	return strings.Contains(err.Error(), "23505") ||
+		strings.Contains(err.Error(), "duplicate key")
+}
+
+// numericPtr extrae el float64 de un pgtype.Numeric, devolviendo nil si no es válido.
+func numericPtr(n pgtype.Numeric) *float64 {
+	if !n.Valid {
+		return nil
+	}
+	f, err := n.Float64Value()
+	if err != nil || !f.Valid {
+		return nil
+	}
+	return &f.Float64
+}
+
+// numericFromFloat convierte *float64 a pgtype.Numeric.
+func numericFromFloat(f *float64) pgtype.Numeric {
+	if f == nil {
+		return pgtype.Numeric{}
+	}
+	var n pgtype.Numeric
+	_ = n.Scan(strconv.FormatFloat(*f, 'f', -1, 64))
+	return n
+}

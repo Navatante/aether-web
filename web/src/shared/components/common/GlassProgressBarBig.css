@@ -1,0 +1,320 @@
+/* GlassProgressBarBig animations */
+
+/* ========== AIRFLOW ANIMATIONS ========== */
+@keyframes airFlow {
+    0%, 100% { transform: translateX(0) scaleY(1); }
+    50% { transform: translateX(-33%) scaleY(1.2); }
+}
+
+@keyframes airFlow2 {
+    0%, 100% { transform: translateX(-20%) scaleY(1); }
+    50% { transform: translateX(0) scaleY(0.8); }
+}
+
+@keyframes turbulence {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(1.1) rotate(3deg);
+        opacity: 0.5;
+    }
+}
+
+@keyframes dustFloat1 {
+    0%, 100% {
+        bottom: 15%;
+        opacity: 0;
+        transform: translateX(0) translateY(0);
+    }
+    10% { opacity: 0.8; }
+    50% { transform: translateX(4px) translateY(-2px); }
+    90% { opacity: 0.8; }
+    95% {
+        bottom: 75%;
+        opacity: 0;
+        transform: translateX(-2px) translateY(2px);
+    }
+}
+
+@keyframes dustFloat2 {
+    0%, 100% {
+        bottom: 10%;
+        opacity: 0;
+        transform: translateX(0) translateY(0);
+    }
+    10% { opacity: 0.7; }
+    30% { transform: translateX(-3px) translateY(1px); }
+    70% { transform: translateX(3px) translateY(-1px); }
+    90% { opacity: 0.7; }
+    95% {
+        bottom: 85%;
+        opacity: 0;
+        transform: translateX(2px) translateY(0);
+    }
+}
+
+@keyframes dustFloat3 {
+    0%, 100% {
+        bottom: 20%;
+        opacity: 0;
+        transform: translateX(0);
+    }
+    10% { opacity: 0.9; }
+    50% { transform: translateX(-2px); }
+    90% { opacity: 0.9; }
+    95% {
+        bottom: 70%;
+        opacity: 0;
+        transform: translateX(3px);
+    }
+}
+
+@keyframes dustFloat4 {
+    0%, 100% {
+        bottom: 8%;
+        opacity: 0;
+        transform: translateX(0) translateY(0) scale(1);
+    }
+    10% { opacity: 0.6; }
+    25% { transform: translateX(5px) translateY(-1px) scale(1.1); }
+    75% { transform: translateX(-4px) translateY(1px) scale(0.9); }
+    90% { opacity: 0.6; }
+    95% {
+        bottom: 80%;
+        opacity: 0;
+        transform: translateX(1px) translateY(0) scale(1);
+    }
+}
+
+@keyframes dustFloat5 {
+    0%, 100% {
+        bottom: 25%;
+        opacity: 0;
+        transform: translateX(0);
+    }
+    10% { opacity: 0.8; }
+    50% { transform: translateX(2px); }
+    90% { opacity: 0.8; }
+    95% {
+        bottom: 65%;
+        opacity: 0;
+        transform: translateX(-1px);
+    }
+}
+
+@keyframes dustFloat6 {
+    0%, 100% {
+        bottom: 12%;
+        opacity: 0;
+        transform: translateX(0) translateY(0);
+    }
+    10% { opacity: 0.5; }
+    33% { transform: translateX(6px) translateY(-2px); }
+    66% { transform: translateX(-3px) translateY(1px); }
+    90% { opacity: 0.5; }
+    95% {
+        bottom: 78%;
+        opacity: 0;
+        transform: translateX(4px) translateY(-1px);
+    }
+}
+
+/* ========== CRP ANIMATIONS ========== */
+@keyframes etherealShift {
+    0%, 100% {
+        opacity: 0.8;
+        filter: hue-rotate(0deg);
+    }
+    50% {
+        opacity: 1;
+        filter: hue-rotate(10deg);
+    }
+}
+
+@keyframes mistFloat {
+    0%, 100% {
+        transform: translateY(0) scaleX(1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-4px) scaleX(1.2);
+        opacity: 0.9;
+    }
+}
+
+@keyframes wispsMove {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.5;
+    }
+    33% {
+        transform: translateY(-10%) rotate(2deg);
+        opacity: 0.8;
+    }
+    66% {
+        transform: translateY(5%) rotate(-2deg);
+        opacity: 0.6;
+    }
+}
+
+@keyframes corePulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+@keyframes veilRise {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(-100%); }
+}
+
+@keyframes particleFloat1 {
+    0%, 100% {
+        bottom: 10%;
+        opacity: 0;
+        transform: translateX(0) scale(0.3);
+    }
+    10% {
+        opacity: 0.8;
+        transform: translateX(2px) scale(1);
+    }
+    50% {
+        transform: translateX(-4px) scale(0.9);
+        opacity: 1;
+    }
+    90% {
+        opacity: 0.6;
+        transform: translateX(3px) scale(0.7);
+    }
+    95% {
+        bottom: 90%;
+        opacity: 0;
+        transform: translateX(0) scale(0.2);
+    }
+}
+
+@keyframes particleFloat2 {
+    0%, 100% {
+        bottom: 5%;
+        opacity: 0;
+        transform: translateX(0) scale(0.3);
+    }
+    10% {
+        opacity: 0.9;
+        transform: translateX(-2px) scale(1);
+    }
+    50% {
+        transform: translateX(5px) scale(0.85);
+        opacity: 1;
+    }
+    90% {
+        opacity: 0.5;
+    }
+    95% {
+        bottom: 85%;
+        opacity: 0;
+        transform: translateX(-3px) scale(0.2);
+    }
+}
+
+@keyframes particleFloat3 {
+    0%, 100% {
+        bottom: 15%;
+        opacity: 0;
+        transform: translateX(0) scale(0.5);
+    }
+    15% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    85% {
+        opacity: 0.7;
+    }
+    95% {
+        bottom: 80%;
+        opacity: 0;
+        transform: translateX(2px) scale(0.3);
+    }
+}
+
+@keyframes particleFloat4 {
+    0%, 100% {
+        bottom: 8%;
+        opacity: 0;
+        transform: translateX(0) scale(0.4);
+    }
+    10% {
+        opacity: 0.7;
+        transform: translateX(3px) scale(1);
+    }
+    30% {
+        transform: translateX(-6px) scale(0.95);
+    }
+    60% {
+        transform: translateX(4px) scale(0.85);
+    }
+    90% {
+        opacity: 0.4;
+    }
+    95% {
+        bottom: 92%;
+        opacity: 0;
+        transform: translateX(-2px) scale(0.2);
+    }
+}
+
+@keyframes particleFloat5 {
+    0%, 100% {
+        bottom: 20%;
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+    70% {
+        opacity: 1;
+    }
+    90% {
+        bottom: 70%;
+        opacity: 0;
+    }
+}
+
+@keyframes particleFloat6 {
+    0%, 100% {
+        bottom: 5%;
+        opacity: 0;
+        transform: translateX(0) scale(0.2);
+    }
+    5% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    25% {
+        transform: translateX(6px) scale(1.1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: translateX(-4px) scale(0.9);
+        opacity: 0.7;
+    }
+    75% {
+        transform: translateX(3px) scale(0.8);
+        opacity: 0.5;
+    }
+    95% {
+        bottom: 95%;
+        opacity: 0;
+        transform: translateX(0) scale(0.1);
+    }
+}

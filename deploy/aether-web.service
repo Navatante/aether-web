@@ -1,0 +1,51 @@
+[Unit]
+Description=aether-web — backend HTTP de la 14ª Escuadrilla
+Documentation=file:///opt/aether-web/deploy/README.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+# Reinicio robusto pero sin loops infinitos (van en [Unit], no en [Service])
+StartLimitBurst=5
+StartLimitIntervalSec=60s
+
+[Service]
+Type=simple
+User=aether
+Group=aether
+WorkingDirectory=/opt/aether-web
+
+# Variables de entorno (AETHER_DATABASE_URL, AETHER_ADDR, AETHER_SESSION_TTL).
+# El archivo debe tener permisos 600 y pertenecer a root:aether.
+EnvironmentFile=/etc/aether-web/env
+
+ExecStart=/opt/aether-web/aether-web
+
+Restart=on-failure
+RestartSec=5s
+
+# Apagado limpio
+KillSignal=SIGTERM
+TimeoutStopSec=30s
+
+# Logs a journald
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aether-web
+
+# Sandbox razonable (no necesita escribir fuera de /opt/aether-web)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/aether-web/data
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target

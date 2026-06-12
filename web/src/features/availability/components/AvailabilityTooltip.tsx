@@ -1,0 +1,204 @@
+import React from 'react';
+import { Calendar, Users, MapPin, FileText } from 'lucide-react';
+import { type Absence, type PersonComision, type Person, getReasonColor } from "@/features/availability";
+
+interface Day {
+    day: number;
+    dayOfWeek: number;
+    isWeekend: boolean;
+    dateStr: string;
+}
+
+interface AvailabilityTooltipProps {
+    day: Day;
+    availableCount: number;
+    totalCount: number;
+    absentPersons: Array<{
+        person: Person;
+        absence?: Absence;
+        comision?: PersonComision;
+    }>;
+}
+
+const dayNamesLong: string[] = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const monthNames: string[] = [
+    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
+const EMOJI_SUN = '☀️';
+const EMOJI_MOON = '🌑';
+
+export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
+                                                                            day,
+                                                                            availableCount,
+                                                                            totalCount,
+                                                                            absentPersons
+                                                                        }) => {
+    const date = new Date(day.dateStr);
+    const formattedDate = `${dayNamesLong[day.dayOfWeek]}, ${day.day} de ${monthNames[date.getMonth()]}`;
+    const absentCount = totalCount - availableCount;
+    const availabilityPercentage = totalCount > 0 ? Math.round((availableCount / totalCount) * 100) : 0;
+
+    // Agrupar ausentes por tipo
+    const groupedAbsents = absentPersons.reduce((acc, item) => {
+        const type = item.comision ? 'comision' : (item.absence?.absence_reason || 'Otro');
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(item);
+        return acc;
+    }, {} as Record<string, typeof absentPersons>);
+
+    const InfoSection = ({
+                             icon: Icon,
+                             title,
+                             children
+                         }: {
+        icon: React.ElementType;
+        title: string;
+        children: React.ReactNode;
+    }) => (
+        <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+                <Icon className="w-3.5 h-3.5 text-neutral-500" />
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    {title}
+                </span>
+            </div>
+            <div className="pl-5 border-l-2 border-gray-200 dark:border-gray-700">
+                {children}
+            </div>
+        </div>
+    );
+
+    const AbsentItem = ({
+                            item
+                        }: {
+        item: { person: Person; absence?: Absence; comision?: PersonComision }
+    }) => {
+        const isComision = !!item.comision;
+        const isVueloDia = item.absence?.absence_reason === 'Vuelo día';
+        const isVueloNoche = item.absence?.absence_reason === 'Vuelo noche';
+
+        return (
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 py-0.5">
+                {isComision ? (
+                    <MapPin className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+                ) : isVueloDia ? (
+                    <span className="text-xs flex-shrink-0">{EMOJI_SUN}</span>
+                ) : isVueloNoche ? (
+                    <span className="text-xs flex-shrink-0">{EMOJI_MOON}</span>
+                ) : (
+                    <div
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getReasonColor(item.absence?.absence_reason || '').color }}
+                    />
+                )}
+                <span className="truncate">{item.person.full_name}</span>
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-3 max-w-xs min-w-[240px] max-h-[340px] overflow-y-auto pr-4">
+            {/* Fecha */}
+            <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
+                <Calendar className="w-4 h-4 text-neutral-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {formattedDate}
+                </span>
+                {day.isWeekend && (
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+                        Fin de semana
+                    </span>
+                )}
+            </div>
+
+            {/* Resumen de disponibilidad */}
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-500" />
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Disponibilidad
+                        </span>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        availabilityPercentage >= 80
+                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                            : availabilityPercentage >= 50
+                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    }`}>
+                        {availabilityPercentage}%
+                    </span>
+                </div>
+
+                {/* Barra de progreso */}
+                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                        className={`h-full transition-all duration-300 rounded-full ${
+                            availabilityPercentage >= 80
+                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                : availabilityPercentage >= 50
+                                    ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                                    : 'bg-gradient-to-r from-red-500 to-red-400'
+                        }`}
+                        style={{ width: `${availabilityPercentage}%` }}
+                    />
+                </div>
+
+                {/* Contadores */}
+                <div className="flex justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-gray-600 dark:text-gray-400">
+                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">{availableCount}</span> disponibles
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-gray-400" />
+                        <span className="text-gray-600 dark:text-gray-400">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">{absentCount}</span> ausentes
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Lista de ausentes agrupados */}
+            {absentCount > 0 && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                    {Object.entries(groupedAbsents).map(([type, items]) => {
+                        const isComision = type === 'comision';
+                        const reasonData = !isComision ? getReasonColor(type) : null;
+
+                        return (
+                            <InfoSection
+                                key={type}
+                                icon={isComision ? MapPin : FileText}
+                                title={isComision ? 'En comisión' : reasonData?.label || type}
+                            >
+                                <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                                    {items.map((item, idx) => (
+                                        <AbsentItem key={idx} item={item} />
+                                    ))}
+                                </div>
+                            </InfoSection>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Mensaje cuando no hay ausentes */}
+            {absentCount === 0 && (
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Todo el personal disponible
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default AvailabilityTooltip;

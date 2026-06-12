@@ -1,0 +1,21 @@
+-- ============================================================
+-- PLANTILLA. La migración real (0005_seed_productive_data.up.sql)
+-- contiene datos productivos específicos de la escuadrilla
+-- (papeletas operativas adicionales, calificaciones de tripulantes
+-- reales, horas previas modelo, ausencias, comisiones, etc.) y vive
+-- en un repo privado por confidencialidad.
+--
+-- Se aplica DESPUÉS de cargar el SQLite (porque referencia personas
+-- por person_sk). El target `make dev-rebuild` lo orquesta solo.
+--
+-- Tablas que rellena el 0005 real:
+--   operations.papeleta (adicionales, sin SK explícito)
+--   operations.crew_qualification
+--   operations.previous_model_real_hour
+--   operations.previous_model_sim_hour
+--   detall.absence
+--   detall.comision
+--   detall.notcrew_qualification
+--   detall.person_comision
+--   UPDATE detall.person SET person_permission_level WHERE person_sk = <admin>;
+-- ============================================================
