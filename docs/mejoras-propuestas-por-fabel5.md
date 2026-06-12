@@ -167,9 +167,9 @@ normalizar el contrato, no de fosilizarlo.
      `Disponibilidad` (697 → 421 + `useDisponibilidad`),
      `RegisterComisionForm` (686 → 454 + `useComisionForm`),
      `Personnel` (575 → 370 + `usePersonnel`). Refactor mecánico
-     (la lógica se movió sin reescribirse); verificado con `tsc -b` y
-     build de Vite. Recomendado un repaso visual de estas 4 pantallas
-     con `npm run dev` en la próxima sesión de uso.
+     (la lógica se movió sin reescribirse); verificado con `tsc -b`,
+     build de Vite y **repaso visual de las 4 pantallas con la app
+     corriendo (2026-06-12): funcionan correctamente**.
 
 **El plan está completo.** No queda nada pendiente del análisis original.
 
