@@ -67,13 +67,13 @@ export interface ApiListResult<T> {
     total_count?: number;
 }
 
-export interface UseApiPaginatedQueryOptions<TData> {
+export interface UseApiPaginatedQueryOptions<TData, TRaw = unknown> {
     method?: HttpMethod;            // default GET
     path: string;
     query?: HttpOptions["query"];   // GET params
     body?: unknown;                 // si method != GET
     queryKey: QueryKey;
-    transform?: (raw: unknown[]) => TData[];
+    transform?: (raw: TRaw[]) => TData[];
     enabled?: boolean;
     showToastOnError?: boolean;
 }
@@ -87,7 +87,7 @@ export interface UseApiPaginatedQueryOptions<TData> {
  *       queryKey: queryKeys.flights.list(params),
  *   })
  */
-export function useApiPaginatedQuery<TData = unknown>(opts: UseApiPaginatedQueryOptions<TData>) {
+export function useApiPaginatedQuery<TData = unknown, TRaw = unknown>(opts: UseApiPaginatedQueryOptions<TData, TRaw>) {
     const { method = "GET", path, query, body, queryKey, transform, enabled = true, showToastOnError = true } = opts;
     const { isAuthenticated, loading: userLoading } = useUser();
     const queryEnabled = !userLoading && isAuthenticated && enabled;
@@ -95,10 +95,11 @@ export function useApiPaginatedQuery<TData = unknown>(opts: UseApiPaginatedQuery
     const q = useQuery<{ items: TData[]; totalCount: number }>({
         queryKey: queryEnabled ? queryKey : [...queryKey, "disabled"],
         queryFn: async ({ signal }) => {
-            const res = await http<ApiListResult<unknown>>(method, path, { query, body, signal });
+            const res = await http<ApiListResult<TRaw>>(method, path, { query, body, signal });
             const raw = res.items ?? [];
             const total = res.total_count ?? raw.length;
-            const items = transform ? transform(raw) : (raw as TData[]);
+            // Sin transform, se asume TRaw = TData (el caso por defecto).
+            const items = transform ? transform(raw) : (raw as unknown as TData[]);
             return { items, totalCount: total };
         },
         enabled: queryEnabled,

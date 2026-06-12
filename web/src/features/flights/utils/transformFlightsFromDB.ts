@@ -1,8 +1,12 @@
 import { FlightData, CrewMember } from "@/types/flights";
+import type { FlightItem, PilotoJSON, DotacionJSON } from "@/types/generated/flights";
 
-const safeNumber = (val: any, def = 0) => (typeof val === "number" ? val : def);
+const safeNumber = (val: unknown, def = 0) => (typeof val === "number" ? val : def);
 
-const transformCrewMember = (m: any): CrewMember => ({
+// Un tripulante de la API: piloto o dotación (campos de ambos, opcionales).
+type RawCrewMember = Partial<PilotoJSON & DotacionJSON> & Pick<PilotoJSON, "nombre" | "nk" | "orden">;
+
+const transformCrewMember = (m: RawCrewMember): CrewMember => ({
     nombre: m.nombre || "",
     nk: m.nk || "",
     orden: safeNumber(m.orden),
@@ -36,7 +40,7 @@ const transformCrewMember = (m: any): CrewMember => ({
     papeletas: m.papeletas || [],
 });
 
-export const transformFlightsFromDB = (raw: any[]): FlightData[] => {
+export const transformFlightsFromDB = (raw: FlightItem[]): FlightData[] => {
     return raw.map((f) => ({
         id: f.id,
         fecha: f.fecha,

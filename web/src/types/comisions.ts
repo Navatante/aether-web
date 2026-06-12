@@ -1,22 +1,8 @@
-/**
- * Persona participante en una comisión
- */
-export interface PersonaParticipante {
-    person_comision_sk: number;
-    nombre: string;
-    orden: number;
-}
+// Tipos de comisiones. La forma de la API viene GENERADA desde los structs
+// Go (web/src/types/generated/comisiones.ts, regenerar con `make types`).
+// Aquí solo se re-exportan con los nombres históricos del frontend.
 
-/**
- * Datos principales de una comisión (coincide con la salida del SP)
- */
-export interface ComisionData {
-    comision_sk: number;
-    fecha_inicio: string;
-    fecha_fin: string;
-    dias: number;
-    lugar: string;
-    tipo: string;
-    esfuerzo: boolean;
-    personas_participantes: PersonaParticipante[];
-}
+export type {
+    ComisionParticipante as PersonaParticipante,
+    ComisionListItem as ComisionData,
+} from './generated/comisiones';

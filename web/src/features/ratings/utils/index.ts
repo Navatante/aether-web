@@ -27,17 +27,7 @@ export {
     processGeneralTacticalRatings,
     processLeadershipRatings,
     processMaintenanceRatings,
-    filterPersonnel,
-    isPilotMutuallyExcluded,
-    formatDate,
-    formatDateForBackend,
 } from './processing';
 
 // Hooks
-export {
-    useRatings,
-    useDatePopover,
-    useDeleteConfirmation,
-    formatLocalDate,
-} from './hooks';
-export type { UseRatingsConfig } from './hooks';
+export { formatLocalDate } from './hooks';

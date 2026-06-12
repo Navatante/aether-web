@@ -5,6 +5,7 @@ import { queryKeys } from "@/lib/queryKeys";
 import { transformFlightsFromDB } from "../utils/transformFlightsFromDB";
 import { cn } from "@/lib/utils";
 import { FlightData, CrewMember } from "@/types/flights";
+import type { FlightItem } from "@/types/generated/flights";
 import {
     User, ChevronDown, ChevronUp, Users, MapPin, Shield,
     Search, ChevronLeft, ChevronRight, RefreshCw, Trash2
@@ -88,7 +89,7 @@ const Flights = () => {
         totalCount,
         isLoading,
         refetch,
-    } = useApiPaginatedQuery<FlightData>({
+    } = useApiPaginatedQuery<FlightData, FlightItem>({
         path: "/flights",
         query,
         queryKey: queryKeys.flights.list(escuadrillaId ?? 0, params),

@@ -28,7 +28,6 @@ export type {
     DeleteTarget,
     RatingPageConfig,
     ProcessedRatingData,
-    UseRatingsReturn,
 } from './types';
 
 // Utils

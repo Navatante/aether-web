@@ -67,7 +67,9 @@
       "Bash(AETHER_TEST_DATABASE_URL=\"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\" go test ./...)",
       "Bash(~/go/bin/migrate -path migrations -database \"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\" up)",
       "Bash(git commit -q -m ' *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(sed -n 1,298p web/src/features/ratings/utils/processing.ts)",
+      "Bash(mv /tmp/proc.ts web/src/features/ratings/utils/processing.ts)"
     ]
   }
 }
