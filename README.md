@@ -21,6 +21,24 @@ Este repositorio es **público y software libre (MIT)**, pero algunos artefactos
 
 Si quieres correr la aplicación contra tu propio dataset, los archivos `migrations/examples/*.sql.example` describen qué tablas hay que rellenar y con qué forma.
 
+## Seguridad
+
+- **Autenticación**: usuario + contraseña con **argon2id** (parámetros RFC 9106). Sesiones con token aleatorio de 32 bytes del que solo se guarda el hash SHA-256 en BD (`timestamptz`, purga periódica de caducadas); cookie `HttpOnly` + `SameSite=Lax` (+`Secure` con `AETHER_COOKIE_SECURE=true` tras TLS).
+- **Autorización en el servidor**: cada ruta de escritura exige un nivel de permiso (`Común` / `Operacional` / `Administrativo` / `Seguridad`) vía middleware `RequirePermission` — el gating de la UI es solo cosmético, la garantía está en el backend (403). Reparto por dominio en [`CLAUDE.md` §8](CLAUDE.md#8-autenticación-y-sesiones).
+- **Rate limit** en `/auth/login` por IP (ráfaga de 5, luego 1 cada 2 s) contra fuerza bruta.
+- **Errores sin fugas**: handler central de errores; los 5xx devuelven un mensaje genérico y el detalle real (SQL, esquema) solo va al log, correlado por `X-Request-ID`.
+- **Operación**: request logging JSON estructurado (journald), apagado ordenado con `SIGTERM`, timeouts HTTP y límite de body de 2 MB; la configuración se valida al arranque (sin DSN no arranca).
+- **Auditoría**: trigger `tr_audit_flight` registra quién hizo qué (usuario e IP vía GUCs de sesión) en las escrituras de vuelos.
+
+## Calidad y CI
+
+GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) en cada push y PR:
+
+- **Leak-guard RGPD**: el job falla si algún archivo sensible (SQLite, seeds 0002/0005, mapeo de usuarios o cualquier `*.db`) aparece versionado.
+- **Backend**: `go vet`, `golangci-lint`, build y tests — unitarios y de **integración** contra un PostgreSQL efímero (service container; en local, `AETHER_TEST_DATABASE_URL` + `make test`).
+- **Frontend**: `npm ci` + typecheck/build de producción (`tsc -b` + Vite).
+- **Contrato de tipos Go → TS**: los tipos de `web/src/types/generated/` se generan desde los structs Go con tygo (`make types`); el CI falla si están desactualizados.
+
 ## Desarrollo local
 
 Resumen — guía completa en [`CLAUDE.md` §12](CLAUDE.md#12-desarrollo-local).
