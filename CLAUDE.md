@@ -1,6 +1,10 @@
-# Aether-Web — Migración Tauri → Web y guía de arquitectura
+# Aether-Web — Guía de arquitectura y desarrollo
 
-Este documento explica **qué se ha migrado**, **cómo está organizado el código nuevo**, y **cómo trabajar con él** sin ser experto en Go o aplicaciones web. Pensado para que puedas:
+> Documento de contexto del proyecto (CLAUDE.md). Nació como la guía de la
+> migración Tauri → Web (ya completada) y se mantiene como referencia de
+> arquitectura, convenciones y tareas típicas.
+
+Este documento explica **cómo está organizado el código**, y **cómo trabajar con él** sin ser experto en Go o aplicaciones web. Pensado para que puedas:
 
 - Entender qué hace cada capa (frontend, backend, base de datos).
 - Localizar dónde tocar para un cambio típico (añadir endpoint, columna, lookup, etc.).
@@ -188,7 +192,7 @@ aether-web/
 │   ├── migrate-up.sh
 │   └── README.md               # Runbook de despliegue.
 │
-├── docs/MIGRACION.md           # ESTE DOCUMENTO.
+├── CLAUDE.md                   # ESTE DOCUMENTO (guía de arquitectura y convenciones).
 ├── Makefile                    # Comandos `make run`, `make build-prod`...
 ├── sqlc.yaml                   # Configuración del generador sqlc.
 ├── go.mod / go.sum             # Dependencias Go.
@@ -736,6 +740,45 @@ Para mutaciones simples que no necesitan invalidación de caché compleja, puede
 await http('POST', '/festivos', { body: { festivo_dia, festivo_motivo } });
 await refetch();
 ```
+
+### Convenciones de organización del frontend (2026-06)
+
+Tras el refactor de los componentes grandes, el frontend sigue estas reglas.
+**El código nuevo debe seguirlas también:**
+
+1. **Componentes = solo render.** La lógica de datos, estado y handlers de una
+   página o diálogo no trivial vive en un hook propio en
+   `features/<feature>/hooks/use<Nombre>.ts`. El componente lo consume por
+   destructuring y se limita al JSX. Ejemplos de referencia:
+   - `availability/hooks/useAbsenceDialog.ts` ← `RegisterAbsenceDialog`
+   - `availability/hooks/useDisponibilidad.ts` ← página `Disponibilidad`
+   - `comisiones/hooks/useComisionForm.ts` ← `RegisterComisionForm`
+   - `personnel/hooks/usePersonnel.ts` ← página `Personnel`
+   - `ratings/hooks/useGeneralTacticalRatings.ts` ← `GeneralTacticalRatings`
+
+2. **Modelo compartido por feature.** Tipos, catálogos y helpers que usan
+   varios componentes de un feature van en un módulo de modelo, no dentro de
+   un componente. Ejemplo: `availability/absences.ts` (tipos `Absence`/`Person`,
+   catálogo `absenceReasonColors`, `getReasonColor`, helpers de fecha).
+
+3. **Diálogos multi-tab → un archivo por tab.** Si un diálogo tiene secciones
+   autocontenidas, cada una vive en su archivo bajo una subcarpeta del diálogo.
+   Ejemplo: `flights/components/dialogs/manage-flight-data/{PlacesTab,AircraftsTab,EventsTab,shared}.tsx`.
+
+4. **Tipos de la API: generados, no escritos a mano.** Los structs Go con tags
+   `json:` son la fuente de verdad; tygo genera `web/src/types/generated/*.ts`
+   (`make types`, y el CI falla si están desactualizados). Los archivos de
+   `web/src/types/*.ts` son adaptadores finos que re-exportan los generados con
+   los nombres históricos del frontend (ver `types/dashboard.ts` y
+   `types/comisions.ts`); los tipos puramente de UI sí se escriben a mano ahí.
+   **Nunca edites `types/generated/`.**
+
+5. **Datos siempre por TanStack Query.** `useApiQuery` / `useApiMutation` /
+   `useApiPaginatedQuery` con `queryKeys` e `invalidateKeys`; el patrón
+   `http()` + `useState` + refetch manual está deprecado para queries (la
+   mutación inline de arriba sigue siendo aceptable en casos triviales).
+   `useApiPaginatedQuery` acepta un segundo genérico `TRaw` para tipar el
+   `transform` con el tipo generado de la API (ver `Flights.tsx`).
 
 ---
 

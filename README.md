@@ -6,7 +6,7 @@ Aplicación web para la gestión operativa de una escuadrilla de helicópteros: 
 
 ## Estado
 
-Migración Tauri → Web completada. 77 endpoints HTTP, 12 dominios, despliegue en un único binario por systemd. Detalles en [`docs/MIGRACION.md`](docs/MIGRACION.md).
+Migración Tauri → Web completada. 77 endpoints HTTP, 12 dominios, despliegue en un único binario por systemd. Detalles en [`CLAUDE.md`](CLAUDE.md) (guía de arquitectura y convenciones).
 
 ## Privacidad
 
@@ -23,7 +23,7 @@ Si quieres correr la aplicación contra tu propio dataset, los archivos `migrati
 
 ## Desarrollo local
 
-Resumen — guía completa en [`docs/MIGRACION.md` §12](docs/MIGRACION.md#12-desarrollo-local).
+Resumen — guía completa en [`CLAUDE.md` §12](CLAUDE.md#12-desarrollo-local).
 
 **Requisitos**: Go 1.22+, Node 20+, Docker, `sqlc`, `migrate` (golang-migrate).
 
