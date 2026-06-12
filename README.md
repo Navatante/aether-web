@@ -6,7 +6,7 @@ Aplicación web para la gestión operativa de una escuadrilla de helicópteros: 
 
 ## Estado
 
-Migración Tauri → Web completada. 77 endpoints HTTP, 12 dominios, despliegue en un único binario por systemd. Detalles en [`CLAUDE.md`](CLAUDE.md) (guía de arquitectura y convenciones).
+Migración Tauri → Web completada. 77 endpoints HTTP, 12 dominios, despliegue en un único binario por systemd. Detalles en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) (guía de arquitectura y convenciones).
 
 ## Privacidad
 
@@ -24,7 +24,7 @@ Si quieres correr la aplicación contra tu propio dataset, los archivos `migrati
 ## Seguridad
 
 - **Autenticación**: usuario + contraseña con **argon2id** (parámetros RFC 9106). Sesiones con token aleatorio de 32 bytes del que solo se guarda el hash SHA-256 en BD (`timestamptz`, purga periódica de caducadas); cookie `HttpOnly` + `SameSite=Lax` (+`Secure` con `AETHER_COOKIE_SECURE=true` tras TLS).
-- **Autorización en el servidor**: cada ruta de escritura exige un nivel de permiso (`Común` / `Operacional` / `Administrativo` / `Seguridad`) vía middleware `RequirePermission` — el gating de la UI es solo cosmético, la garantía está en el backend (403). Reparto por dominio en [`CLAUDE.md` §8](CLAUDE.md#8-autenticación-y-sesiones).
+- **Autorización en el servidor**: cada ruta de escritura exige un nivel de permiso (`Común` / `Operacional` / `Administrativo` / `Seguridad`) vía middleware `RequirePermission` — el gating de la UI es solo cosmético, la garantía está en el backend (403). Reparto por dominio en [`docs/ARQUITECTURA.md` §8](docs/ARQUITECTURA.md#8-autenticación-y-sesiones).
 - **Rate limit** en `/auth/login` por IP (ráfaga de 5, luego 1 cada 2 s) contra fuerza bruta.
 - **Errores sin fugas**: handler central de errores; los 5xx devuelven un mensaje genérico y el detalle real (SQL, esquema) solo va al log, correlado por `X-Request-ID`.
 - **Operación**: request logging JSON estructurado (journald), apagado ordenado con `SIGTERM`, timeouts HTTP y límite de body de 2 MB; la configuración se valida al arranque (sin DSN no arranca).
@@ -41,7 +41,7 @@ GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) en cada push y PR:
 
 ## Desarrollo local
 
-Resumen — guía completa en [`CLAUDE.md` §12](CLAUDE.md#12-desarrollo-local).
+Resumen — guía completa en [`docs/ARQUITECTURA.md` §12](docs/ARQUITECTURA.md#12-desarrollo-local).
 
 **Requisitos**: Go 1.22+, Node 20+, Docker, `sqlc`, `migrate` (golang-migrate).
 

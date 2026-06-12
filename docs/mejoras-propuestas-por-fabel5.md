@@ -2,7 +2,7 @@
 
 > Análisis del estado del proyecto a 2026-06-12, tras revisar backend Go completo
 > (main, auth, dominios, db), capa HTTP/query del frontend, migraciones, Makefile,
-> .gitignore y `docs/MIGRACION.md` (hoy `CLAUDE.md` en la raíz del repo).
+> .gitignore y `docs/MIGRACION.md` (hoy `docs/ARQUITECTURA.md`).
 
 ## Veredicto general
 
@@ -188,6 +188,6 @@ normalizar el contrato, no de fosilizarlo.
 - Separación repo público/privado por RGPD con symlinks y plantillas `.example`.
 - SPA embebida con `go:embed`: despliegue de un solo binario con rollback automático
   en `update.sh`.
-- Documentación (`MIGRACION.md`, hoy `CLAUDE.md`) extensa y útil — aunque tenía
+- Documentación (`MIGRACION.md`, hoy `docs/ARQUITECTURA.md`) extensa y útil — aunque tenía
   drift: mencionaba `internal/config/` y `POST /logs` que no existían; corregido
   al implementar los puntos 3 y 4.
