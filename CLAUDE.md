@@ -24,7 +24,7 @@ BD de desarrollo: contenedor Docker `aether-pg`. DSN típico: `postgres://jon:12
 
 Cadena por capas: `queries/<dominio>.sql` → sqlc genera `internal/queries/` → `Service` (lógica de negocio) → `Handlers` (HTTP) → Echo.
 
-- Un paquete por dominio en `internal/domain/<dominio>/` con `dto.go` (contrato JSON), `service.go` (negocio + sentinel errors) y `handlers.go` (parseo HTTP + `Register(g, authSvc)`).
+- Un paquete por dominio en `internal/domain/<dominio>/`. Los grandes (flights, ratings, lookups, comisiones, dashboard) se dividen en `dto.go` (contrato JSON), `service.go` (negocio + sentinel errors) y `handlers.go` (parseo HTTP + `Register(g, authSvc)`); los pequeños lo reúnen todo en un único `<dominio>.go` (festivos, events…). Mismas piezas en ambos casos.
 - Las rutas se registran explícitamente desde `cmd/server/main.go`; si un dominio no se enchufa ahí, sus rutas no existen. No hay descubrimiento mágico.
 - Configuración solo vía `internal/config` (variables `AETHER_*`); no añadir `os.Getenv` en otros sitios. Sin `AETHER_DATABASE_URL` el proceso no arranca.
 - RLS por código: las queries de datos por escuadrilla filtran siempre por `*_escuadrilla_fk` usando el `EscuadrillaID` de la sesión.
@@ -61,12 +61,13 @@ El gating de la UI (`hasPermission`) es solo cosmético; la garantía real es el
 
 - **RGPD — jamás versionar en este repo (público)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.*.sql`, `migrations/0005_seed_productive_data.*.sql`. Son symlinks al repo privado `~/aether-data`. El CI tiene leak-guard, pero revisa `git status` antes de cada push igualmente. Nunca `git add -f`.
 - **No editar código generado**: `internal/queries/` (sqlc) ni `web/src/types/generated/` (tygo).
-- **Migraciones**: numeradas secuencialmente con par `.up.sql`/`.down.sql` en `migrations/`. La siguiente libre es la 0007. Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs → `make types`.
+- **Migraciones**: numeradas secuencialmente con par `.up.sql`/`.down.sql` en `migrations/` (mira el último número antes de crear una; convenciones en `migrations/README.md`). Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs → `make types`.
 - **Timestamps**: usar `timestamptz`, nunca `TIMESTAMP` sin zona (la migración 0006 corrigió un bug real de sesiones por esto).
 - Commits y push solo cuando el usuario lo pida; el frontend embebido (`web/dist/`) está versionado — reconstruirlo (`cd web && npm run build`) antes de commitear cambios de frontend relevantes.
 
 ## Otros documentos
 
 - `docs/ARQUITECTURA.md` — guía extensa: arranque del binario, walkthrough de un dominio, tareas típicas ("cómo añado un endpoint/columna/lookup"), desarrollo local completo, repos público/privado, despliegue, glosario.
-- `docs/mejoras-propuestas-por-fabel5.md` — análisis crítico y plan de mejoras (completado en 2026-06).
+- `web/CLAUDE.md` — detalle operativo del frontend (recetas de hooks, queryKeys, lookups, tipos generados).
+- `migrations/README.md` — convenciones de migraciones y qué archivos son symlinks al repo privado.
 - `deploy/README.md` — runbook de producción (systemd, install/update con rollback).

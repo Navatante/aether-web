@@ -108,7 +108,7 @@ Estado al cierre: backend 77/77 endpoints, frontend 8/8 sub-lotes, despliegue li
 ┌────────────────────────────────────────────────────────────────────┐
 │                          PostgreSQL                                │
 │                                                                    │
-│   • Esquemas: detall, operations.                                 │
+│   • Esquemas: detall, operations, flightsafety.                   │
 │   • Tablas, triggers de invariantes (no-overlap, etc.),           │
 │     auditoría (`tr_audit_flight`).                                │
 │   • Migraciones gestionadas con golang-migrate (.sql en           │
@@ -523,39 +523,35 @@ Sin estas dos líneas, la ruta no existe.
 
 ### 7.6 Frontend: el diálogo de festivos
 
-`web/src/features/availability/components/dialogs/FestivosDialog.tsx`:
+`web/src/features/availability/components/dialogs/FestivosDialog.tsx` sigue la convención 5 (datos por TanStack Query, no `http()` + estado manual):
 
 ```tsx
-import { http } from '@/lib/http';
+const festivosKey = queryKeys.availability.festivos(escId ?? 0);
 
-// ...
-async function fetchFestivos() {
-    const result = await http<Festivo[]>('GET', '/festivos');
-    setFestivos(result);
-}
+// Lectura: cachea bajo festivosKey, solo cuando el diálogo está abierto.
+const { data: festivosData, isLoading } = useApiQuery<Festivo[]>(
+    'GET', '/festivos', { enabled: open }, festivosKey,
+);
 
-async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    await http('POST', '/festivos', {
-        body: {
-            festivo_dia: festivoDia,
-            festivo_motivo: festivoMotivo.trim(),
-        },
-    });
-    await fetchFestivos();
-}
+// Escritura: al completarse invalida festivosKey → la lista se recarga sola.
+const saveMutation = useApiMutation<unknown, { festivo_sk?: number; festivo_dia: string; festivo_motivo: string }>(
+    mode === 'edit' ? 'PUT' : 'POST',
+    (vars) => (mode === 'edit' ? `/festivos/${vars.festivo_sk}` : '/festivos'),
+    { invalidateKeys: [festivosKey] },
+);
 
-async function handleDelete(festivoSk: number) {
-    await http('DELETE', `/festivos/${festivoSk}`);
-    await fetchFestivos();
-}
+const deleteMutation = useApiMutation<void, { festivo_sk: number }>(
+    'DELETE',
+    (vars) => `/festivos/${vars.festivo_sk}`,
+    { invalidateKeys: [festivosKey] },
+);
 ```
 
 **El recorrido completo** del botón "Crear festivo":
 
 1. El usuario rellena el formulario y pulsa "Guardar".
-2. `handleSubmit` llama `http('POST', '/festivos', { body: {...} })`.
-3. `http` añade la cookie de sesión, hace `fetch('/api/v1/festivos', ...)`.
+2. El handler llama `saveMutation.mutate({ festivo_dia, festivo_motivo })`.
+3. `useApiMutation` usa `http` por debajo: añade la cookie de sesión y hace `fetch('/api/v1/festivos', ...)`.
 4. Echo enruta a `Handlers.Create` (porque `Register` declaró `POST /festivos`).
 5. El middleware `RequireAuth` lee la cookie, valida la sesión y mete el `User` en el contexto Echo.
 6. El handler lee el body con `c.Bind(&req)`, llama a `svc.Create(...)`.
@@ -563,7 +559,7 @@ async function handleDelete(festivoSk: number) {
 8. Postgres ejecuta el INSERT.
 9. El service devuelve el ID.
 10. El handler responde `201 Created` con `{ "id": 123 }`.
-11. El frontend cierra el diálogo y refresca la lista.
+11. `invalidateKeys` invalida `festivosKey`: TanStack Query vuelve a pedir la lista y el diálogo se refresca solo.
 
 ---
 
@@ -827,7 +823,7 @@ Ejemplo: "quiero un endpoint que devuelva festivos solo del próximo mes".
 
 ### B. Añadir una columna nueva a una tabla
 
-1. **Crea una migración nueva**: `migrations/0005_add_festivo_color.up.sql` con `ALTER TABLE detall.festivo ADD COLUMN festivo_color VARCHAR(7);`. Y la inversa en `0005_..._down.sql` (`ALTER TABLE ... DROP COLUMN festivo_color;`).
+1. **Crea una migración nueva** con el siguiente número libre (mira el último en `migrations/`): `migrations/00NN_add_festivo_color.up.sql` con `ALTER TABLE detall.festivo ADD COLUMN festivo_color VARCHAR(7);`. Y la inversa en `00NN_..._down.sql` (`ALTER TABLE ... DROP COLUMN festivo_color;`).
 2. Aplícala: `DATABASE_URL=... make migrate-up`.
 3. **Actualiza las queries SQL** que SELECT-ean / INSERT-ean esa tabla para incluir la nueva columna (`queries/festivos.sql`).
 4. `make sqlc` regenera el código.
