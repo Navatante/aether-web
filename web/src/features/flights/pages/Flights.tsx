@@ -161,47 +161,47 @@ const Flights = () => {
         const label = isPilot ? `Piloto ${index + 1}` : `Dotación ${index + 1}`;
 
         return (
-            <div key={`${role}-${index}`} className="bg-white/5 rounded-lg p-4 backdrop-blur-sm border border-white/10">
+            <div key={`${role}-${index}`} className="bg-glass rounded-lg p-4 backdrop-blur-sm border border-glass-border">
                 <div className="flex justify-between items-start mb-4">
-                    <h4 className="text-white font-semibold flex items-center gap-2">
-                        <User className="w-4 h-4 text-slate-300" />
+                    <h4 className="text-foreground font-semibold flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
                         {label}
-                        <span className="text-sm font-normal text-white/80">- {member.nombre}</span>
+                        <span className="text-sm font-normal text-foreground/80">- {member.nombre}</span>
                     </h4>
-                    <span className="text-xs text-slate-300/80">{member.nk}</span>
+                    <span className="text-xs text-muted-foreground">{member.nk}</span>
                 </div>
 
                 {/* Horas de Vuelo */}
                 <div className="mb-8">
-                    <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Horas de Vuelo</p>
+                    <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Horas de Vuelo</p>
                     <div className="grid grid-cols-2 gap-14 text-sm">
                         <div className="space-y-2">
                             {isPilot && member.horaVueloPiloto ? (
                                 <>
-                                    <div className="flex justify-between"><span className="text-cyan-200/50">Día:</span><span className={member.horaVueloPiloto.dia === 0 ? "text-white/20" : "text-cyan-200"}>{member.horaVueloPiloto.dia}h</span></div>
-                                    <div className="flex justify-between"><span className="text-red-200/50">Noche:</span><span className={member.horaVueloPiloto.noche === 0 ? "text-white/20" : "text-red-200"}>{member.horaVueloPiloto.noche}h</span></div>
-                                    <div className="flex justify-between"><span className="text-green-200/50">GVN:</span><span className={member.horaVueloPiloto.gvn.total === 0 ? "text-white/20" : "text-green-200"}>{member.horaVueloPiloto.gvn.total}h</span></div>
-                                    <div className="flex justify-between pl-4"><span className="text-green-200/50 text-xs">→ IIT:</span><span className={member.horaVueloPiloto.gvn.iit === 0 ? "text-gray-300/20" : "text-green-200/80"}><span className="text-xs">{member.horaVueloPiloto.gvn.iit}h</span></span></div>
-                                    <div className="flex justify-between pl-4"><span className="text-green-200/50 text-xs">→ ANVIS:</span><span className={`text-xs ${member.horaVueloPiloto.gvn.anvis === 0 ? "text-gray-300/20" : "text-green-200/80"}`}>{member.horaVueloPiloto.gvn.anvis}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-day/60">Día:</span><span className={member.horaVueloPiloto.dia === 0 ? "text-foreground/30" : "text-hour-day"}>{member.horaVueloPiloto.dia}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-night/60">Noche:</span><span className={member.horaVueloPiloto.noche === 0 ? "text-foreground/30" : "text-hour-night"}>{member.horaVueloPiloto.noche}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-gvn/60">GVN:</span><span className={member.horaVueloPiloto.gvn.total === 0 ? "text-foreground/30" : "text-hour-gvn"}>{member.horaVueloPiloto.gvn.total}h</span></div>
+                                    <div className="flex justify-between pl-4"><span className="text-hour-gvn/60 text-xs">→ IIT:</span><span className={member.horaVueloPiloto.gvn.iit === 0 ? "text-foreground/30" : "text-hour-gvn/80"}><span className="text-xs">{member.horaVueloPiloto.gvn.iit}h</span></span></div>
+                                    <div className="flex justify-between pl-4"><span className="text-hour-gvn/60 text-xs">→ ANVIS:</span><span className={`text-xs ${member.horaVueloPiloto.gvn.anvis === 0 ? "text-foreground/30" : "text-hour-gvn/80"}`}>{member.horaVueloPiloto.gvn.anvis}h</span></div>
                                 </>
                             ) : member.horaVueloDotacion ? (
                                 <>
-                                    <div className="flex justify-between"><span className="text-cyan-200/50">Día:</span><span className={member.horaVueloDotacion.dia === 0 ? "text-white/20" : "text-cyan-200"}>{member.horaVueloDotacion.dia}h</span></div>
-                                    <div className="flex justify-between"><span className="text-red-200/50">Noche:</span><span className={member.horaVueloDotacion.noche === 0 ? "text-white/20" : "text-red-200"}>{member.horaVueloDotacion.noche}h</span></div>
-                                    <div className="flex justify-between"><span className="text-green-200/50">GVN:</span><span className={member.horaVueloDotacion.gvn === 0 ? "text-white/20" : "text-green-200"}>{member.horaVueloDotacion.gvn}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-day/60">Día:</span><span className={member.horaVueloDotacion.dia === 0 ? "text-foreground/30" : "text-hour-day"}>{member.horaVueloDotacion.dia}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-night/60">Noche:</span><span className={member.horaVueloDotacion.noche === 0 ? "text-foreground/30" : "text-hour-night"}>{member.horaVueloDotacion.noche}h</span></div>
+                                    <div className="flex justify-between"><span className="text-hour-gvn/60">GVN:</span><span className={member.horaVueloDotacion.gvn === 0 ? "text-foreground/30" : "text-hour-gvn"}>{member.horaVueloDotacion.gvn}h</span></div>
                                 </>
                             ) : null}
                         </div>
                         <div className="space-y-2">
                             {isPilot && member.horaVueloPiloto ? (
                                 <>
-                                    <div className="flex justify-between"><span className="text-gray-400">Instructor:</span><span className={member.horaVueloPiloto.instructor === 0 ? "text-white/20" : "text-white"}>{member.horaVueloPiloto.instructor}h</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-400">Instrumentos:</span><span className={member.horaVueloPiloto.instrumentos === 0 ? "text-white/20" : "text-white"}>{member.horaVueloPiloto.instrumentos}h</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-400">Form. Día:</span><span className={member.horaVueloPiloto.formacionDia === 0 ? "text-white/20" : "text-white"}>{member.horaVueloPiloto.formacionDia}h</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-400">Form. GVN:</span><span className={member.horaVueloPiloto.formacionGvn === 0 ? "text-white/20" : "text-white"}>{member.horaVueloPiloto.formacionGvn}h</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Instructor:</span><span className={member.horaVueloPiloto.instructor === 0 ? "text-foreground/30" : "text-foreground"}>{member.horaVueloPiloto.instructor}h</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Instrumentos:</span><span className={member.horaVueloPiloto.instrumentos === 0 ? "text-foreground/30" : "text-foreground"}>{member.horaVueloPiloto.instrumentos}h</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Form. Día:</span><span className={member.horaVueloPiloto.formacionDia === 0 ? "text-foreground/30" : "text-foreground"}>{member.horaVueloPiloto.formacionDia}h</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Form. GVN:</span><span className={member.horaVueloPiloto.formacionGvn === 0 ? "text-foreground/30" : "text-foreground"}>{member.horaVueloPiloto.formacionGvn}h</span></div>
                                 </>
                             ) : member.horaVueloDotacion ? (
-                                <div className="flex justify-between"><span className="text-gray-400">Winch Trim:</span><span className={member.horaVueloDotacion.winchTrim === 0 ? "text-white/20" : "text-white"}>{member.horaVueloDotacion.winchTrim}h</span></div>
+                                <div className="flex justify-between"><span className="text-muted-foreground">Winch Trim:</span><span className={member.horaVueloDotacion.winchTrim === 0 ? "text-foreground/30" : "text-foreground"}>{member.horaVueloDotacion.winchTrim}h</span></div>
                             ) : null}
                         </div>
                     </div>
@@ -209,7 +209,7 @@ const Flights = () => {
 
                 {/* Papeletas */}
                 <div className="mb-8">
-                    <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Papeletas</p>
+                    <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Papeletas</p>
                     {member.papeletas && member.papeletas.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                             {member.papeletas.map((p, i) => (
@@ -218,8 +218,8 @@ const Flights = () => {
                                         <span className={cn(
                                             "px-2 py-1 rounded text-sm cursor-help font-medium",
                                             p.periodo === 3
-                                                ? "bg-lime-500/20 text-lime-300/80"
-                                                : "bg-blue-500/20 text-blue-300/80"
+                                                ? "bg-success-muted text-success-muted-foreground"
+                                                : "bg-info-muted text-info-muted-foreground"
                                         )}>{p.nombre}</span>
                                     </TooltipTrigger>
                                     <TooltipContent variant="info"><p>{p.descripcion}</p></TooltipContent>
@@ -227,38 +227,38 @@ const Flights = () => {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-white/30 text-sm italic">Sin papeletas registradas</div>
+                        <div className="text-foreground/40 text-sm italic">Sin papeletas registradas</div>
                     )}
                 </div>
 
                 {/* Tomas */}
                 {isPilot && member.tomas && (
                     <div className="mb-8">
-                        <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Tomas</p>
+                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Tomas</p>
                         <div className="space-y-1 text-sm">
-                            <div className="grid grid-cols-5 gap-2 text-gray-400">
+                            <div className="grid grid-cols-5 gap-2 text-muted-foreground">
                                 <span></span><span className="text-center">Tierra</span><span className="text-center">Mono</span><span className="text-center">Multi</span><span className="text-center">Carrier</span>
                             </div>
                             <div className="grid grid-cols-5 gap-2">
-                                <span className="text-cyan-200/50">Día:</span>
-                                <span className={`text-center ${member.tomas.dia.tierra === 0 ? "text-white/20" : "text-cyan-200"}`}>{member.tomas.dia.tierra}</span>
-                                <span className={`text-center ${member.tomas.dia.monospot === 0 ? "text-white/20" : "text-cyan-200"}`}>{member.tomas.dia.monospot}</span>
-                                <span className={`text-center ${member.tomas.dia.multispot === 0 ? "text-white/20" : "text-cyan-200"}`}>{member.tomas.dia.multispot}</span>
-                                <span className={`text-center ${member.tomas.dia.carrier === 0 ? "text-white/20" : "text-cyan-200"}`}>{member.tomas.dia.carrier}</span>
+                                <span className="text-hour-day/60">Día:</span>
+                                <span className={`text-center ${member.tomas.dia.tierra === 0 ? "text-foreground/30" : "text-hour-day"}`}>{member.tomas.dia.tierra}</span>
+                                <span className={`text-center ${member.tomas.dia.monospot === 0 ? "text-foreground/30" : "text-hour-day"}`}>{member.tomas.dia.monospot}</span>
+                                <span className={`text-center ${member.tomas.dia.multispot === 0 ? "text-foreground/30" : "text-hour-day"}`}>{member.tomas.dia.multispot}</span>
+                                <span className={`text-center ${member.tomas.dia.carrier === 0 ? "text-foreground/30" : "text-hour-day"}`}>{member.tomas.dia.carrier}</span>
                             </div>
                             <div className="grid grid-cols-5 gap-2">
-                                <span className="text-red-200/50">Noche:</span>
-                                <span className={`text-center ${member.tomas.nocheConv.tierra === 0 ? "text-white/20" : "text-red-200"}`}>{member.tomas.nocheConv.tierra}</span>
-                                <span className={`text-center ${member.tomas.nocheConv.monospot === 0 ? "text-white/20" : "text-red-200"}`}>{member.tomas.nocheConv.monospot}</span>
-                                <span className={`text-center ${member.tomas.nocheConv.multispot === 0 ? "text-white/20" : "text-red-200"}`}>{member.tomas.nocheConv.multispot}</span>
-                                <span className={`text-center ${member.tomas.nocheConv.carrier === 0 ? "text-white/20" : "text-red-200"}`}>{member.tomas.nocheConv.carrier}</span>
+                                <span className="text-hour-night/60">Noche:</span>
+                                <span className={`text-center ${member.tomas.nocheConv.tierra === 0 ? "text-foreground/30" : "text-hour-night"}`}>{member.tomas.nocheConv.tierra}</span>
+                                <span className={`text-center ${member.tomas.nocheConv.monospot === 0 ? "text-foreground/30" : "text-hour-night"}`}>{member.tomas.nocheConv.monospot}</span>
+                                <span className={`text-center ${member.tomas.nocheConv.multispot === 0 ? "text-foreground/30" : "text-hour-night"}`}>{member.tomas.nocheConv.multispot}</span>
+                                <span className={`text-center ${member.tomas.nocheConv.carrier === 0 ? "text-foreground/30" : "text-hour-night"}`}>{member.tomas.nocheConv.carrier}</span>
                             </div>
                             <div className="grid grid-cols-5 gap-2">
-                                <span className="text-green-200/50">GVN:</span>
-                                <span className={`text-center ${member.tomas.gvn.tierra === 0 ? "text-white/20" : "text-green-200"}`}>{member.tomas.gvn.tierra}</span>
-                                <span className={`text-center ${member.tomas.gvn.monospot === 0 ? "text-white/20" : "text-green-200"}`}>{member.tomas.gvn.monospot}</span>
-                                <span className={`text-center ${member.tomas.gvn.multispot === 0 ? "text-white/20" : "text-green-200"}`}>{member.tomas.gvn.multispot}</span>
-                                <span className={`text-center ${member.tomas.gvn.carrier === 0 ? "text-white/20" : "text-green-200"}`}>{member.tomas.gvn.carrier}</span>
+                                <span className="text-hour-gvn/60">GVN:</span>
+                                <span className={`text-center ${member.tomas.gvn.tierra === 0 ? "text-foreground/30" : "text-hour-gvn"}`}>{member.tomas.gvn.tierra}</span>
+                                <span className={`text-center ${member.tomas.gvn.monospot === 0 ? "text-foreground/30" : "text-hour-gvn"}`}>{member.tomas.gvn.monospot}</span>
+                                <span className={`text-center ${member.tomas.gvn.multispot === 0 ? "text-foreground/30" : "text-hour-gvn"}`}>{member.tomas.gvn.multispot}</span>
+                                <span className={`text-center ${member.tomas.gvn.carrier === 0 ? "text-foreground/30" : "text-hour-gvn"}`}>{member.tomas.gvn.carrier}</span>
                             </div>
                         </div>
                     </div>
@@ -268,18 +268,18 @@ const Flights = () => {
                 {isPilot && member.aproximacionesInstr && (
                     <>
                         <div className="mb-8">
-                            <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Aproximaciones Instrumentales</p>
+                            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Aproximaciones Instrumentales</p>
                             <div className="grid grid-cols-2 gap-14 text-sm">
-                                <div className="flex justify-between"><span className="text-gray-400">Precisión:</span><span className={member.aproximacionesInstr.precision === 0 ? "text-white/20" : "text-white"}>{member.aproximacionesInstr.precision}</span></div>
-                                <div className="flex justify-between"><span className="text-gray-400">No Precisión:</span><span className={member.aproximacionesInstr.noPrecision === 0 ? "text-white/20" : "text-white"}>{member.aproximacionesInstr.noPrecision}</span></div>
+                                <div className="flex justify-between"><span className="text-muted-foreground">Precisión:</span><span className={member.aproximacionesInstr.precision === 0 ? "text-foreground/30" : "text-foreground"}>{member.aproximacionesInstr.precision}</span></div>
+                                <div className="flex justify-between"><span className="text-muted-foreground">No Precisión:</span><span className={member.aproximacionesInstr.noPrecision === 0 ? "text-foreground/30" : "text-foreground"}>{member.aproximacionesInstr.noPrecision}</span></div>
                             </div>
                         </div>
                         {member.aproximacionesSar && (
                             <div className="mb-4">
-                                <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Aproximaciones SAR</p>
+                                <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Aproximaciones SAR</p>
                                 <div className="grid grid-cols-2 gap-14 text-sm">
-                                    <div className="flex justify-between"><span className="text-gray-400">T/D:</span><span className={member.aproximacionesSar.td === 0 ? "text-white/20" : "text-white"}>{member.aproximacionesSar.td}</span></div>
-                                    <div className="flex justify-between"><span className="text-gray-400">Search Pattern:</span><span className={member.aproximacionesSar.sp === 0 ? "text-white/20" : "text-white"}>{member.aproximacionesSar.sp}</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">T/D:</span><span className={member.aproximacionesSar.td === 0 ? "text-foreground/30" : "text-foreground"}>{member.aproximacionesSar.td}</span></div>
+                                    <div className="flex justify-between"><span className="text-muted-foreground">Search Pattern:</span><span className={member.aproximacionesSar.sp === 0 ? "text-foreground/30" : "text-foreground"}>{member.aproximacionesSar.sp}</span></div>
                                 </div>
                             </div>
                         )}
@@ -289,10 +289,10 @@ const Flights = () => {
                 {/* Proyectiles */}
                 {!isPilot && member.proyectiles && (
                     <div>
-                        <p className="text-xs text-slate-300 mb-2 uppercase tracking-wider">Proyectiles Disparados</p>
+                        <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Proyectiles Disparados</p>
                         <div className="grid grid-cols-2 gap-14 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-400">M3M:</span><span className={member.proyectiles.m3m === 0 ? "text-white/20" : "text-white"}>{member.proyectiles.m3m}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-400">MAG58:</span><span className={member.proyectiles.mag58 === 0 ? "text-white/20" : "text-white"}>{member.proyectiles.mag58}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">M3M:</span><span className={member.proyectiles.m3m === 0 ? "text-foreground/30" : "text-foreground"}>{member.proyectiles.m3m}</span></div>
+                            <div className="flex justify-between"><span className="text-muted-foreground">MAG58:</span><span className={member.proyectiles.mag58 === 0 ? "text-foreground/30" : "text-foreground"}>{member.proyectiles.mag58}</span></div>
                         </div>
                     </div>
                 )}
@@ -413,43 +413,42 @@ const Flights = () => {
 
                                         {selectedFlight?.id === flight.id && (
                                             <DetailsRow colSpan={7}>
-                                                        <div className="flex gap-4 mb-6 border-b border-white/10">
-                                                            <button onClick={() => setActiveTab('tripulacion')} className={`pb-2 px-4 transition-all ${activeTab === 'tripulacion' ? 'text-white border-b-2 border-slate-300' : 'text-gray-400 hover:text-white'}`}><Users className="w-4 h-4 inline mr-2" />Tripulación</button>
-                                                            <button onClick={() => setActiveTab('autoridad')} className={`pb-2 px-4 transition-all ${activeTab === 'autoridad' ? 'text-white border-b-2 border-slate-300' : 'text-gray-400 hover:text-white'}`}><Shield className="w-4 h-4 inline mr-2" />Autoridad y Pasajeros</button>
+                                                        <div className="flex gap-4 mb-6 border-b border-border">
+                                                            <button onClick={() => setActiveTab('tripulacion')} className={`pb-2 px-4 transition-all ${activeTab === 'tripulacion' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Users className="w-4 h-4 inline mr-2" />Tripulación</button>
+                                                            <button onClick={() => setActiveTab('autoridad')} className={`pb-2 px-4 transition-all ${activeTab === 'autoridad' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Shield className="w-4 h-4 inline mr-2" />Autoridad y Pasajeros</button>
                                                             {hasPermission(PermissionLevel.OPERACIONAL) && (
                                                                 <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                                                                     <AlertDialogTrigger asChild>
-                                                                        <button onClick={() => openDeleteDialog(flight.id)} className="ml-auto pb-2 px-4 text-red-300 hover:text-red-200 transition-all text-xs">
+                                                                        <button onClick={() => openDeleteDialog(flight.id)} className="ml-auto pb-2 px-4 text-danger hover:text-danger/80 transition-all text-xs">
                                                                             <Trash2 className="pb-1 w-4 h-4 inline mr-1" />Eliminar
                                                                         </button>
                                                                     </AlertDialogTrigger>
-                                                                    <AlertDialogContent className="bg-[#1a1a1a] border border-white/20 text-white">
+                                                                    <AlertDialogContent>
                                                                         <form action={() => {
                                                                             if (flightToDelete && confirmationText === `eliminarvuelo${flightToDelete}`) {
                                                                                 deleteAction(flightToDelete);
                                                                             }
                                                                         }}>
                                                                             <AlertDialogHeader>
-                                                                                <AlertDialogTitle className="text-xl font-semibold text-white">
+                                                                                <AlertDialogTitle className="text-xl font-semibold">
                                                                                     ¿Estás absolutamente seguro?
                                                                                 </AlertDialogTitle>
-                                                                                <AlertDialogDescription className="text-gray-300">
+                                                                                <AlertDialogDescription>
                                                                                     Esta acción no se puede deshacer. Eliminará permanentemente el vuelo{' '}
-                                                                                    <span className="font-semibold text-white">ID: {flightToDelete}</span>.
+                                                                                    <span className="font-semibold text-foreground">ID: {flightToDelete}</span>.
                                                                                     <br /><br />
-                                                                                    Escribe: <strong className="text-red-400">eliminarvuelo{flightToDelete}</strong>
+                                                                                    Escribe: <strong className="text-danger">eliminarvuelo{flightToDelete}</strong>
                                                                                 </AlertDialogDescription>
                                                                             </AlertDialogHeader>
                                                                             <Input
                                                                                 placeholder="Escribe aquí..."
                                                                                 value={confirmationText}
                                                                                 onChange={(e) => setConfirmationText(e.target.value)}
-                                                                                className="mt-4 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                                                                                className="mt-4"
                                                                                 disabled={isDeleting}
                                                                             />
                                                                             <AlertDialogFooter>
                                                                                 <AlertDialogCancel
-                                                                                    className="bg-white/10 text-white border-white/20 hover:bg-white/20"
                                                                                     disabled={isDeleting}
                                                                                 >
                                                                                     Cancelar
@@ -457,7 +456,7 @@ const Flights = () => {
                                                                                 <AlertDialogAction
                                                                                     type="submit"
                                                                                     disabled={confirmationText !== `eliminarvuelo${flightToDelete}` || isDeleting}
-                                                                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                                                                    className="bg-danger hover:bg-danger/90 text-danger-foreground"
                                                                                 >
                                                                                     {isDeleting ? (
                                                                                         <span className="flex items-center gap-2">

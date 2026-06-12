@@ -81,7 +81,7 @@ export function RatingButton({
     // Determinar clases según estado
     const getButtonClasses = (): string => {
         if (isDisabled && !isCertified) {
-            return `${baseClasses} bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 opacity-30 cursor-not-allowed`;
+            return `${baseClasses} bg-muted border-border opacity-30 cursor-not-allowed`;
         }
 
         if (isCertified) {
@@ -92,24 +92,24 @@ export function RatingButton({
         }
 
         if (!hasPermission) {
-            return `${baseClasses} bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 cursor-not-allowed opacity-50`;
+            return `${baseClasses} bg-muted border-border cursor-not-allowed opacity-50`;
         }
 
-        return `${baseClasses} bg-gray-100 dark:bg-white/5 border-gray-300 dark:border-white/10 hover:scale-110 cursor-pointer`;
+        return `${baseClasses} bg-muted border-border hover:scale-110 cursor-pointer`;
     };
 
     // Determinar el icono
     const getIcon = () => {
         if (isSaving) {
-            return <Loader2 className="w-5 h-5 animate-spin text-gray-500" />;
+            return <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />;
         }
         if (isDisabled && !isCertified) {
-            return <Lock className="w-5 h-5 text-gray-300 dark:text-white/10 opacity-30" />;
+            return <Lock className="w-5 h-5 text-muted-foreground opacity-30" />;
         }
         if (isCertified) {
             return <Check className={`w-5 h-5 ${color.text}`} />;
         }
-        return <X className="w-5 h-5 text-gray-500 dark:text-slate-500" />;
+        return <X className="w-5 h-5 text-muted-foreground" />;
     };
 
     // Si no está certificado, no está deshabilitado y tiene permiso: mostrar popover
@@ -176,8 +176,8 @@ export function RatingButton({
 
     // Dot indicador de estado (warning/expired)
     const stateDot = isCertified && (state === 'warning' || state === 'expired') ? (
-        <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
-            state === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
+        <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${
+            state === 'warning' ? 'bg-warning' : 'bg-danger'
         }`} />
     ) : null;
 

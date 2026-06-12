@@ -86,8 +86,8 @@ const Personnel = () => {
                         <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? 'Todos')}>
                             <SelectTrigger className="min-w-[200px]">
                                 <span className="flex items-center gap-2">
-                                    {statusFilter === "active" && <div className="w-2 h-2 bg-emerald-500 rounded-full" />}
-                                    {statusFilter === "inactive" && <div className="w-2 h-2 bg-red-500 rounded-full" />}
+                                    {statusFilter === "active" && <div className="w-2 h-2 bg-success rounded-full" />}
+                                    {statusFilter === "inactive" && <div className="w-2 h-2 bg-danger rounded-full" />}
                                     {statusFilter === "active" ? "Activos" : statusFilter === "inactive" ? "Inactivos" : "Todos"}
                                 </span>
                             </SelectTrigger>
@@ -236,8 +236,8 @@ const Personnel = () => {
                                                         </div>
                                                         <div>
                                                             <PageCardLabel>Estado</PageCardLabel>
-                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${person.person_active ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'}`}>
-                                                                <span className={`w-1.5 h-1.5 rounded-full ${person.person_active ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${person.person_active ? 'bg-success-muted text-success-muted-foreground' : 'bg-danger-muted text-danger-muted-foreground'}`}>
+                                                                <span className={`w-1.5 h-1.5 rounded-full ${person.person_active ? 'bg-success' : 'bg-danger'}`}></span>
                                                                 {person.person_active ? 'Activo' : 'Inactivo'}
                                                             </span>
                                                         </div>
@@ -334,7 +334,7 @@ const Personnel = () => {
                             <br />
                             <span className="font-semibold"> {dialog.target?.name}</span> (ID: {dialog.target?.id})
                             <br /><br />
-                            Escribe: <strong className={dialog.target?.isActive ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}>
+                            Escribe: <strong className={dialog.target?.isActive ? 'text-destructive' : 'text-success'}>
                             {requiredConfirmation}
                         </strong>
                         </AlertDialogDescription>

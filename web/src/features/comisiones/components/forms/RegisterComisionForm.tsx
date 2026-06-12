@@ -83,7 +83,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     className={cn(
                                         "w-full h-10 justify-start text-left font-normal",
                                         !fechaInicio && "text-muted-foreground",
-                                        errors.fechaInicio && "border-red-500"
+                                        errors.fechaInicio && "border-danger"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -104,7 +104,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                             </PopoverContent>
                         </Popover>
                         {errors.fechaInicio && (
-                            <p className="text-sm text-red-500">{errors.fechaInicio.message}</p>
+                            <p className="text-sm text-danger">{errors.fechaInicio.message}</p>
                         )}
                     </div>
 
@@ -118,7 +118,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     className={cn(
                                         "w-full h-10 justify-start text-left font-normal",
                                         !fechaFin && "text-muted-foreground",
-                                        errors.fechaFin && "border-red-500"
+                                        errors.fechaFin && "border-danger"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
@@ -142,7 +142,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                             </PopoverContent>
                         </Popover>
                         {errors.fechaFin && (
-                            <p className="text-sm text-red-500">{errors.fechaFin.message}</p>
+                            <p className="text-sm text-danger">{errors.fechaFin.message}</p>
                         )}
                     </div>
                 </div>
@@ -176,7 +176,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                         }}
                     />
                     {errors.tipo && (
-                        <p className="text-sm text-red-500">{errors.tipo.message}</p>
+                        <p className="text-sm text-danger">{errors.tipo.message}</p>
                     )}
                 </div>
 
@@ -227,7 +227,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                         }}
                     />
                     {errors.lugar && (
-                        <p className="text-sm text-red-500">{errors.lugar.message}</p>
+                        <p className="text-sm text-danger">{errors.lugar.message}</p>
                     )}
                 </div>
 
@@ -244,7 +244,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
                                 disabled:pointer-events-none disabled:opacity-50
                                 ${generaEsfuerzo === true
-                                ? 'bg-green-500 text-white shadow-sm'
+                                ? 'bg-success text-success-foreground shadow-sm'
                                 : 'bg-transparent text-muted-foreground hover:bg-background/50 hover:text-foreground/80'
                             }
                             `}
@@ -260,7 +260,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
                                 disabled:pointer-events-none disabled:opacity-50
                                 ${generaEsfuerzo === false
-                                ? 'bg-red-500 text-white shadow-sm'
+                                ? 'bg-danger text-danger-foreground shadow-sm'
                                 : 'bg-transparent text-muted-foreground hover:bg-background/50 hover:text-foreground/80'
                             }
                             `}
@@ -303,7 +303,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     setLugarError('');
                                 }}
                                 placeholder="Ingrese el nombre del lugar"
-                                className={lugarError ? 'border-red-500' : ''}
+                                className={lugarError ? 'border-danger' : ''}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
@@ -312,7 +312,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                 }}
                             />
                             {lugarError && (
-                                <p className="text-sm text-red-500">{lugarError}</p>
+                                <p className="text-sm text-danger">{lugarError}</p>
                             )}
                         </div>
                     </div>
@@ -402,7 +402,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     setLugarError('');
                                 }}
                                 placeholder="Ingrese el nombre del lugar"
-                                className={lugarError ? 'border-red-500' : ''}
+                                className={lugarError ? 'border-danger' : ''}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
@@ -411,7 +411,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                 }}
                             />
                             {lugarError && (
-                                <p className="text-sm text-red-500">{lugarError}</p>
+                                <p className="text-sm text-danger">{lugarError}</p>
                             )}
                         </div>
                     </div>

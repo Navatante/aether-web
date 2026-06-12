@@ -12,8 +12,8 @@ export interface DeleteTarget {
 
 export function ErrorBanner({ message }: { message: string }) {
     return (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-            <p className="text-sm text-red-600 dark:text-red-400">{message}</p>
+        <div className="bg-danger-muted border border-danger/30 rounded-lg p-3">
+            <p className="text-sm text-danger-muted-foreground">{message}</p>
         </div>
     );
 }
@@ -21,8 +21,8 @@ export function ErrorBanner({ message }: { message: string }) {
 export function LoadingState() {
     return (
         <div className="flex items-center justify-center p-8">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-            <span className="ml-2 text-slate-600 dark:text-slate-300">Cargando...</span>
+            <Loader2 className="w-6 h-6 animate-spin text-info" />
+            <span className="ml-2 text-muted-foreground">Cargando...</span>
         </div>
     );
 }

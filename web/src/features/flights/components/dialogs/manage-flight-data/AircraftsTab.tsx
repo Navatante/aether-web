@@ -171,7 +171,7 @@ export function AircraftsTab({
                                                                 sk: a.aircraft_sk,
                                                                 label: `${a.aircraft_registration} (${a.aircraft_number})`,
                                                             })}
-                                                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                            className="h-8 w-8 text-danger hover:text-danger hover:bg-danger-muted"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>

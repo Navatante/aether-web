@@ -6,34 +6,13 @@ import {
     TooltipContent,
 } from "@/components/ui/tooltip";
 import "./GlassProgressBarBig.css";
+import { getEtherealColors } from "./glassColors";
 
 interface GlassProgressBarProps {
     type?: "crp" | "airflow";
     value?: number;
     className?: string;
 }
-
-// Color constants - defined outside component to prevent recreation
-const GREEN_COLORS = {
-    primary: "rgba(34, 197, 94, 0.7)",
-    secondary: "rgba(74, 222, 128, 0.5)",
-    glow: "rgba(134, 239, 172, 0.8)",
-    particles: "rgba(187, 247, 208, 0.9)",
-} as const;
-
-const ORANGE_COLORS = {
-    primary: "rgba(249, 115, 22, 0.7)",
-    secondary: "rgba(251, 146, 60, 0.5)",
-    glow: "rgba(253, 186, 116, 0.8)",
-    particles: "rgba(254, 215, 170, 0.9)",
-} as const;
-
-const RED_COLORS = {
-    primary: "rgba(239, 68, 68, 0.7)",
-    secondary: "rgba(248, 113, 113, 0.5)",
-    glow: "rgba(252, 165, 165, 0.8)",
-    particles: "rgba(254, 202, 202, 0.9)",
-} as const;
 
 // Airflow color helper - returns colors for both light and dark modes
 function getAirflowColors(percentage: number, isDark: boolean) {
@@ -77,13 +56,6 @@ function getAirflowColors(percentage: number, isDark: boolean) {
             airColorLight: "rgba(150,140,130,0.4)",
             airColorGlow: "rgba(110,100,90,0.6)",
         };
-}
-
-// CRP color helper
-function getEtherealColors(percentage: number) {
-    if (percentage > 80) return GREEN_COLORS;
-    if (percentage >= 40) return ORANGE_COLORS;
-    return RED_COLORS;
 }
 
 function GlassProgressBarBig({

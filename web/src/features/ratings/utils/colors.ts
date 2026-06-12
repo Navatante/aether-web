@@ -1,6 +1,12 @@
 // src/features/ratings/utils/colors.ts
 //
 // Configuración de colores para cada tipo de rating.
+//
+// EXCEPCIÓN DOCUMENTADA al sistema de tokens de app/theme.css: COLOR_PALETTE
+// es una paleta categórica de 15 colores (un color por calificación) y es el
+// único sitio del repo donde se permite paleta Tailwind literal con
+// dual-coding `dark:`. Todo lo demás usa tokens semánticos
+// (guard: `make theme-guard`).
 
 // ============================================================================
 // COLOR PALETTE
@@ -268,14 +274,14 @@ export function getCertificationButtonClasses(
     const baseClasses = 'w-9 h-9 flex items-center justify-center rounded-full transition-all duration-200 border-2';
 
     if (isDisabled) {
-        return `${baseClasses} bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed opacity-50`;
+        return `${baseClasses} bg-muted border-border cursor-not-allowed opacity-50`;
     }
 
     if (isCertified) {
         return `${baseClasses} ${color.bg} ${color.border} ${color.shadow} shadow-md cursor-pointer`;
     }
 
-    return `${baseClasses} bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 ${color.bgHover} cursor-pointer`;
+    return `${baseClasses} bg-muted border-border ${color.bgHover} cursor-pointer`;
 }
 
 /**
@@ -284,10 +290,10 @@ export function getCertificationButtonClasses(
 export function getStateBadgeClasses(state: string): string {
     switch (state) {
         case 'Calificado':
-            return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+            return 'bg-success-muted text-success-muted-foreground';
         case 'En transicion':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+            return 'bg-warning-muted text-warning-muted-foreground';
         default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
+            return 'bg-muted text-muted-foreground';
     }
 }

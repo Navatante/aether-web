@@ -21,7 +21,7 @@ export default function OutlineGradientButton({
                                                   text,
                                                   size = 'md',
                                                   onClick,
-                                                  gradient = 'from-purple-400 to-pink-400',
+                                                  gradient = 'from-gradient-from to-gradient-to',
                                                   textColor = 'text-foreground',
                                                   textHoverColor = 'group-hover:text-primary',
                                                   className = '',
@@ -72,7 +72,7 @@ export default function OutlineGradientButton({
             `}
             style={{
                 // Respaldo para navegadores que no soporten bien las variables CSS en shadow
-                '--tw-shadow-color': 'var(--tag-blue-color)',
+                '--tw-shadow-color': 'var(--color-ring)',
             } as React.CSSProperties}
         >
             <span className={`absolute inset-0 rounded-full bg-gradient-to-r ${gradient} ${borderWidth[size]}`}>

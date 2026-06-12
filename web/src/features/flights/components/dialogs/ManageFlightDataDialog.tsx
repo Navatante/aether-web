@@ -184,7 +184,7 @@ export default function ManageFlightDataDialog({ open, onOpenChange, onRefresh }
                         <AlertDialogAction
                             onClick={handleDeleteConfirm}
                             disabled={deleting}
-                            className="bg-red-500 hover:bg-red-600"
+                            className="bg-danger text-danger-foreground hover:bg-danger/90"
                         >
                             {deleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Eliminar

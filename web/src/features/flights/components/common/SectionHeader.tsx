@@ -17,7 +17,7 @@ function SectionHeader({ title, onAdd }: SectionHeaderProps) {
             <Button
                 type="button"
                 onClick={onAdd}
-                className="flex items-center gap-2 size-6 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/30 dark:hover:text-emerald-400"
+                className="flex items-center gap-2 size-6 hover:bg-success-muted hover:border-success/40 hover:text-success"
                 variant="outline"
             >
                 <Plus size={18} />

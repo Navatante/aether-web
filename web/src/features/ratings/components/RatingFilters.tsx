@@ -89,8 +89,8 @@ export function RatingFilters({
                                     <span className={`${COLOR_PALETTE[colorMap[currentRating.crew_rating_sk] || 'gray'].text} font-semibold`}>
                                         {currentRating.abbreviation}
                                     </span>
-                                    <span className="text-gray-700 dark:text-gray-300">-</span>
-                                    <span className="text-gray-700 dark:text-gray-300">
+                                    <span className="text-foreground">-</span>
+                                    <span className="text-foreground">
                                         {currentRating.name}
                                     </span>
                                 </span>
@@ -118,8 +118,8 @@ export function RatingFilters({
                                         <span className={`${color.text} font-semibold`}>
                                             {rating.abbreviation}
                                         </span>
-                                        <span className="text-gray-700 dark:text-gray-300">-</span>
-                                        <span className="text-gray-700 dark:text-gray-300">
+                                        <span className="text-foreground">-</span>
+                                        <span className="text-foreground">
                                             {rating.name}
                                         </span>
                                     </span>

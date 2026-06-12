@@ -1,0 +1,593 @@
+/* ========================================
+   THEME — fuente única de verdad de colores
+   ========================================
+   1. Variables en :root (tema claro) y .dark (tema oscuro), disponibles
+      globalmente mediante var(--nombre-variable).
+   2. @theme inline las mapea a clases utilitarias de Tailwind
+      (bg-background, text-success, bg-role-pilot, ...).
+
+   Regla del repo: ningún color hardcodeado (hex/rgb/oklch) fuera de este
+   archivo. Excepciones documentadas: features/ratings/utils/colors.ts
+   (COLOR_PALETTE), shared/components/common/glassColors.ts,
+   components/ui/chart.tsx. Guard: `make theme-guard`.
+   ======================================== */
+
+/* ========================================
+   VARIANTE PERSONALIZADA PARA MODO OSCURO
+   ======================================== */
+@custom-variant dark (&:is(.dark *));
+
+/* ========================================
+   VARIABLES CSS - TEMA CLARO (ROOT)
+   ======================================== */
+:root {
+    /* Colores de fondo y texto principal */
+    --background: oklch(1 0 0);              /* Blanco puro */
+    --foreground: oklch(0.145 0 0);          /* Casi negro */
+
+    /* Colores de tarjetas */
+    --card: oklch(1 0 0);                    /* Fondo blanco */
+    --card-foreground: oklch(0.145 0 0);     /* Texto oscuro */
+
+    /* Colores de popovers */
+    --popover: oklch(1 0 0);                 /* Fondo blanco */
+    --popover-foreground: oklch(0.145 0 0);  /* Texto oscuro */
+
+    /* Colores primarios (elementos destacados) */
+    --primary: oklch(0.205 0 0);             /* Gris muy oscuro */
+    --primary-foreground: oklch(0.985 0 0);  /* Casi blanco */
+
+    /* Colores secundarios */
+    --secondary: oklch(0.97 0 0);            /* Gris muy claro */
+    --secondary-foreground: oklch(0.205 0 0);/* Gris muy oscuro */
+
+    /* Colores apagados (elementos menos importantes) */
+    --muted: oklch(0.97 0 0);                /* Gris muy claro */
+    --muted-foreground: oklch(0.556 0 0);    /* Gris medio */
+
+    /* Colores de acento */
+    --accent: oklch(0.97 0 0);               /* Gris muy claro */
+    --accent-foreground: oklch(0.205 0 0);   /* Gris muy oscuro */
+
+    /* Colores destructivos (alertas, errores) */
+    --destructive: oklch(0.637 0.237 25.331);           /* Rojo */
+    --destructive-foreground: oklch(0.577 0.245 27.325);/* Rojo más oscuro */
+
+    /* Elementos de interfaz */
+    --border: oklch(0.922 0 0);              /* Gris muy claro para bordes */
+    --input: oklch(0.922 0 0);               /* Gris muy claro para inputs */
+    --ring: oklch(0.708 0 0);                /* Gris medio para anillos de enfoque */
+
+    /* ========== ESTADOS SEMÁNTICOS ========== */
+    /* success / warning / danger / info, cada uno con -foreground (texto
+       sobre el color sólido), -muted (fondo suave) y -muted-foreground
+       (texto sobre el fondo suave o texto de estado sin fondo). */
+    --success: oklch(0.627 0.194 149.214);
+    --success-foreground: oklch(0.985 0 0);
+    --success-muted: oklch(0.627 0.194 149.214 / 0.15);
+    --success-muted-foreground: oklch(0.448 0.119 151.328);
+
+    --warning: oklch(0.666 0.179 58.318);
+    --warning-foreground: oklch(0.985 0 0);
+    --warning-muted: oklch(0.666 0.179 58.318 / 0.15);
+    --warning-muted-foreground: oklch(0.473 0.137 46.201);
+
+    --danger: var(--destructive);
+    --danger-foreground: oklch(0.985 0 0);
+    --danger-muted: oklch(0.637 0.237 25.331 / 0.12);
+    --danger-muted-foreground: oklch(0.444 0.177 26.899);
+
+    --info: oklch(0.546 0.245 262.881);
+    --info-foreground: oklch(0.985 0 0);
+    --info-muted: oklch(0.546 0.245 262.881 / 0.12);
+    --info-muted-foreground: oklch(0.424 0.199 265.638);
+
+    /* Colores para gráficos */
+    --chart-1: oklch(0.145 0 0);
+    --chart-2: oklch(0.725 0 0);
+    --chart-accent: oklch(0.769 0.188 70.08);
+    --color-day-hour: oklch(0.58 0.03 230);
+    --color-night-hour: oklch(0.54 0.03 20);
+    --color-gvn-hour: oklch(0.62 0.03 135);
+
+    /* Texto de horas/tomas por franja (Día/Noche/GVN) en detalles de vuelo */
+    --hour-day: oklch(0.55 0.1 221);
+    --hour-night: oklch(0.55 0.14 20);
+    --hour-gvn: oklch(0.55 0.1 150);
+    /* Radio de bordes */
+    --radius: 0.625rem;                      /* ~10px */
+
+    /* Colores de sidebar */
+    --sidebar: var(--background);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
+
+    /* ========== GLASS EFFECT ========== */
+    --glass: oklch(0.96 0 0);
+    --glass-foreground: var(--foreground);
+    --glass-border: oklch(0.9 0 0);
+
+    /* ========== ROLE BADGES (6 variantes) ========== */
+    --role-pilot: oklch(0.97 0.015 25);
+    --role-pilot-foreground: oklch(0.45 0.16 25);
+
+    --role-crew: oklch(0.97 0.02 160);
+    --role-crew-foreground: oklch(0.45 0.12 160);
+
+    --role-swimmer: oklch(0.97 0.02 220);
+    --role-swimmer-foreground: oklch(0.45 0.12 220);
+
+    --role-crew-swimmer: oklch(0.97 0.02 160);
+    --role-crew-swimmer-foreground: oklch(0.45 0.12 160);
+
+    --role-no-crew: oklch(0.98 0.005 0);
+    --role-no-crew-foreground: oklch(0.45 0.01 0);
+
+    --role-default: oklch(0.97 0.005 0);
+    --role-default-foreground: oklch(0.5 0.01 0);
+
+    /* ========== EVENT BADGES (7 variantes) ========== */
+    --event-mision: oklch(0.97 0.03 85);
+    --event-mision-foreground: oklch(0.45 0.12 85);
+
+    --event-maniobra-nacional: oklch(0.97 0.02 250);
+    --event-maniobra-nacional-foreground: oklch(0.45 0.15 250);
+
+    --event-maniobra-internacional: oklch(0.97 0.02 175);
+    --event-maniobra-internacional-foreground: oklch(0.45 0.12 175);
+
+    --event-pruebas: oklch(0.97 0.03 50);
+    --event-pruebas-foreground: oklch(0.45 0.15 50);
+
+    --event-adaptacion: oklch(0.97 0.02 220);
+    --event-adaptacion-foreground: oklch(0.45 0.12 220);
+
+    --event-adiestramiento: oklch(0.97 0.02 145);
+    --event-adiestramiento-foreground: oklch(0.45 0.12 145);
+
+    --event-default: oklch(0.98 0.005 0);
+    --event-default-foreground: oklch(0.45 0.01 0);
+
+    /* ========== PLAN BADGES (4 variantes) ========== */
+    --plan-instruction1-pilot: oklch(0.85 0.08 220);
+    --plan-instruction1-pilot-foreground: oklch(0.35 0.12 220);
+
+    --plan-instruction2-pilot: oklch(0.85 0.08 85);
+    --plan-instruction2-pilot-foreground: oklch(0.35 0.12 85);
+
+    --plan-instruction1-dv: oklch(0.95 0.03 220);
+    --plan-instruction1-dv-foreground: oklch(0.4 0.1 220);
+
+    --plan-instruction2-dv: oklch(0.95 0.03 85);
+    --plan-instruction2-dv-foreground: oklch(0.4 0.1 85);
+
+    /* ========== CARACTERISTICA BADGES (3 variantes) ========== */
+    --caracteristica-b1: oklch(0.85 0.08 175);
+    --caracteristica-b1-foreground: oklch(0.4 0.1 175);
+
+    --caracteristica-b2: oklch(0.85 0.08 85);
+    --caracteristica-b2-foreground: oklch(0.4 0.1 85);
+
+    --caracteristica-lv: oklch(0.85 0.1 300);
+    --caracteristica-lv-foreground: oklch(0.4 0.15 300);
+
+    /* ========== ESCALA BADGE ========== */
+    --escala: oklch(0.8 0 0);
+    --escala-foreground: oklch(0.3 0 0);
+
+    /* ========== TABLE ========== */
+    --table-header: oklch(0.96 0 0 / 0.7);
+    --table-header-foreground: oklch(0.45 0 0);
+    --table-row-even: oklch(1 0 0);
+    --table-row-odd: oklch(0.98 0 0);
+    --table-row-selected: oklch(0.97 0.02 250);
+    --table-row-hover: oklch(0.98 0 0);
+
+    /* ========== DETAILS ROW ========== */
+    --details-from: oklch(0.97 0.02 250);
+    --details-to: oklch(0.97 0.015 270);
+    --details-border: oklch(0.9 0.02 250);
+
+    /* ========== GRADIENT TITLE ========== */
+    --gradient-from: oklch(0.55 0 0);
+    --gradient-to: oklch(0.65 0 0);
+
+    /* ========== MARCA (gradiente teal, igual en ambos temas) ========== */
+    --brand-from: oklch(0.69 0.105 183);
+    --brand-via: oklch(0.66 0.103 215);
+    --brand-to: oklch(0.56 0.083 196);
+
+    /* ========== DISPONIBILIDAD ========== */
+    /* Comisión en el calendario (antes rgba(79,164,200,0.76)) */
+    --comision: oklch(0.69 0.085 232.7 / 0.76);
+
+    /* Colores por razón de ausencia (calendario y leyenda). Mismos valores
+       en ambos temas: se pintan sobre celdas con fondo propio. */
+    --absence-permiso: oklch(0.568 0.111 146.545);
+    --absence-asuntos-propios: oklch(0.566 0.057 163.845);
+    --absence-dia-adicional: oklch(0.743 0.084 164.484);
+    --absence-baja-medica: oklch(0.623 0.127 18.979);
+    --absence-guardia: oklch(0.785 0.139 96.303);
+    --absence-saliente: oklch(0.87 0.116 105.302);
+    --absence-curso: oklch(0.709 0.107 65.486);
+    --absence-reconocimiento: oklch(0.91 0 89.876);
+    --absence-dunker: oklch(0.727 0.092 213.697);
+    --absence-otro: oklch(0.55 0.02 265);
+    --absence-default: oklch(0.55 0.02 265);
+
+    /* Fondo de las columnas de fin de semana del calendario */
+    --calendar-weekend: oklch(0.922 0 0 / 0.5);
+
+    /* ========== ESFUERZO (umbrales de días) ========== */
+    --effort-low: oklch(0.627 0.194 149.214 / 0.3);
+    --effort-mid: oklch(0.666 0.179 58.318 / 0.3);
+    --effort-high: oklch(0.577 0.245 27.325 / 0.3);
+    --effort-limit: oklch(0.577 0.245 27.325);
+
+    /* ========== INPUT FILLED (campo con valor) ========== */
+    --input-filled: oklch(0.378 0.077 168.94 / 0.2);
+    --input-filled-border: oklch(0.596 0.145 163.225 / 0.3);
+    --input-filled-ring: oklch(0.596 0.145 163.225 / 0.15);
+}
+
+/* ========================================
+   VARIABLES CSS - TEMA OSCURO
+   ======================================== */
+.dark {
+    /* Colores de fondo y texto principal invertidos */
+    --background: oklch(0.145 0 0);          /* Casi negro */
+    --foreground: oklch(0.85 0 0);          /* Casi blanco */
+
+    /* Colores de tarjetas */
+    --card: oklch(0.145 0 0);                /* Fondo oscuro */
+    --card-foreground: oklch(0.985 0 0);     /* Texto claro */
+
+    /* Colores de popovers */
+    --popover: oklch(0.145 0 0);             /* Fondo oscuro */
+    --popover-foreground: oklch(0.985 0 0);  /* Texto claro */
+
+    /* Colores primarios invertidos */
+    --primary: oklch(0.985 0 0);             /* Casi blanco */
+    --primary-foreground: oklch(0.205 0 0);  /* Gris muy oscuro */
+
+    /* Colores secundarios */
+    --secondary: oklch(0.269 0 0);           /* Gris oscuro */
+    --secondary-foreground: oklch(0.985 0 0);/* Casi blanco */
+
+    /* Colores apagados */
+    --muted: oklch(0.269 0 0);               /* Gris oscuro */
+    --muted-foreground: oklch(0.708 0 0);    /* Gris medio-claro */
+
+    /* Colores de acento */
+    --accent: oklch(0.269 0 0);              /* Gris oscuro */
+    --accent-foreground: oklch(0.9 0 0);   /* Casi blanco */
+
+    /* Colores destructivos (sin cambios) */
+    --destructive: oklch(0.637 0.237 25.331);           /* Rojo */
+    --destructive-foreground: oklch(0.637 0.237 25.331);/* Rojo */
+
+    /* Elementos de interfaz oscuros */
+    --border: oklch(0.269 0 0);              /* Gris oscuro */
+    --input: oklch(0.269 0 0);               /* Gris oscuro */
+    --ring: oklch(0.439 0 0);                /* Gris medio */
+
+    /* ========== ESTADOS SEMÁNTICOS ========== */
+    --success: oklch(0.723 0.219 149.579);
+    --success-foreground: oklch(0.145 0 0);
+    --success-muted: oklch(0.723 0.219 149.579 / 0.2);
+    --success-muted-foreground: oklch(0.792 0.209 151.711);
+
+    --warning: oklch(0.769 0.188 70.08);
+    --warning-foreground: oklch(0.145 0 0);
+    --warning-muted: oklch(0.769 0.188 70.08 / 0.2);
+    --warning-muted-foreground: oklch(0.828 0.189 84.429);
+
+    --danger: var(--destructive);
+    --danger-foreground: oklch(0.985 0 0);
+    --danger-muted: oklch(0.637 0.237 25.331 / 0.2);
+    --danger-muted-foreground: oklch(0.704 0.191 22.216);
+
+    --info: oklch(0.623 0.214 259.815);
+    --info-foreground: oklch(0.985 0 0);
+    --info-muted: oklch(0.623 0.214 259.815 / 0.2);
+    --info-muted-foreground: oklch(0.707 0.165 254.624);
+
+    /* Colores para gráficos (diferentes tonos) */
+    --chart-1: oklch(0.85 0 0);
+    --chart-2: oklch(0.425 0 0);
+    --chart-accent: oklch(0.769 0.188 70.08);
+    --color-day-hour: oklch(0.48 0.018 230);
+    --color-night-hour: oklch(0.44 0.022 20);
+    --color-gvn-hour: oklch(0.52 0.018 135);
+
+    /* Texto de horas/tomas por franja (tonos pastel sobre fondo oscuro) */
+    --hour-day: oklch(0.917 0.08 205);
+    --hour-night: oklch(0.885 0.062 18.3);
+    --hour-gvn: oklch(0.925 0.084 156);
+    /* Colores de sidebar oscuros */
+    --sidebar: var(--background);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
+
+    /* ========== GLASS EFFECT ========== */
+    --glass: oklch(1 0 0 / 0.05);
+    --glass-foreground: var(--foreground);
+    --glass-border: oklch(1 0 0 / 0.1);
+
+    /* ========== ROLE BADGES ========== */
+    --role-pilot: oklch(0.35 0.12 25 / 0.3);
+    --role-pilot-foreground: oklch(0.75 0.12 25);
+
+    --role-crew: oklch(0.35 0.1 160 / 0.3);
+    --role-crew-foreground: oklch(0.75 0.1 160);
+
+    --role-swimmer: oklch(0.35 0.1 220 / 0.3);
+    --role-swimmer-foreground: oklch(0.75 0.1 220);
+
+    --role-crew-swimmer: oklch(0.35 0.1 160 / 0.3);
+    --role-crew-swimmer-foreground: oklch(0.75 0.1 160);
+
+    --role-no-crew: oklch(0.3 0.005 0 / 0.3);
+    --role-no-crew-foreground: oklch(0.6 0.01 0);
+
+    --role-default: oklch(0.3 0.005 0 / 0.3);
+    --role-default-foreground: oklch(0.65 0.01 0);
+
+    /* ========== EVENT BADGES ========== */
+    --event-mision: oklch(0.35 0.1 85 / 0.3);
+    --event-mision-foreground: oklch(0.75 0.1 85);
+
+    --event-maniobra-nacional: oklch(0.35 0.12 250 / 0.3);
+    --event-maniobra-nacional-foreground: oklch(0.75 0.12 250);
+
+    --event-maniobra-internacional: oklch(0.35 0.1 175 / 0.3);
+    --event-maniobra-internacional-foreground: oklch(0.75 0.1 175);
+
+    --event-pruebas: oklch(0.35 0.12 50 / 0.3);
+    --event-pruebas-foreground: oklch(0.75 0.12 50);
+
+    --event-adaptacion: oklch(0.35 0.1 220 / 0.3);
+    --event-adaptacion-foreground: oklch(0.75 0.1 220);
+
+    --event-adiestramiento: oklch(0.35 0.1 145 / 0.3);
+    --event-adiestramiento-foreground: oklch(0.75 0.1 145);
+
+    --event-default: oklch(0.3 0.005 0 / 0.3);
+    --event-default-foreground: oklch(0.65 0.01 0);
+
+    /* ========== PLAN BADGES ========== */
+    --plan-instruction1-pilot: oklch(0.5 0.1 220 / 0.25);
+    --plan-instruction1-pilot-foreground: oklch(0.9 0.05 220);
+
+    --plan-instruction2-pilot: oklch(0.5 0.1 85 / 0.25);
+    --plan-instruction2-pilot-foreground: oklch(0.9 0.05 85);
+
+    --plan-instruction1-dv: oklch(0.5 0.08 220 / 0.12);
+    --plan-instruction1-dv-foreground: oklch(0.85 0.05 220);
+
+    --plan-instruction2-dv: oklch(0.5 0.08 85 / 0.12);
+    --plan-instruction2-dv-foreground: oklch(0.85 0.05 85);
+
+    /* ========== CARACTERISTICA BADGES ========== */
+    --caracteristica-b1: oklch(0.35 0.1 175);
+    --caracteristica-b1-foreground: oklch(0.75 0.1 175);
+
+    --caracteristica-b2: oklch(0.35 0.1 85);
+    --caracteristica-b2-foreground: oklch(0.75 0.1 85);
+
+    --caracteristica-lv: oklch(0.35 0.12 300);
+    --caracteristica-lv-foreground: oklch(0.75 0.12 300);
+
+    /* ========== ESCALA BADGE ========== */
+    --escala: oklch(0.9 0 0 / 0.3);
+    --escala-foreground: oklch(0.9 0 0 / 0.8);
+
+    /* ========== TABLE ========== */
+    --table-header: oklch(0.25 0 0 / 0.95);
+    --table-header-foreground: oklch(0.75 0 0);
+    --table-row-even: oklch(1 0 0 / 0.02);
+    --table-row-odd: transparent;
+    --table-row-selected: oklch(0.6 0.15 250 / 0.1);
+    --table-row-hover: oklch(1 0 0 / 0.05);
+
+    /* ========== DETAILS ROW ========== */
+    --details-from: oklch(0.6 0.15 250 / 0.05);
+    --details-to: oklch(0.6 0.12 270 / 0.05);
+    --details-border: oklch(0.6 0.15 250 / 0.2);
+
+    /* ========== GRADIENT TITLE ========== */
+    --gradient-from: oklch(0.55 0 0);
+    --gradient-to: oklch(0.65 0 0);
+
+    /* Fin de semana del calendario */
+    --calendar-weekend: oklch(0 0 0);
+
+    /* ========== ESFUERZO ========== */
+    --effort-low: oklch(0.723 0.219 149.579 / 0.3);
+    --effort-mid: oklch(0.769 0.188 70.08 / 0.3);
+    --effort-high: oklch(0.637 0.237 25.331 / 0.3);
+    --effort-limit: oklch(0.637 0.237 25.331);
+}
+
+/* ========================================
+   THEME INLINE - MAPEO DE VARIABLES
+   Conecta las variables CSS con las clases de Tailwind
+   ======================================== */
+@theme inline {
+    /* Colores base del sistema de diseño */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    /* Estados semánticos */
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-muted: var(--success-muted);
+    --color-success-muted-foreground: var(--success-muted-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-muted: var(--warning-muted);
+    --color-warning-muted-foreground: var(--warning-muted-foreground);
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+    --color-danger-muted: var(--danger-muted);
+    --color-danger-muted-foreground: var(--danger-muted-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-info-muted: var(--info-muted);
+    --color-info-muted-foreground: var(--info-muted-foreground);
+
+    /* Elementos de interfaz */
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    /* Colores para gráficos */
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --chart-accent: var(--chart-accent);
+
+    /* Sistema de radios para bordes redondeados */
+    --radius-sm: calc(var(--radius) - 4px);  /* Pequeño: ~6px */
+    --radius-md: calc(var(--radius) - 2px);  /* Medio: ~8px */
+    --radius-lg: var(--radius);              /* Grande: ~10px */
+    --radius-xl: calc(var(--radius) + 4px);  /* Extra grande: ~14px */
+
+    /* Colores de sidebar */
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Glass */
+    --color-glass: var(--glass);
+    --color-glass-foreground: var(--glass-foreground);
+    --color-glass-border: var(--glass-border);
+
+    /* Roles (6) */
+    --color-role-pilot: var(--role-pilot);
+    --color-role-pilot-foreground: var(--role-pilot-foreground);
+    --color-role-crew: var(--role-crew);
+    --color-role-crew-foreground: var(--role-crew-foreground);
+    --color-role-swimmer: var(--role-swimmer);
+    --color-role-swimmer-foreground: var(--role-swimmer-foreground);
+    --color-role-crew-swimmer: var(--role-crew-swimmer);
+    --color-role-crew-swimmer-foreground: var(--role-crew-swimmer-foreground);
+    --color-role-no-crew: var(--role-no-crew);
+    --color-role-no-crew-foreground: var(--role-no-crew-foreground);
+    --color-role-default: var(--role-default);
+    --color-role-default-foreground: var(--role-default-foreground);
+
+    /* Events (7) */
+    --color-event-mision: var(--event-mision);
+    --color-event-mision-foreground: var(--event-mision-foreground);
+    --color-event-maniobra-nacional: var(--event-maniobra-nacional);
+    --color-event-maniobra-nacional-foreground: var(--event-maniobra-nacional-foreground);
+    --color-event-maniobra-internacional: var(--event-maniobra-internacional);
+    --color-event-maniobra-internacional-foreground: var(--event-maniobra-internacional-foreground);
+    --color-event-pruebas: var(--event-pruebas);
+    --color-event-pruebas-foreground: var(--event-pruebas-foreground);
+    --color-event-adaptacion: var(--event-adaptacion);
+    --color-event-adaptacion-foreground: var(--event-adaptacion-foreground);
+    --color-event-adiestramiento: var(--event-adiestramiento);
+    --color-event-adiestramiento-foreground: var(--event-adiestramiento-foreground);
+    --color-event-default: var(--event-default);
+    --color-event-default-foreground: var(--event-default-foreground);
+
+    /* Plans (4) */
+    --color-plan-instruction1-pilot: var(--plan-instruction1-pilot);
+    --color-plan-instruction1-pilot-foreground: var(--plan-instruction1-pilot-foreground);
+    --color-plan-instruction2-pilot: var(--plan-instruction2-pilot);
+    --color-plan-instruction2-pilot-foreground: var(--plan-instruction2-pilot-foreground);
+    --color-plan-instruction1-dv: var(--plan-instruction1-dv);
+    --color-plan-instruction1-dv-foreground: var(--plan-instruction1-dv-foreground);
+    --color-plan-instruction2-dv: var(--plan-instruction2-dv);
+    --color-plan-instruction2-dv-foreground: var(--plan-instruction2-dv-foreground);
+
+    /* Caracteristicas (3) */
+    --color-caracteristica-b1: var(--caracteristica-b1);
+    --color-caracteristica-b1-foreground: var(--caracteristica-b1-foreground);
+    --color-caracteristica-b2: var(--caracteristica-b2);
+    --color-caracteristica-b2-foreground: var(--caracteristica-b2-foreground);
+    --color-caracteristica-lv: var(--caracteristica-lv);
+    --color-caracteristica-lv-foreground: var(--caracteristica-lv-foreground);
+
+    /* Escala */
+    --color-escala: var(--escala);
+    --color-escala-foreground: var(--escala-foreground);
+
+    /* Table */
+    --color-table-header: var(--table-header);
+    --color-table-header-foreground: var(--table-header-foreground);
+    --color-table-row-even: var(--table-row-even);
+    --color-table-row-odd: var(--table-row-odd);
+    --color-table-row-selected: var(--table-row-selected);
+    --color-table-row-hover: var(--table-row-hover);
+
+    /* Details */
+    --color-details-from: var(--details-from);
+    --color-details-to: var(--details-to);
+    --color-details-border: var(--details-border);
+
+    /* Gradient Title */
+    --color-gradient-from: var(--gradient-from);
+    --color-gradient-to: var(--gradient-to);
+
+    /* Marca */
+    --color-brand-from: var(--brand-from);
+    --color-brand-via: var(--brand-via);
+    --color-brand-to: var(--brand-to);
+
+    /* Disponibilidad */
+    --color-comision: var(--comision);
+    --color-absence-permiso: var(--absence-permiso);
+    --color-absence-asuntos-propios: var(--absence-asuntos-propios);
+    --color-absence-dia-adicional: var(--absence-dia-adicional);
+    --color-absence-baja-medica: var(--absence-baja-medica);
+    --color-absence-guardia: var(--absence-guardia);
+    --color-absence-saliente: var(--absence-saliente);
+    --color-absence-curso: var(--absence-curso);
+    --color-absence-reconocimiento: var(--absence-reconocimiento);
+    --color-absence-dunker: var(--absence-dunker);
+    --color-absence-otro: var(--absence-otro);
+    --color-absence-default: var(--absence-default);
+    --color-calendar-weekend: var(--calendar-weekend);
+
+    /* Horas por franja */
+    --color-hour-day: var(--hour-day);
+    --color-hour-night: var(--hour-night);
+    --color-hour-gvn: var(--hour-gvn);
+
+    /* Esfuerzo */
+    --color-effort-low: var(--effort-low);
+    --color-effort-mid: var(--effort-mid);
+    --color-effort-high: var(--effort-high);
+    --color-effort-limit: var(--effort-limit);
+}

@@ -124,21 +124,21 @@ function StatisticsTooltip({
                     <span className="font-medium text-right">{diasTotalesPeriodo} dias</span>
 
                     <span className="text-muted-foreground">Dias con vuelo real:</span>
-                    <span className="font-medium text-right text-green-600 dark:text-green-400">
+                    <span className="font-medium text-right text-success">
                         {diasVolados} {diasVolados === 1 ? 'dia' : 'dias'} ({porcentajeDiasVolados}%)
                     </span>
 
                     {diasSoloSimulador > 0 && (
                         <>
                             <span className="text-muted-foreground">Dias solo simulador:</span>
-                            <span className="font-medium text-right text-blue-600 dark:text-blue-400">
+                            <span className="font-medium text-right text-info">
                                 {diasSoloSimulador} {diasSoloSimulador === 1 ? 'dia' : 'dias'}
                             </span>
                         </>
                     )}
 
                     <span className="text-muted-foreground">Dias sin actividad:</span>
-                    <span className="font-medium text-right text-gray-500">
+                    <span className="font-medium text-right text-muted-foreground">
                         {diasSinActividad} {diasSinActividad === 1 ? 'dia' : 'dias'}
                     </span>
                 </div>

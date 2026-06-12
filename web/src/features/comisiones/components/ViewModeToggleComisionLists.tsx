@@ -104,11 +104,11 @@ function CustomTooltip({ description, children }: CustomTooltipProps) {
 
                     {/* Contenido del tooltip */}
                     <div className="w-80 max-w-[90vw] animate-in fade-in-0 zoom-in-95 duration-200">
-                        <div className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 shadow-xl dark:shadow-2xl dark:shadow-black/40">
+                        <div className="relative overflow-hidden rounded-xl border border-border bg-popover shadow-xl dark:shadow-2xl">
 
                             {/* Descripción */}
                             <div className="px-4 py-3">
-                                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300 text-pretty">
+                                <p className="text-sm leading-relaxed text-muted-foreground text-pretty">
                                     {description}
                                 </p>
                             </div>
@@ -133,7 +133,7 @@ export default function ViewModeToggleComisionLists({
 
     return (
         <div className={`flex justify-center mb-6 ${className}`}>
-            <div className="inline-flex flex-wrap gap-1 bg-gray-200 dark:bg-white/10 rounded-xl p-1">
+            <div className="inline-flex flex-wrap gap-1 bg-muted rounded-xl p-1">
                 {VIEW_MODE_OPTIONS.map((option) => (
                     <CustomTooltip
                         key={option.value}
@@ -144,8 +144,8 @@ export default function ViewModeToggleComisionLists({
                             onClick={() => handleChange(option.value)}
                             className={`px-4 py-2 rounded-lg transition-all font-medium text-sm ${
                                 viewMode === option.value
-                                    ? 'bg-white dark:bg-white/20 text-gray-900 dark:text-white shadow-md'
-                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                    ? 'bg-background text-foreground shadow-md'
+                                    : 'text-muted-foreground hover:text-foreground'
                             }`}
                             aria-pressed={viewMode === option.value}
                         >

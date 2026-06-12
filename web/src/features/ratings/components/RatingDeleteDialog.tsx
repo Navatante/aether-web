@@ -65,7 +65,7 @@ export function RatingDeleteDialog({
                                 Estás a punto de eliminar la calificación{' '}
                                 <strong>{ratingName}</strong> de:
                                 <br />
-                                <span className="text-sm text-orange-600 dark:text-orange-400">
+                                <span className="text-sm text-warning">
                                     <strong>{personName}</strong>
                                 </span>
                             </>
@@ -82,7 +82,7 @@ export function RatingDeleteDialog({
                             await onConfirm();
                         }}
                         disabled={isDeleting}
-                        className="bg-red-600 hover:bg-red-700"
+                        className="bg-danger text-danger-foreground hover:bg-danger/90"
                     >
                         {isDeleting ? (
                             <>

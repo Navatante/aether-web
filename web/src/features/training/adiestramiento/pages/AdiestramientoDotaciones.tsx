@@ -170,26 +170,26 @@ export default function AdiestramientoDotaciones() {
     const getStatusColor = (estado: string | null): string => {
         switch (estado) {
             case 'Expirado':
-                return 'bg-red-500/20 text-red-400 border-red-500/30';
+                return 'bg-danger-muted text-danger-muted-foreground border-danger/30';
             case 'Alerta':
-                return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+                return 'bg-warning-muted text-warning-muted-foreground border-warning/30';
             case 'Vigente':
-                return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                return 'bg-success-muted text-success-muted-foreground border-success/30';
             default:
-                return 'bg-gray-800/50 text-gray-500 border-gray-700/50';
+                return 'bg-muted text-muted-foreground border-border';
         }
     };
 
     const getCellBackground = (estado: string | null): string => {
         switch (estado) {
             case 'Expirado':
-                return 'bg-gradient-to-br from-red-950/40 to-red-900/20';
+                return 'bg-danger-muted';
             case 'Alerta':
-                return 'bg-gradient-to-br from-amber-950/40 to-amber-900/20';
+                return 'bg-warning-muted';
             case 'Vigente':
-                return 'bg-gradient-to-br from-emerald-950/30 to-emerald-900/10';
+                return 'bg-success-muted';
             default:
-                return 'bg-gradient-to-br from-neutral-900/50 to-neutral-800/30';
+                return 'bg-muted';
         }
     };
 
@@ -197,8 +197,8 @@ export default function AdiestramientoDotaciones() {
         return (
             <div className="h-full flex items-center justify-center">
                 <div className="text-center">
-                    <Loader2 className="h-12 w-12 animate-spin text-gray-500 mx-auto mb-4" />
-                    <p className="text-gray-600 dark:text-gray-400">Cargando papeletas...</p>
+                    <Loader2 className="h-12 w-12 animate-spin text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Cargando papeletas...</p>
                 </div>
             </div>
         );
@@ -207,15 +207,15 @@ export default function AdiestramientoDotaciones() {
     if (error) {
         return (
             <div className="h-full flex items-center justify-center">
-                <div className="text-center bg-red-50 dark:bg-red-900/20 p-8 rounded-xl">
-                    <X className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-red-700 dark:text-red-400 mb-2">
+                <div className="text-center bg-danger-muted p-8 rounded-xl">
+                    <X className="h-12 w-12 text-danger mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-danger-muted-foreground mb-2">
                         Error al cargar papeletas
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-400">{error}</p>
+                    <p className="text-muted-foreground">{error}</p>
                     <button
                         onClick={() => refetch()}
-                        className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        className="mt-4 px-4 py-2 bg-danger text-danger-foreground rounded-lg hover:bg-danger/90 transition-colors"
                     >
                         Reintentar
                     </button>
@@ -261,11 +261,11 @@ export default function AdiestramientoDotaciones() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Todos los planes">
-                                                <span className="text-gray-700 dark:text-gray-300">Todos los planes</span>
+                                                <span className="text-foreground">Todos los planes</span>
                                             </SelectItem>
                                             {uniquePlans.map(plan => (
                                                 <SelectItem key={plan} value={plan}>
-                                                    <span className="text-gray-700 dark:text-gray-300">{plan}</span>
+                                                    <span className="text-foreground">{plan}</span>
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -278,11 +278,11 @@ export default function AdiestramientoDotaciones() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Todos los bloques">
-                                                <span className="text-gray-700 dark:text-gray-300">Todos los bloques</span>
+                                                <span className="text-foreground">Todos los bloques</span>
                                             </SelectItem>
                                             {uniqueBlocks.map(block => (
                                                 <SelectItem key={block} value={block}>
-                                                    <span className="text-gray-700 dark:text-gray-300">{block}</span>
+                                                    <span className="text-foreground">{block}</span>
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -295,7 +295,7 @@ export default function AdiestramientoDotaciones() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Todos los estados">
-                                                <span className="text-gray-700 dark:text-gray-300">Todos los estados</span>
+                                                <span className="text-foreground">Todos los estados</span>
                                             </SelectItem>
                                             <SelectItem value="Vigente">
                                                 <span>Vigente</span>
@@ -346,9 +346,9 @@ export default function AdiestramientoDotaciones() {
                     {/* Tabla con scroll */}
                     <PageTableContainer className="flex-1 overflow-auto">
                         <table className="w-full" role="table">
-                            <thead className="sticky top-0 z-10 bg-gray-100/70 dark:bg-neutral-800/95">
+                            <thead className="sticky top-0 z-10 bg-table-header">
                             <tr>
-                                <th className="text-left font-semibold text-table-header-foreground p-4 w-0 whitespace-nowrap sticky left-0 z-20 bg-gray-100/70 dark:bg-neutral-800/95">
+                                <th className="text-left font-semibold text-table-header-foreground p-4 w-0 whitespace-nowrap sticky left-0 z-20 bg-table-header">
                                     {/* Puedes dejar vacío o poner un título si quieres */}
                                 </th>
                                 {visiblePersonas.map(persona => (
@@ -368,7 +368,7 @@ export default function AdiestramientoDotaciones() {
                                             {/* Nombre del dotacion */}
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <span className="font-semibold text-gray-300 mt-2 cursor-help">
+                                                    <span className="font-semibold text-table-header-foreground mt-2 cursor-help">
                                                         {persona.person_nk}
                                                     </span>
                                                 </TooltipTrigger>
@@ -389,7 +389,7 @@ export default function AdiestramientoDotaciones() {
                             <tbody>
                             {filteredPapeletas.length === 0 ? (
                                 <tr>
-                                    <td colSpan={visiblePersonas.length + 1} className="p-8 text-center text-gray-500">
+                                    <td colSpan={visiblePersonas.length + 1} className="p-8 text-center text-muted-foreground">
                                         No se encontraron papeletas
                                     </td>
                                 </tr>
@@ -397,17 +397,17 @@ export default function AdiestramientoDotaciones() {
                                 filteredPapeletas.map((papeleta, idx) => (
                                     <tr
                                         key={papeleta.papeleta_sk}
-                                        className={`border-b border-gray-800/50 hover:bg-gray-800/20 ${
-                                            idx % 2 === 0 ? 'bg-white dark:bg-white/[0.02]' : 'bg-gray-50 dark:bg-transparent'
+                                        className={`border-b border-border hover:bg-table-row-hover ${
+                                            idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
                                         }`}
                                     >
-                                        <td className={`p-4 min-w-0 whitespace-nowrap sticky left-0 z-5 border-b border-gray-100/70 dark:border-neutral-800/95 ${
-                                            idx % 2 === 0 ? 'bg-white dark:bg-[#1a1a1a]' : 'bg-gray-50 dark:bg-neutral-900'
+                                        <td className={`p-4 min-w-0 whitespace-nowrap sticky left-0 z-5 border-b border-border ${
+                                            idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
                                         }`}>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <div className="cursor-help">
-                                                      <span className="font-medium text-gray-200">
+                                                      <span className="font-medium text-foreground">
                                                         {papeleta.papeleta_name}
                                                       </span>
                                                     </div>
@@ -421,19 +421,19 @@ export default function AdiestramientoDotaciones() {
 
                                                     {/* Contenido */}
                                                     <div className="px-4 py-3 space-y-1">
-                                                        <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed text-pretty">
+                                                        <p className="text-base text-foreground leading-relaxed text-pretty">
                                                             {papeleta.papeleta_description}
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm text-muted-foreground">
                                                             Expiración: {papeleta.papeleta_expiration} días
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm text-muted-foreground">
                                                             CRP: {papeleta.papeleta_dv_crp_value}
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm text-muted-foreground">
                                                             Plan: {papeleta.papeleta_plan}
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
+                                                        <p className="text-sm text-muted-foreground">
                                                             Bloque: {papeleta.papeleta_block}
                                                         </p>
                                                     </div>
@@ -464,7 +464,7 @@ export default function AdiestramientoDotaciones() {
                                                                         </div>
                                                                     </>
                                                                 ) : (
-                                                                    <span className="text-gray-600">-</span>
+                                                                    <span className="text-muted-foreground">-</span>
                                                                 )}
                                                             </div>
                                                         </TooltipTrigger>
@@ -474,16 +474,16 @@ export default function AdiestramientoDotaciones() {
                                                         >
                                                             {status ? (
                                                                 <div className="px-4 py-3 space-y-1">
-                                                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-pretty">
+                                                                    <p className="text-sm text-foreground leading-relaxed text-pretty">
                                                                         Transcurridos: {status.dias_transcurridos} días
                                                                     </p>
-                                                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-pretty">
+                                                                    <p className="text-sm text-foreground leading-relaxed text-pretty">
                                                                         Restantes: {status.dias_restantes} días
                                                                     </p>
                                                                     <p className={`text-sm font-medium ${
-                                                                        status.estado === 'Expirado' ? 'text-red-400' :
-                                                                            status.estado === 'Alerta' ? 'text-amber-400' :
-                                                                                'text-emerald-400'
+                                                                        status.estado === 'Expirado' ? 'text-danger' :
+                                                                            status.estado === 'Alerta' ? 'text-warning' :
+                                                                                'text-success'
                                                                     }`}>
                                                                         {status.estado === 'Expirado' ? '⚠️ Expirado' :
                                                                             status.estado === 'Alerta' ? '⏰ Próximo a vencer' :
@@ -492,7 +492,7 @@ export default function AdiestramientoDotaciones() {
                                                                 </div>
                                                             ) : (
                                                                 <div className="px-4 py-3">
-                                                                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                                                                    <p className="text-sm text-muted-foreground">
                                                                         Nunca realizó esta papeleta
                                                                     </p>
                                                                 </div>

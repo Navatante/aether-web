@@ -311,22 +311,22 @@ export function useDisponibilidad() {
     const getDayHeaderClass = (day: Day): string => {
         const holiday = isHoliday(day.dateStr);
         if (holiday) {
-            return 'bg-red-100/70 dark:bg-red-900/30';
+            return 'bg-danger-muted';
         }
         if (day.isWeekend) {
-            return 'bg-gray-200/50 dark:bg-black';
+            return 'bg-calendar-weekend';
         }
-        return 'bg-gray-100/70 dark:bg-neutral-800/95';
+        return 'bg-table-header';
     };
 
     // Función helper para obtener las clases de estilo de un día (celda)
     const getDayCellClass = (day: Day): string => {
         const holiday = isHoliday(day.dateStr);
         if (holiday) {
-            return 'bg-red-50/50 dark:bg-red-900/20';
+            return 'bg-danger-muted/60';
         }
         if (day.isWeekend) {
-            return 'bg-slate-100/50 dark:bg-black';
+            return 'bg-calendar-weekend';
         }
         return '';
     };

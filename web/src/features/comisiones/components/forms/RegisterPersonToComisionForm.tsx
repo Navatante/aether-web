@@ -125,7 +125,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                 >
                     <SelectTrigger
                         id="comision"
-                        className={errors.comision ? 'border-red-500' : ''}
+                        className={errors.comision ? 'border-danger' : ''}
                     >
                         <SelectValue placeholder={comisionesLoading ? "Cargando..." : "Seleccione una comisión"} />
                     </SelectTrigger>
@@ -147,7 +147,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     </SelectContent>
                 </Select>
                 {errors.comision && (
-                    <p className="text-sm text-red-500">{errors.comision.message}</p>
+                    <p className="text-sm text-danger">{errors.comision.message}</p>
                 )}
             </div>
 
@@ -163,7 +163,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                 {selectedPersonas.length > 0 && (
                     <div
                         className={`flex flex-col gap-2 p-3 border rounded-md bg-muted/50 max-h-48 overflow-y-auto ${
-                            errors.personas ? 'border-red-500' : 'border-border'
+                            errors.personas ? 'border-danger' : 'border-border'
                         }`}
                     >
                         {selectedPersonas.map((personSk) => {
@@ -200,7 +200,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     }}
                     disabled={personLoading || availablePersons.length === 0}
                 >
-                    <SelectTrigger className={errors.personas ? 'border-red-500' : ''}>
+                    <SelectTrigger className={errors.personas ? 'border-danger' : ''}>
                         <SelectValue placeholder={
                             personLoading
                                 ? "Cargando personas..."
@@ -230,7 +230,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                 </Select>
 
                 {errors.personas && (
-                    <p className="text-sm text-red-500">{errors.personas.message}</p>
+                    <p className="text-sm text-danger">{errors.personas.message}</p>
                 )}
             </div>
 

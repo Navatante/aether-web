@@ -37,6 +37,15 @@ jobs:
           fi
           exit $fail
 
+  # Cortafuegos de theming: ningún color hardcodeado en el frontend fuera de
+  # web/src/app/theme.css (excepciones documentadas en scripts/theme-guard.sh).
+  theme-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar que no hay colores hardcodeados
+        run: ./scripts/theme-guard.sh
+
   backend:
     runs-on: ubuntu-latest
     services:

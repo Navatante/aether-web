@@ -32,7 +32,7 @@ export function Topbar() {
 
             <div className="ml-auto flex items-center gap-10">
 
-                <div className="select-none cursor-default text-red-400">
+                <div className="select-none cursor-default text-danger">
                     {/*TODO esta linea es debug para comprobar que se carga bien la escuadrilla al principio*/}
                     {escuadrillaId ? "🛠️ App en desarrollo" : "Escuadrilla no cargada"}
                 </div>
@@ -45,7 +45,7 @@ export function Topbar() {
                             text={nk}
                             size="xs"
                             textColor="text-foreground/80 hover:text-foreground"
-                            gradient="from-gray-700 to-gray-800 hover:from-[#18b9ab] hover:via-[#0ea9c7] hover:to-[#0a8b8f]"
+                            gradient="from-gradient-from to-gradient-to hover:from-brand-from hover:via-brand-via hover:to-brand-to"
                         />
                       </div>
                     </SheetTrigger>

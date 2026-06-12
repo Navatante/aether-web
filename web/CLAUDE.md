@@ -45,6 +45,14 @@ Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no 
    }
    ```
 
+## Colores y theming
+
+- **Fuente única de verdad**: `src/app/theme.css` — tokens OKLCH en `:root` (claro) y `.dark` (oscuro), mapeados a clases Tailwind vía `@theme inline`. El modo oscuro lo gestiona `ThemeProvider` (clase `.dark` en `<html>`); nunca dual-codees colores con `dark:` a mano.
+- **Prohibido hardcodear colores** (hex/rgb/oklch o clases de paleta tipo `text-gray-400`, `bg-red-500`, `text-white`): usa tokens semánticos (`text-muted-foreground`, `bg-danger-muted`, `text-success`, `bg-table-header`, `bg-role-pilot`…). Para estilos inline o recharts: `var(--token)` (p. ej. `var(--effort-high)`, `var(--absence-permiso)`).
+- Si necesitas un color nuevo, añade el token en `theme.css` (`:root` + `.dark` + mapeo `--color-*`).
+- **Excepciones documentadas**: `features/ratings/utils/colors.ts` (COLOR_PALETTE categórica), `shared/components/common/glassColors.ts` y `GlassProgressBar*` (animación decorativa), `components/ui/chart.tsx` (defaults de recharts), `components/ui/button.tsx`/`badge.tsx` (variants stock de shadcn), scrims `bg-black/NN` en overlays.
+- Guard: `make theme-guard` (también corre en CI). Allowlist en `scripts/theme-guard.sh`.
+
 ## Permisos en la UI
 
 `useHasPermission(...)` solo oculta botones: es cosmético. La garantía real es el 403 del backend (`RequirePermission`). Al añadir una acción de escritura, replica en la UI exactamente la allow-list de la ruta (sin jerarquía entre niveles).

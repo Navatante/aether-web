@@ -59,12 +59,12 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
     }) => (
         <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5 text-neutral-500" />
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {title}
                 </span>
             </div>
-            <div className="pl-5 border-l-2 border-gray-200 dark:border-gray-700">
+            <div className="pl-5 border-l-2 border-border">
                 {children}
             </div>
         </div>
@@ -80,9 +80,9 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
         const isVueloNoche = item.absence?.absence_reason === 'Vuelo noche';
 
         return (
-            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 py-0.5">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground py-0.5">
                 {isComision ? (
-                    <MapPin className="w-3 h-3 text-cyan-500 flex-shrink-0" />
+                    <MapPin className="w-3 h-3 text-info flex-shrink-0" />
                 ) : isVueloDia ? (
                     <span className="text-xs flex-shrink-0">{EMOJI_SUN}</span>
                 ) : isVueloNoche ? (
@@ -101,13 +101,13 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
     return (
         <div className="space-y-3 max-w-xs min-w-[240px] max-h-[340px] overflow-y-auto pr-4">
             {/* Fecha */}
-            <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <Calendar className="w-4 h-4 text-neutral-500" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
                     {formattedDate}
                 </span>
                 {day.isWeekend && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-warning-muted text-warning-muted-foreground font-medium">
                         Fin de semana
                     </span>
                 )}
@@ -117,31 +117,31 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-emerald-500" />
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        <Users className="w-4 h-4 text-success" />
+                        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Disponibilidad
                         </span>
                     </div>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         availabilityPercentage >= 80
-                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                            ? 'bg-success-muted text-success-muted-foreground'
                             : availabilityPercentage >= 50
-                                ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                                ? 'bg-warning-muted text-warning-muted-foreground'
+                                : 'bg-danger-muted text-danger-muted-foreground'
                     }`}>
                         {availabilityPercentage}%
                     </span>
                 </div>
 
                 {/* Barra de progreso */}
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                         className={`h-full transition-all duration-300 rounded-full ${
                             availabilityPercentage >= 80
-                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                                ? 'bg-success'
                                 : availabilityPercentage >= 50
-                                    ? 'bg-gradient-to-r from-amber-500 to-amber-400'
-                                    : 'bg-gradient-to-r from-red-500 to-red-400'
+                                    ? 'bg-warning'
+                                    : 'bg-danger'
                         }`}
                         style={{ width: `${availabilityPercentage}%` }}
                     />
@@ -150,15 +150,15 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
                 {/* Contadores */}
                 <div className="flex justify-between text-xs">
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-gray-600 dark:text-gray-400">
-                            <span className="font-semibold text-emerald-600 dark:text-emerald-400">{availableCount}</span> disponibles
+                        <div className="w-2 h-2 rounded-full bg-success" />
+                        <span className="text-muted-foreground">
+                            <span className="font-semibold text-success">{availableCount}</span> disponibles
                         </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-gray-400" />
-                        <span className="text-gray-600 dark:text-gray-400">
-                            <span className="font-semibold text-gray-700 dark:text-gray-300">{absentCount}</span> ausentes
+                        <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                        <span className="text-muted-foreground">
+                            <span className="font-semibold text-foreground">{absentCount}</span> ausentes
                         </span>
                     </div>
                 </div>
@@ -166,7 +166,7 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
 
             {/* Lista de ausentes agrupados */}
             {absentCount > 0 && (
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                <div className="pt-2 border-t border-border space-y-3">
                     {Object.entries(groupedAbsents).map(([type, items]) => {
                         const isComision = type === 'comision';
                         const reasonData = !isComision ? getReasonColor(type) : null;
@@ -190,9 +190,9 @@ export const AvailabilityTooltip: React.FC<AvailabilityTooltipProps> = ({
 
             {/* Mensaje cuando no hay ausentes */}
             {absentCount === 0 && (
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 text-xs text-success">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
                         Todo el personal disponible
                     </div>
                 </div>

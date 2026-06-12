@@ -39,16 +39,16 @@ export const ConnectionIndicatorSidebar = () => {
     };
 
     const getStatusColor = () => {
-        if (isReconnecting) return 'text-blue-500';
+        if (isReconnecting) return 'text-info';
         switch (connectionStatus) {
             case 'connecting':
-                return 'text-blue-500';
+                return 'text-info';
             case 'connected':
-                return 'text-green-500';
+                return 'text-success';
             case 'disconnected':
-                return 'text-yellow-500';
+                return 'text-warning';
             case 'error':
-                return 'text-red-500';
+                return 'text-danger';
         }
     };
 
@@ -77,7 +77,7 @@ export const ConnectionIndicatorSidebar = () => {
                     {(connectionStatus === 'error' || connectionStatus === 'disconnected') && !isReconnecting && (
                         <button
                             onClick={handleReconnect}
-                            className="ml-auto p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 group-data-[collapsible=icon]:hidden"
+                            className="ml-auto p-0.5 rounded hover:bg-foreground/10 group-data-[collapsible=icon]:hidden"
                         >
                             <RefreshCw className="h-3 w-3" />
                         </button>

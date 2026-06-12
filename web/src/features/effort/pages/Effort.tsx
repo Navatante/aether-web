@@ -94,9 +94,9 @@ export default function Effort() {
 
         // Función para asignar color según los días
         const getBarColor = (days: number) => {
-            if (days >= 210) return "rgba(220,38,38,0.3)" // red-600
-            if (days >= 168) return "rgba(217,119,6,0.3)" // amber-600
-            return "rgba(22,163,74,0.3)" // green-600
+            if (days >= 210) return "var(--effort-high)"
+            if (days >= 168) return "var(--effort-mid)"
+            return "var(--effort-low)"
         }
 
         // Mapear al formato final con colores
@@ -137,7 +137,7 @@ export default function Effort() {
                         <div className="flex flex-wrap gap-4 items-center">
                             {/* Calendar Popover */}
                             <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-sm text-neutral-600 dark:text-neutral-200">
+                                <span className="text-sm text-muted-foreground">
                                     Últimos 730 días hasta:
                                 </span>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -238,13 +238,13 @@ export default function Effort() {
                                 <Bar dataKey="days" radius={5} />
                                 <ReferenceLine
                                     x={210}
-                                    stroke="rgba(220,38,38)"
+                                    stroke="var(--effort-limit)"
                                     strokeWidth={2}
                                     strokeDasharray="3 3"
                                     label={{
                                         value: "Límite: 210",
                                         position: "top",
-                                        fill: "rgba(220,38,38)",
+                                        fill: "var(--effort-limit)",
                                         fontSize: 12,
                                     }}
                                 />

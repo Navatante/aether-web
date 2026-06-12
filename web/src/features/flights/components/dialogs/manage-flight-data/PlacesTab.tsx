@@ -104,7 +104,7 @@ export function PlacesTab({
                                                         sk: p.departure_arrival_place_sk,
                                                         label: `${p.departure_arrival_place_name} (${p.departure_arrival_place_code})`,
                                                     })}
-                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                    className="h-8 w-8 text-danger hover:text-danger hover:bg-danger-muted"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>

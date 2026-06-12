@@ -4,6 +4,7 @@ import {
     TooltipTrigger,
     TooltipContent,
 } from "@/components/ui/tooltip";
+import { getEtherealColors } from "./glassColors";
 
 interface GlassProgressBarProps {
     type?: "crp" | "airflow";
@@ -12,25 +13,6 @@ interface GlassProgressBarProps {
     diasSinVueloReal?: number;
     diasSinSimulador?: number;
 }
-
-// Color constants - defined outside component to prevent recreation
-const GREEN_COLORS = {
-    primary: "rgba(34, 197, 94, 0.7)",
-    secondary: "rgba(74, 222, 128, 0.5)",
-    glow: "rgba(134, 239, 172, 0.8)",
-} as const;
-
-const ORANGE_COLORS = {
-    primary: "rgba(249, 115, 22, 0.7)",
-    secondary: "rgba(251, 146, 60, 0.5)",
-    glow: "rgba(253, 186, 116, 0.8)",
-} as const;
-
-const RED_COLORS = {
-    primary: "rgba(239, 68, 68, 0.7)",
-    secondary: "rgba(248, 113, 113, 0.5)",
-    glow: "rgba(252, 165, 165, 0.8)",
-} as const;
 
 // Airflow color helper
 function getAirflowColors(percentage: number) {
@@ -53,13 +35,6 @@ function getAirflowColors(percentage: number) {
         liquidColorLight: "rgba(128,128,128,0.35)",
         liquidColorGlow: "rgba(85,85,85,0.6)",
     };
-}
-
-// CRP color helper
-function getEtherealColors(percentage: number) {
-    if (percentage > 80) return GREEN_COLORS;
-    if (percentage >= 40) return ORANGE_COLORS;
-    return RED_COLORS;
 }
 
 // Calculate display values for airflow type

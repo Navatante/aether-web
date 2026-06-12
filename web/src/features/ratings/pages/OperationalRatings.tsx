@@ -239,8 +239,8 @@ function OperationalTooltip({ calificacion, isPilot }: OperationalTooltipProps) 
             <div className="space-y-2">
                 {calificacion.message_instruction && (
                     <div className="flex items-start gap-2">
-                        <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">📋</span>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-muted-foreground text-xs mt-0.5">📋</span>
+                        <span className="text-sm text-foreground">
                             {calificacion.message_instruction}
                         </span>
                     </div>
@@ -248,8 +248,8 @@ function OperationalTooltip({ calificacion, isPilot }: OperationalTooltipProps) 
 
                 {calificacion.message_hours && (
                     <div className="flex items-start gap-2">
-                        <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">⏱️</span>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-muted-foreground text-xs mt-0.5">⏱️</span>
+                        <span className="text-sm text-foreground">
                             {calificacion.message_hours}
                         </span>
                     </div>
@@ -257,8 +257,8 @@ function OperationalTooltip({ calificacion, isPilot }: OperationalTooltipProps) 
 
                 {calificacion.message_crp && (
                     <div className="flex items-start gap-2">
-                        <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">⚔</span>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                        <span className="text-muted-foreground text-xs mt-0.5">⚔</span>
+                        <span className="text-sm text-foreground">
                             {calificacion.message_crp}
                         </span>
                     </div>
@@ -266,10 +266,10 @@ function OperationalTooltip({ calificacion, isPilot }: OperationalTooltipProps) 
             </div>
 
             {/* Requisitos de certificaciones operativas */}
-            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-3 border-t border-border">
                 <div className="flex items-center gap-2 mb-3">
-                    <Info className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    <Info className="w-4 h-4 text-info" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         Requisitos Operativos {isPilot ? 'Pilotos' : 'Dotaciones'}
                     </span>
                 </div>
@@ -282,9 +282,9 @@ function OperationalTooltip({ calificacion, isPilot }: OperationalTooltipProps) 
                             <div key={req.rating} className="text-xs">
                                 <div className="flex items-center gap-2 mb-1">
                                     <span className={`${colors.text} font-bold`}>{req.rating}</span>
-                                    <span className="text-gray-600 dark:text-gray-400">({req.label})</span>
+                                    <span className="text-muted-foreground">({req.label})</span>
                                 </div>
-                                <div className="text-gray-600 dark:text-gray-400 pl-2 border-l-2 border-gray-300 dark:border-gray-600">
+                                <div className="text-muted-foreground pl-2 border-l-2 border-border">
                                     {req.requirements}
                                 </div>
                             </div>
@@ -348,7 +348,7 @@ export default function OperationalRatings() {
         }
 
         return (
-            <div className="inline-flex items-center justify-center p-3 rounded-xl bg-gray-100 dark:bg-white/5 border-2 border-gray-300 dark:border-white/10 opacity-30">
+            <div className="inline-flex items-center justify-center p-3 rounded-xl bg-muted border-2 border-border opacity-30">
                 <span className="w-5 h-5"></span>
             </div>
         );
@@ -415,7 +415,7 @@ export default function OperationalRatings() {
                 {/* Empty state */}
                 {filteredPersonnel.length === 0 && (
                     <div className="text-center py-8">
-                        <p className="text-gray-500 dark:text-gray-400">
+                        <p className="text-muted-foreground">
                             No se encontraron resultados para los filtros seleccionados
                         </p>
                     </div>

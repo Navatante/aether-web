@@ -164,7 +164,7 @@ function PapeletaCard({
                                                     onClick={() => field.onChange(items.map(i => i.sk === item.sk ? { ...i, period: 'dia' } : i))}
                                                     className={cn("px-2 py-0.5 transition-colors",
                                                         item.period === 'dia'
-                                                            ? "bg-blue-500 text-white"
+                                                            ? "bg-info text-info-foreground"
                                                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                                                     )}>
                                                     Dia
@@ -174,7 +174,7 @@ function PapeletaCard({
                                                     onClick={() => field.onChange(items.map(i => i.sk === item.sk ? { ...i, period: 'gvn' } : i))}
                                                     className={cn("px-2 py-0.5 transition-colors",
                                                         item.period === 'gvn'
-                                                            ? "bg-lime-500 text-black"
+                                                            ? "bg-success text-success-foreground"
                                                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                                                     )}>
                                                     GVN

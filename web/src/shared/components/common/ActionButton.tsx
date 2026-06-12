@@ -14,8 +14,7 @@ interface ActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
 
 const baseClasses = [
     "flex items-center gap-2.5 rounded-xl font-medium transition-all duration-200 backdrop-blur-md border",
-    "bg-white border-gray-200 text-gray-700",
-    "dark:bg-white/5 dark:border-white/10 dark:text-gray-300",
+    "bg-background border-border text-foreground",
     "disabled:opacity-50 disabled:cursor-not-allowed",
 ].join(" ");
 
@@ -27,16 +26,16 @@ const sizeClasses = {
 
 const variantClasses = {
     refresh:
-        "hover:bg-gray-50 hover:border-gray-300 dark:hover:bg-white/10 dark:hover:border-white/20",
+        "hover:bg-accent hover:border-ring/50",
     add:
-        "hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/30 dark:hover:text-emerald-400",
-    export: "hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 dark:hover:bg-blue-500/10 dark:hover:border-blue-500/30 dark:hover:text-blue-400",
+        "hover:bg-success-muted hover:border-success/40 hover:text-success",
+    export: "hover:bg-info-muted hover:border-info/40 hover:text-info",
     edit:
-        "hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600 dark:hover:bg-amber-500/10 dark:hover:border-amber-500/30 dark:hover:text-amber-400",
+        "hover:bg-warning-muted hover:border-warning/40 hover:text-warning",
     delete:
-        "hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:border-red-500/30 dark:hover:text-red-400",
+        "hover:bg-danger-muted hover:border-danger/40 hover:text-danger",
     default:
-        "hover:bg-gray-50 hover:border-gray-300 dark:hover:bg-white/10 dark:hover:border-white/20",
+        "hover:bg-accent hover:border-ring/50",
 };
 
 export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProps>(

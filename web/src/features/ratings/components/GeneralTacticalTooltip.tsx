@@ -14,17 +14,17 @@ interface MetricRowProps {
 
 function MetricRow({ icon, label, value, status }: MetricRowProps) {
     const statusColors = {
-        valid: 'text-green-500',
-        warning: 'text-yellow-500',
-        expired: 'text-red-500'
+        valid: 'text-success',
+        warning: 'text-warning',
+        expired: 'text-danger'
     };
 
     return (
         <div className="flex items-start gap-2">
-            <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{icon}</span>
+            <span className="text-muted-foreground text-xs mt-0.5">{icon}</span>
             <div className="flex-1">
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}:</span>
-                <span className={`text-sm ml-2 font-semibold ${status ? statusColors[status] : 'text-gray-700 dark:text-gray-300'}`}>
+                <span className="text-xs font-medium text-muted-foreground">{label}:</span>
+                <span className={`text-sm ml-2 font-semibold ${status ? statusColors[status] : 'text-foreground'}`}>
                     {value}
                 </span>
             </div>
@@ -41,13 +41,13 @@ function RequirementSection({ title, requirements }: RequirementSectionProps) {
     return (
         <div className="space-y-1">
             <div className="flex items-center gap-2">
-                <Info className="w-3 h-3 text-blue-500" />
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                <Info className="w-3 h-3 text-info" />
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     {title}
                 </span>
             </div>
             {requirements.map((req, idx) => (
-                <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 pl-5 border-l-2 border-gray-300 dark:border-gray-600 flex items-center gap-2">
+                <div key={idx} className="text-xs text-muted-foreground pl-5 border-l-2 border-border flex items-center gap-2">
                     {req}
                 </div>
             ))}
@@ -69,8 +69,8 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                 <div className="space-y-2">
                     <div className="flex items-start gap-2">
                         <div className="flex-1">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Fecha de obtención:</span>
-                            <span className="text-xs ml-2 text-gray-700 dark:text-gray-300">
+                            <span className="text-xs font-medium text-muted-foreground">Fecha de obtención:</span>
+                            <span className="text-xs ml-2 text-foreground">
                                 {new Date(cert.date_qualified).toLocaleDateString('es-ES')}
                             </span>
                         </div>
@@ -92,14 +92,14 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             }
                         />
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={[
                                 <>Horas en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥55h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />50-54.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;50h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥55h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />50-54.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;50h</>
                             ]}
                         />
                     </div>
@@ -120,14 +120,14 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             }
                         />
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={[
                                 <>Horas Noche conv./GVN en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥17h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />12-16.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;12h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥17h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />12-16.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;12h</>
                             ]}
                         />
                     </div>
@@ -159,23 +159,23 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             />
                         )}
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={isPilot ? [
                                 <>Horas GVN en los últimos 90 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥8h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />3-7.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;3h</>,
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥8h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />3-7.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;3h</>,
                                 <>Horas GVN en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥17h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />12-16.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;12h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥17h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />12-16.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;12h</>
                             ] : [
                                 <>Horas GVN en los últimos 90 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥7h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />2-6.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;2h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥7h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />2-6.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;2h</>
                             ]}
                         />
                     </div>
@@ -220,18 +220,18 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             />
                         )}
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={[
                                 <>Horas IFR en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥17h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />12-16.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;12h</>,
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥17h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />12-16.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;12h</>,
                                 <>Aproximaciones IFR en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥11 aprox.</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />6-10 aprox.</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;6 aprox.</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥11 aprox.</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />6-10 aprox.</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;6 aprox.</>
                             ]}
                         />
                     </div>
@@ -243,32 +243,32 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                 <>
                     <div className="space-y-2">
                         <div className="flex items-start gap-2">
-                            <span className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">⚓</span>
+                            <span className="text-muted-foreground text-xs mt-0.5">⚓</span>
                             <div className="flex-1">
-                                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 block mb-2">
+                                <span className="text-xs font-semibold text-muted-foreground block mb-2">
                                     Tomas en buque (Últimos 182 días):
                                 </span>
                                 <div className="space-y-1 pl-2">
                                     {cert?.total_tomas_dia_buque_182 !== undefined && (
                                         <div className="text-xs">
-                                            <span className="text-gray-600 dark:text-gray-400">Día:</span>
-                                            <span className="text-sm ml-2 font-semibold text-gray-700 dark:text-gray-300">
+                                            <span className="text-muted-foreground">Día:</span>
+                                            <span className="text-sm ml-2 font-semibold text-foreground">
                                                 {cert.total_tomas_dia_buque_182}
                                             </span>
                                         </div>
                                     )}
                                     {cert?.total_tomas_nocheConv_buque_182 !== undefined && (
                                         <div className="text-xs">
-                                            <span className="text-gray-600 dark:text-gray-400">Noche:</span>
-                                            <span className="text-sm ml-2 font-semibold text-gray-700 dark:text-gray-300">
+                                            <span className="text-muted-foreground">Noche:</span>
+                                            <span className="text-sm ml-2 font-semibold text-foreground">
                                                 {cert.total_tomas_nocheConv_buque_182}
                                             </span>
                                         </div>
                                     )}
                                     {cert?.total_tomas_GVN_buque_182 !== undefined && (
                                         <div className="text-xs">
-                                            <span className="text-gray-600 dark:text-gray-400">GVN:</span>
-                                            <span className="text-sm ml-2 font-semibold text-gray-700 dark:text-gray-300">
+                                            <span className="text-muted-foreground">GVN:</span>
+                                            <span className="text-sm ml-2 font-semibold text-foreground">
                                                 {cert.total_tomas_GVN_buque_182}
                                             </span>
                                         </div>
@@ -277,14 +277,14 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             </div>
                         </div>
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={isPilot ? [
                                 <>Tomas en buque en los últimos 182 días</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥9</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />4-8</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;4</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥9</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />4-8</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;4</>
                             ] : [
                                 <>TBD</>
                             ]}
@@ -316,18 +316,18 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             }
                         />
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={[
                                 <>Horas GVN en los últimos 90 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥11h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />6-10.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;6h</>,
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥11h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />6-10.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;6h</>,
                                 <>Horas GVN en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥29h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />24-28.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;24h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥29h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />24-28.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;24h</>
                             ]}
                         />
                     </div>
@@ -357,18 +357,18 @@ export function GeneralTacticalTooltip({ cert, ratingId, isPilot }: GeneralTacti
                             }
                         />
                     </div>
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-3 border-t border-border">
                         <RequirementSection
                             title="Requisitos"
                             requirements={[
                                 <>Horas GVN en los últimos 90 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥14h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />9-13.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥14h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />9-13.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;9h</>,
                                 <>Horas GVN en los últimos 365 días:</>,
-                                <><div className="w-2 h-2 rounded-full bg-green-500" />≥41h</>,
-                                <><div className="w-2 h-2 rounded-full bg-yellow-500" />36-40.9h</>,
-                                <><div className="w-2 h-2 rounded-full bg-red-500" />&lt;36h</>
+                                <><div className="w-2 h-2 rounded-full bg-success" />≥41h</>,
+                                <><div className="w-2 h-2 rounded-full bg-warning" />36-40.9h</>,
+                                <><div className="w-2 h-2 rounded-full bg-danger" />&lt;36h</>
                             ]}
                         />
                     </div>

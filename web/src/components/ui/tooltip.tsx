@@ -12,7 +12,7 @@ const tooltipContentVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground px-3 py-1.5 text-xs",
-        info: "bg-white text-gray-800 dark:bg-neutral-800 dark:text-gray-200 border border-black/10 dark:border-white/10 shadow-xl px-3 py-1.5 text-sm",
+        info: "bg-popover text-popover-foreground border border-border shadow-xl px-3 py-1.5 text-sm",
       },
     },
     defaultVariants: {

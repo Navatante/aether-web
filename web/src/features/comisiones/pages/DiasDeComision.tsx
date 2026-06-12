@@ -76,7 +76,7 @@ const getTableBadgeClass = (type: 'rol' | 'b1' | 'b2' | 'lv', value?: string): s
         case 'lv':
             return `${tableBase} bg-caracteristica-lv text-caracteristica-lv-foreground`
         default:
-            return `${tableBase} bg-slate-500 text-white`
+            return `${tableBase} bg-role-default text-role-default-foreground`
     }
 }
 
@@ -306,7 +306,7 @@ export default function DiasDeComision() {
                         {/* Calendar Popover - solo para OMP, UNADEST, UNAEMB */}
                         {['OMP como UNAEMB o UNADEST', 'UNADEST nacionales o extranjero', 'UNAEMB nacionales o extranjero'].includes(viewMode) && (
                             <div className="flex items-center justify-center gap-2 mb-4">
-                                <span className="text-sm text-neutral-600 dark:text-neutral-200">
+                                <span className="text-sm text-muted-foreground">
                                     Últimos 365 días hasta:
                                 </span>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -363,7 +363,7 @@ export default function DiasDeComision() {
                                     </tr>
                                 ) : error ? (
                                     <tr>
-                                        <td colSpan={2} className="p-8 text-center text-red-500">
+                                        <td colSpan={2} className="p-8 text-center text-danger">
                                             {error}
                                         </td>
                                     </tr>

@@ -44,22 +44,23 @@ export type DialogMode = 'create' | 'view' | 'edit' | 'view-comision';
 
 // ==================== CATÁLOGO DE MOTIVOS ====================
 
+// Los valores viven en app/theme.css (tokens --absence-*).
 export const absenceReasonColors: Record<string, AbsenceReason> = {
-    'Permiso': { label: 'Permiso', color: 'oklch(0.568 0.111 146.545)' },
-    'Asuntos propios': { label: 'Asuntos propios', color: 'oklch(0.566 0.057 163.845)' },
-    'Dia adicional': { label: 'Dia adicional', color: 'oklch(0.743 0.084 164.484)' },
-    'Baja médica': { label: 'Baja médica', color: 'oklch(0.623 0.127 18.979)' },
-    'Guardia': { label: 'Guardia', color: 'oklch(0.785 0.139 96.303)' },
-    'Saliente': { label: 'Saliente', color: 'oklch(0.87 0.116 105.302)' },
-    'Curso': { label: 'Curso', color: 'oklch(0.709 0.107 65.486)' },
-    'Reconocimiento médico': { label: 'Reconocimiento médico', color: 'oklch(0.91 0 89.876)' },
-    'Dunker': { label: 'Dunker', color: 'oklch(0.727 0.092 213.697)' },
+    'Permiso': { label: 'Permiso', color: 'var(--absence-permiso)' },
+    'Asuntos propios': { label: 'Asuntos propios', color: 'var(--absence-asuntos-propios)' },
+    'Dia adicional': { label: 'Dia adicional', color: 'var(--absence-dia-adicional)' },
+    'Baja médica': { label: 'Baja médica', color: 'var(--absence-baja-medica)' },
+    'Guardia': { label: 'Guardia', color: 'var(--absence-guardia)' },
+    'Saliente': { label: 'Saliente', color: 'var(--absence-saliente)' },
+    'Curso': { label: 'Curso', color: 'var(--absence-curso)' },
+    'Reconocimiento médico': { label: 'Reconocimiento médico', color: 'var(--absence-reconocimiento)' },
+    'Dunker': { label: 'Dunker', color: 'var(--absence-dunker)' },
     'Vuelo día': { label: 'Vuelo día', color: '' },
     'Vuelo noche': { label: 'Vuelo noche', color: '' },
-    'Otro': { label: 'Otro', color: 'oklch(0.55 0.02 265)' },
+    'Otro': { label: 'Otro', color: 'var(--absence-otro)' },
 };
 
-const defaultReasonColor: AbsenceReason = { label: 'Otro', color: '#6B7280' };
+const defaultReasonColor: AbsenceReason = { label: 'Otro', color: 'var(--absence-default)' };
 
 // Motivos restringidos por nivel de permiso (espejo del gating del backend).
 export const ADMIN_ONLY_REASONS = ['Permiso', 'Asuntos propios', 'Dia adicional', 'Baja médica', 'Curso', 'Reconocimiento médico', 'Dunker'];

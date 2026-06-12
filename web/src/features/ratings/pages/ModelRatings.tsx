@@ -275,10 +275,10 @@ function ModelRatingTooltip({
                 <div className="space-y-2">
                     <div className="flex items-start gap-2">
                         <div className="flex-1">
-                            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                            <span className="text-xs font-medium text-muted-foreground">
                                 Fecha de obtención:
                             </span>
-                            <span className="text-xs ml-2 text-gray-700 dark:text-gray-300">
+                            <span className="text-xs ml-2 text-foreground">
                                 {new Date(dateQualified).toLocaleDateString('es-ES')}
                             </span>
                         </div>
@@ -287,14 +287,14 @@ function ModelRatingTooltip({
             )}
 
             {isDisabled && blockingReason && (
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-3 border-t border-border">
                     <div className="flex items-start gap-2">
-                        <Lock className="w-4 h-4 text-orange-500 mt-0.5" />
+                        <Lock className="w-4 h-4 text-warning mt-0.5" />
                         <div className="flex-1">
-                            <span className="text-xs font-semibold text-orange-600 dark:text-orange-400 block mb-1">
+                            <span className="text-xs font-semibold text-warning block mb-1">
                                 Requisito no cumplido
                             </span>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                                 {blockingReason}
                             </span>
                         </div>
@@ -303,11 +303,11 @@ function ModelRatingTooltip({
             )}
 
             {isCertified && (
-                <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="pt-3 border-t border-border">
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                            <Info className="w-3 h-3 text-blue-500" />
-                            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                            <Info className="w-3 h-3 text-info" />
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                                 {isPilot ? 'Requisitos Pilotos' : 'Requisitos Dotaciones'}
                             </span>
                         </div>
@@ -320,7 +320,7 @@ function ModelRatingTooltip({
                             'DI: Requiere ser CDV',
                             'DP: Requiere ser CDV'
                         ]).map((req, idx) => (
-                            <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 pl-5 border-l-2 border-gray-300 dark:border-gray-600">
+                            <div key={idx} className="text-xs text-muted-foreground pl-5 border-l-2 border-border">
                                 {req}
                             </div>
                         ))}

@@ -1,4 +1,4 @@
-.PHONY: run build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild test fmt vet dist clean
+.PHONY: run build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild test fmt vet dist clean theme-guard
 
 BIN := ./bin/aether-web
 BOOTSTRAP_BIN := ./bin/aether-bootstrap
@@ -103,6 +103,11 @@ lint:
 # Instalar con: go install github.com/gzuidhof/tygo@latest
 types:
 	tygo generate
+
+# Falla si hay colores hardcodeados en el frontend fuera de web/src/app/theme.css
+# (mismo check que el job theme-guard del CI; excepciones en el propio script).
+theme-guard:
+	./scripts/theme-guard.sh
 
 # ---------- Producción (Linux/amd64) ----------
 

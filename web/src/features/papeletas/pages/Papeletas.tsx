@@ -233,11 +233,11 @@ const Papeletas = () => {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Todos los planes">
-                                    <span className="text-gray-700 dark:text-gray-300">Todos los planes</span>
+                                    <span className="text-foreground">Todos los planes</span>
                                 </SelectItem>
                                 {planOptions.map((plan) => (
                                     <SelectItem key={plan} value={plan}>
-                                        <span className="text-gray-700 dark:text-gray-300">{plan}</span>
+                                        <span className="text-foreground">{plan}</span>
                                     </SelectItem>
                                 ))}
                             </SelectContent>

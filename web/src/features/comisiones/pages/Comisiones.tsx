@@ -268,8 +268,8 @@ const Comisiones = () => {
                                             <td className="text-center p-4">
                                                 <span className={`px-2 py-1 rounded-full text-xs ${
                                                     comision.esfuerzo
-                                                        ? 'bg-green-500/20 text-green-600 dark:text-green-300'
-                                                        : 'bg-gray-500/20 text-gray-600 dark:text-gray-300'
+                                                        ? 'bg-success-muted text-success-muted-foreground'
+                                                        : 'bg-muted text-muted-foreground'
                                                 }`}>
                                                     {comision.esfuerzo ? 'Sí' : 'No'}
                                                 </span>
@@ -295,7 +295,7 @@ const Comisiones = () => {
                                                                             e.stopPropagation();
                                                                             handleEditComision(comision);
                                                                         }}
-                                                                        className="ml-auto pb-2 px-4 text-blue-300 hover:text-blue-200 transition-all text-xs"
+                                                                        className="ml-auto pb-2 px-4 text-info hover:text-info/80 transition-all text-xs"
                                                                     >
                                                                         <Pencil className="pb-1 w-4 h-4 inline mr-1" />
                                                                         Editar
@@ -306,34 +306,33 @@ const Comisiones = () => {
                                                                         <AlertDialogTrigger asChild>
                                                                             <button
                                                                                 onClick={() => openDeleteDialog(comision.comision_sk)}
-                                                                                className="pb-2 px-4 text-red-300 hover:text-red-200 transition-all text-xs"
+                                                                                className="pb-2 px-4 text-danger hover:text-danger/80 transition-all text-xs"
                                                                             >
                                                                                 <Trash2 className="pb-1 w-4 h-4 inline mr-1" />
                                                                                 Eliminar
                                                                             </button>
                                                                         </AlertDialogTrigger>
-                                                                        <AlertDialogContent className="bg-[#1a1a1a] border border-white/20 text-white">
+                                                                        <AlertDialogContent>
                                                                             <AlertDialogHeader>
-                                                                                <AlertDialogTitle className="text-xl font-semibold text-white">
+                                                                                <AlertDialogTitle className="text-xl font-semibold">
                                                                                     ¿Estás absolutamente seguro?
                                                                                 </AlertDialogTitle>
-                                                                                <AlertDialogDescription className="text-gray-300">
+                                                                                <AlertDialogDescription>
                                                                                     Esta acción no se puede deshacer. Eliminará permanentemente la comisión{' '}
-                                                                                    <span className="font-semibold text-white">ID: {comisionToDelete}</span>.
+                                                                                    <span className="font-semibold text-foreground">ID: {comisionToDelete}</span>.
                                                                                     <br /><br />
-                                                                                    Escribe: <strong className="text-red-400">eliminarcomision{comisionToDelete}</strong>
+                                                                                    Escribe: <strong className="text-danger">eliminarcomision{comisionToDelete}</strong>
                                                                                 </AlertDialogDescription>
                                                                             </AlertDialogHeader>
                                                                             <Input
                                                                                 placeholder="Escribe aquí..."
                                                                                 value={confirmationText}
                                                                                 onChange={(e) => setConfirmationText(e.target.value)}
-                                                                                className="mt-4 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                                                                                className="mt-4"
                                                                                 disabled={isDeleting}
                                                                             />
                                                                             <AlertDialogFooter>
                                                                                 <AlertDialogCancel
-                                                                                    className="bg-white/10 text-white border-white/20 hover:bg-white/20"
                                                                                     disabled={isDeleting}
                                                                                 >
                                                                                     Cancelar
@@ -341,7 +340,7 @@ const Comisiones = () => {
                                                                                 <AlertDialogAction
                                                                                     onClick={handleDeleteConfirm}
                                                                                     disabled={confirmationText !== `eliminarcomision${comisionToDelete}` || isDeleting}
-                                                                                    className="bg-red-500 hover:bg-red-600 text-white"
+                                                                                    className="bg-danger hover:bg-danger/90 text-danger-foreground"
                                                                                 >
                                                                                     {isDeleting ? (
                                                                                         <span className="flex items-center gap-2">
@@ -396,7 +395,7 @@ const Comisiones = () => {
                                                                                                     );
                                                                                                 }}
                                                                                                 disabled={deletingPersonId === persona.person_comision_sk}
-                                                                                                className="p-1 rounded text-red-400/60 hover:text-red-400 hover:bg-red-500/20 transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                                                                                                className="p-1 rounded text-danger/60 hover:text-danger hover:bg-danger-muted transition-all opacity-0 group-hover:opacity-100 disabled:opacity-50"
                                                                                                 title={`Eliminar a ${persona.nombre} de la comisión`}
                                                                                             >
                                                                                                 {deletingPersonId === persona.person_comision_sk ? (
@@ -489,7 +488,7 @@ const Comisiones = () => {
 
             {/* Dialog para editar comisión */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] bg-[#1a1a1a] border border-white/20 text-white p-0">
+                <DialogContent className="sm:max-w-[500px] p-0">
                     <DialogHeader className="p-6 pb-0">
                         <DialogTitle className="text-xl font-semibold">
                             Editar Comisión #{comisionToEdit?.comision_sk}

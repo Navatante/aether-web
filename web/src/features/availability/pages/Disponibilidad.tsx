@@ -195,9 +195,9 @@ export default function Disponibilidad(): React.ReactElement {
                             <div className="flex items-center gap-2">
                                 <div
                                     className="w-3 h-3 rounded"
-                                    style={{ backgroundColor: 'rgba(79,164,200,0.76)' }}
+                                    style={{ backgroundColor: 'var(--comision)' }}
                                 />
-                                <span className="text-sm text-slate-600 dark:text-slate-300">Comisión</span>
+                                <span className="text-sm text-muted-foreground">Comisión</span>
                             </div>
                             {uniqueAbsenceReasons.map((reason) => {
                                 const reasonData = getReasonColor(reason);
@@ -216,7 +216,7 @@ export default function Disponibilidad(): React.ReactElement {
                                                 style={{ backgroundColor: reasonData.color }}
                                             />
                                         )}
-                                        <span className="text-sm text-slate-600 dark:text-slate-300">{reasonData.label}</span>
+                                        <span className="text-sm text-muted-foreground">{reasonData.label}</span>
                                     </div>
                                 );
                             })}
@@ -226,11 +226,11 @@ export default function Disponibilidad(): React.ReactElement {
 
                 {/* Error Message */}
                 {error && (
-                    <div className="flex-shrink-0 mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <p className="text-red-600 dark:text-red-400">Error: {error}</p>
+                    <div className="flex-shrink-0 mb-4 p-4 bg-danger-muted border border-danger/30 rounded-lg">
+                        <p className="text-danger">Error: {error}</p>
                         <button
                             onClick={handleRefresh}
-                            className="mt-2 text-sm text-red-600 dark:text-red-400 underline hover:no-underline"
+                            className="mt-2 text-sm text-danger underline hover:no-underline"
                         >
                             Reintentar
                         </button>
@@ -240,8 +240,8 @@ export default function Disponibilidad(): React.ReactElement {
                 {/* Loading State */}
                 {isLoading && (
                     <div className="flex-1 flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                        <span className="ml-3 text-slate-600 dark:text-slate-300">Cargando disponibilidad...</span>
+                        <Loader2 className="w-8 h-8 animate-spin text-info" />
+                        <span className="ml-3 text-muted-foreground">Cargando disponibilidad...</span>
                     </div>
                 )}
 
@@ -267,18 +267,18 @@ export default function Disponibilidad(): React.ReactElement {
                                                     closeDelay={150}
                                                     render={<div className="p-2 cursor-help" />}
                                                 >
-                                                    <span className={`block text-[10px] uppercase tracking-wide ${holiday ? 'text-red-500 dark:text-red-400 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                    <span className={`block text-[10px] uppercase tracking-wide ${holiday ? 'text-danger font-semibold' : 'text-muted-foreground'}`}>
                                                         {dayNames[day.dayOfWeek]}
                                                     </span>
-                                                    <span className={`block text-sm font-medium mt-0.5 ${holiday ? 'text-red-600 dark:text-red-400' : ''}`}>
+                                                    <span className={`block text-sm font-medium mt-0.5 ${holiday ? 'text-danger' : ''}`}>
                                                         {day.day}
                                                     </span>
                                                 </HoverCardTrigger>
                                                 <HoverCardContent side="bottom" className="w-auto p-4 max-h-[400px] overflow-auto">
                                                     {/* Mostrar nombre del festivo si aplica */}
                                                     {isHoliday(day.dateStr) && (
-                                                        <div className="mb-2 pb-2 border-b border-red-200 dark:border-red-800">
-                                                            <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                                        <div className="mb-2 pb-2 border-b border-danger/30">
+                                                            <span className="text-sm font-semibold text-danger">
                                                                 🎉 {getHolidayName(day.dateStr)}
                                                             </span>
                                                         </div>
@@ -339,13 +339,13 @@ export default function Disponibilidad(): React.ReactElement {
                                             } else if (comision) {
                                                 isStart = comision.comision_start_date.startsWith(day.dateStr);
                                                 isEnd = comision.comision_end_date.startsWith(day.dateStr);
-                                                color = 'rgba(79,164,200,0.76)';
+                                                color = 'var(--comision)';
                                             }
 
                                             return (
                                                 <td
                                                     key={day.day}
-                                                    className={`p-1 text-center border-b border-gray-100/70 dark:border-neutral-800/95 cursor-pointer transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/50 ${getDayCellClass(day)}`}
+                                                    className={`p-1 text-center border-b border-border cursor-pointer transition-colors hover:bg-table-row-hover ${getDayCellClass(day)}`}
                                                     onClick={() => handleCellClick(person, day)}
                                                 >
                                                     {event && (
