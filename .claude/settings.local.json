@@ -12,7 +12,17 @@
       "Bash(cd *)",
       "Bash(export DATABASE_URL=\"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\")",
       "Bash(make migrate-up *)",
-      "Bash(.venv/bin/python database-utils/migrationSQLiteToPostgres.py --help)"
+      "Bash(.venv/bin/python database-utils/migrationSQLiteToPostgres.py --help)",
+      "Bash(ln -sf ~/aether-data/Aether.db                                         database-utils/Aether.db)",
+      "Bash(ln -sf ~/aether-data/person_users.json                                 database-utils/person_users.json)",
+      "Bash(ln -sf ~/aether-data/migrations/0002_seed_lookups.up.sql               migrations/0002_seed_lookups.up.sql)",
+      "Bash(ln -sf ~/aether-data/migrations/0002_seed_lookups.down.sql             migrations/0002_seed_lookups.down.sql)",
+      "Bash(ln -sf ~/aether-data/migrations/0005_seed_productive_data.up.sql       migrations/0005_seed_productive_data.up.sql)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git --version)",
+      "Bash(git -C /home/jonl/.config/JetBrains/GoLand2026.1/projects/GoLandWorkspace/aether-web status)"
     ]
   }
 }
