@@ -1,0 +1,389 @@
+// Estado, datos y handlers de la página Disponibilidad. La página queda
+// solo con el render; aquí vive el calendario, filtros, festivos y diálogos.
+
+import { useEffect, useState } from 'react';
+import { useLogger } from '@/lib/logger';
+import { PermissionLevel, useHasPermission, useEscuadrilla } from '@/providers';
+import { http } from '@/lib/http';
+import { useApiQuery } from '@/lib/apiQuery';
+import { queryKeys } from '@/lib/queryKeys';
+import type { Absence, DialogMode, Person, PersonComision } from '../absences';
+import type { Festivo } from '../components/dialogs/FestivosDialog';
+
+export interface AvailabilityData {
+    persons: Person[];
+    absenses: Absence[];
+    person_comisions: PersonComision[];
+}
+
+export interface Day {
+    day: number;
+    dayOfWeek: number;
+    isWeekend: boolean;
+    dateStr: string;
+}
+
+export const monthNames: string[] = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+export const dayNames: string[] = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+
+export const displayRoles = ['Piloto', 'Dotación', 'Nadador', 'No tripulante'];
+
+export function useDisponibilidad() {
+    const log = useLogger('Disponibilidad');
+    const currentDate = new Date();
+    const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
+    const hasAdministrativePermission = useHasPermission(PermissionLevel.ADMINISTRATIVO);
+    const hasCommonPermission = useHasPermission(PermissionLevel.COMUN);
+    const { id: escId } = useEscuadrilla();
+
+    // Availability data via TanStack Query
+    const availabilityParams = {
+        month: String(selectedMonth + 1),
+        year: String(selectedYear),
+    };
+
+    const {
+        data: availabilityData,
+        isLoading,
+        error: availabilityError,
+        refetch: refetchAvailability,
+    } = useApiQuery<AvailabilityData>(
+        'GET',
+        '/availability',
+        { query: availabilityParams },
+        queryKeys.availability.calendar(escId ?? 0, availabilityParams),
+    );
+
+    const data: AvailabilityData = {
+        persons: availabilityData?.persons ?? [],
+        absenses: availabilityData?.absenses ?? [],
+        person_comisions: availabilityData?.person_comisions ?? [],
+    };
+    const error = availabilityError?.message ?? null;
+
+    // Estado para festivos (uses invoke without RLS)
+    const [festivos, setFestivos] = useState<Festivo[]>([]);
+
+    // Estados de UI para filtros
+    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [roleFilter, setRoleFilter] = useState<string>('Todos los roles');
+    const [escalaFilter, setEscalaFilter] = useState<string>('Todas las escalas');
+
+    // Estados para el dialog
+    const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+    const [dialogMode, setDialogMode] = useState<DialogMode>('create');
+    const [selectedAbsence, setSelectedAbsence] = useState<Absence | null>(null);
+    const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+    const [selectedComision, setSelectedComision] = useState<PersonComision | null>(null);
+    const [initialDialogData, setInitialDialogData] = useState<{
+        personId?: number | '';
+        startDate?: string;
+        endDate?: string;
+        reason?: string;
+        remark?: string;
+    } | undefined>(undefined);
+
+    // Estado para el dialog de Festivos
+    const [isFestivosDialogOpen, setIsFestivosDialogOpen] = useState<boolean>(false);
+
+
+    // Función para cargar festivos
+    const fetchFestivos = async () => {
+        try {
+            const result = await http<Festivo[]>('GET', '/festivos');
+            setFestivos(result || []);
+        } catch (err) {
+            log.error(`Error fetching festivos: ${err}`);
+        }
+    };
+
+    // Cargar festivos al montar
+    useEffect(() => {
+        fetchFestivos();
+    }, []);
+
+    // Escuchar evento de refresh desde TopbarMenus
+    useEffect(() => {
+        const handleRefresh = () => refetchAvailability();
+        window.addEventListener('refresh-availability', handleRefresh);
+        return () => window.removeEventListener('refresh-availability', handleRefresh);
+    }, [refetchAvailability]);
+
+    // Crear un Set de fechas festivas para búsqueda rápida O(1)
+    const festivosSet = (() => {
+        const set = new Set<string>();
+        festivos.forEach(f => {
+            const fecha = f.festivo_dia.split('T')[0];
+            set.add(fecha);
+        });
+        return set;
+    })();
+
+    // Función para verificar si un día es festivo
+    const isHoliday = (dateStr: string): boolean => {
+        return festivosSet.has(dateStr);
+    };
+
+    // Función para obtener el motivo del festivo
+    const getHolidayName = (dateStr: string): string | undefined => {
+        const festivo = festivos.find(f => f.festivo_dia.split('T')[0] === dateStr);
+        return festivo?.festivo_motivo;
+    };
+
+    // Obtener escalas unicas de los datos
+    const uniqueEscala = Array.from(new Set(data.persons.map(p => p.escala))).filter(Boolean);
+
+    // Obtener razones de ausencia únicas de los datos
+    const uniqueAbsenceReasons = (() => {
+        const reasons = new Set(data.absenses.map(a => a.absence_reason));
+        return Array.from(reasons).filter(Boolean);
+    })();
+
+    const daysInMonth: number = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+    const days: Day[] = Array.from({ length: daysInMonth }, (_, i): Day => {
+        const date = new Date(selectedYear, selectedMonth, i + 1);
+        return {
+            day: i + 1,
+            dayOfWeek: date.getDay(),
+            isWeekend: date.getDay() === 0 || date.getDay() === 6,
+            dateStr: `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+        };
+    });
+
+    // Filtrar personas basado en búsqueda y rol
+    const filteredPersons = (() => {
+        const normalize = (str: string) =>
+            str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+        const searchLower = searchTerm ? normalize(searchTerm) : '';
+
+        return data.persons.filter(person => {
+            const normalizedName = normalize(person.full_name);
+            const matchesSearch = !searchTerm || normalizedName.includes(searchLower);
+
+            let matchesRole = false;
+            if (roleFilter === 'Todos los roles') {
+                matchesRole = true;
+            } else if (roleFilter === 'Dotación') {
+                matchesRole = person.person_rol === 'Dotación' || person.person_rol === 'Dotación/Nadador';
+            } else if (roleFilter === 'Nadador') {
+                matchesRole = person.person_rol === 'Nadador' || person.person_rol === 'Dotación/Nadador';
+            } else {
+                matchesRole = person.person_rol === roleFilter;
+            }
+
+            const matchesEscala = escalaFilter === 'Todas las escalas' || person.escala === escalaFilter;
+            return matchesSearch && matchesRole && matchesEscala;
+        });
+    })();
+
+    // Obtener ausencia para un día específico
+    const getAbsenceForDay = (personId: number, dateStr: string): Absence | undefined => {
+        return data.absenses.find((absence: Absence) => {
+            if (absence.absence_person_fk !== personId) return false;
+            const start = new Date(absence.absence_start_date);
+            const end = new Date(absence.absence_end_date);
+            const current = new Date(dateStr);
+            return current >= start && current <= end;
+        });
+    };
+
+    // Obtener comisión para un día específico
+    const getComisionForDay = (personId: number, dateStr: string): PersonComision | undefined => {
+        return data.person_comisions.find((comision: PersonComision) => {
+            if (comision.person_fk !== personId) return false;
+            const start = new Date(comision.comision_start_date);
+            const end = new Date(comision.comision_end_date);
+            const current = new Date(dateStr);
+            return current >= start && current <= end;
+        });
+    };
+
+    // Obtener personas ausentes para un día específico (para el tooltip)
+    const getAbsentPersonsForDay = (dateStr: string) => {
+        return filteredPersons
+            .map(person => {
+                const absence = getAbsenceForDay(person.person_sk, dateStr);
+                const comision = getComisionForDay(person.person_sk, dateStr);
+                if (absence || comision) {
+                    return { person, absence, comision };
+                }
+                return null;
+            })
+            .filter((item): item is { person: Person; absence: Absence | undefined; comision: PersonComision | undefined } => item !== null);
+    };
+
+    // === FUNCIONES PARA ABRIR EL DIALOG ===
+
+    const openCreateDialog = (initialData?: {
+        personId?: number | '';
+        startDate?: string;
+        endDate?: string;
+        reason?: string;
+        remark?: string;
+    }) => {
+        setDialogMode('create');
+        setSelectedAbsence(null);
+        setSelectedPerson(null);
+        setSelectedComision(null);
+        setInitialDialogData(initialData);
+        setIsDialogOpen(true);
+    };
+
+    const openViewAbsenceDialog = (person: Person, absence: Absence) => {
+        setDialogMode('view');
+        setSelectedPerson(person);
+        setSelectedAbsence(absence);
+        setSelectedComision(null);
+        setInitialDialogData(undefined);
+        setIsDialogOpen(true);
+    };
+
+    const openViewComisionDialog = (person: Person, comision: PersonComision) => {
+        setDialogMode('view-comision');
+        setSelectedPerson(person);
+        setSelectedComision(comision);
+        setSelectedAbsence(null);
+        setInitialDialogData(undefined);
+        setIsDialogOpen(true);
+    };
+
+    // === HANDLER PARA EL GRID ===
+
+    const handleCellClick = (person: Person, day: Day): void => {
+        const absence = getAbsenceForDay(person.person_sk, day.dateStr);
+        const comision = getComisionForDay(person.person_sk, day.dateStr);
+
+        if (absence) {
+            {!hasCommonPermission && (
+                openViewAbsenceDialog(person, absence)
+            )}
+        } else if (comision) {
+            {hasAdministrativePermission && (
+                openViewComisionDialog(person, comision)
+            )}
+        } else {
+            {!hasCommonPermission && (
+                openCreateDialog({
+                    personId: person.person_sk,
+                    startDate: day.dateStr,
+                    endDate: day.dateStr,
+                    reason: 'Permiso'
+                })
+            )}
+        }
+    };
+
+    const handleDialogSuccess = () => {
+        refetchAvailability();
+    };
+
+    const handleFestivosDialogClose = (open: boolean) => {
+        setIsFestivosDialogOpen(open);
+        if (!open) {
+            fetchFestivos();
+        }
+    };
+
+    // === OTRAS FUNCIONES ===
+
+    const getAvailabilityForDay = (dateStr: string): number => {
+        const absentCount = filteredPersons.filter((person: Person) => {
+            const hasAbsence = getAbsenceForDay(person.person_sk, dateStr) !== undefined;
+            const hasComision = getComisionForDay(person.person_sk, dateStr) !== undefined;
+            return hasAbsence || hasComision;
+        }).length;
+        return filteredPersons.length - absentCount;
+    };
+
+    const handleRefresh = () => {
+        refetchAvailability();
+        fetchFestivos();
+    };
+
+    // Función helper para obtener las clases de estilo de un día (header)
+    const getDayHeaderClass = (day: Day): string => {
+        const holiday = isHoliday(day.dateStr);
+        if (holiday) {
+            return 'bg-red-100/70 dark:bg-red-900/30';
+        }
+        if (day.isWeekend) {
+            return 'bg-gray-200/50 dark:bg-black';
+        }
+        return 'bg-gray-100/70 dark:bg-neutral-800/95';
+    };
+
+    // Función helper para obtener las clases de estilo de un día (celda)
+    const getDayCellClass = (day: Day): string => {
+        const holiday = isHoliday(day.dateStr);
+        if (holiday) {
+            return 'bg-red-50/50 dark:bg-red-900/20';
+        }
+        if (day.isWeekend) {
+            return 'bg-slate-100/50 dark:bg-black';
+        }
+        return '';
+    };
+
+
+    return {
+        // datos
+        data,
+        isLoading,
+        error,
+        days,
+        filteredPersons,
+        uniqueEscala,
+        uniqueAbsenceReasons,
+
+        // calendario / festivos
+        selectedYear,
+        setSelectedYear,
+        selectedMonth,
+        setSelectedMonth,
+        isHoliday,
+        getHolidayName,
+        getDayHeaderClass,
+        getDayCellClass,
+
+        // filtros
+        searchTerm,
+        setSearchTerm,
+        roleFilter,
+        setRoleFilter,
+        escalaFilter,
+        setEscalaFilter,
+
+        // consultas por celda
+        getAbsenceForDay,
+        getComisionForDay,
+        getAbsentPersonsForDay,
+        getAvailabilityForDay,
+
+        // diálogos
+        isDialogOpen,
+        setIsDialogOpen,
+        dialogMode,
+        selectedAbsence,
+        selectedPerson,
+        selectedComision,
+        initialDialogData,
+        isFestivosDialogOpen,
+        setIsFestivosDialogOpen,
+        handleFestivosDialogClose,
+        handleDialogSuccess,
+
+        // acciones
+        handleCellClick,
+        handleRefresh,
+
+        // permisos
+        hasAdministrativePermission,
+    };
+}

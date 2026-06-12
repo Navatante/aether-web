@@ -69,7 +69,11 @@
       "Bash(git commit -q -m ' *)",
       "Bash(npx eslint *)",
       "Bash(sed -n 1,298p web/src/features/ratings/utils/processing.ts)",
-      "Bash(mv /tmp/proc.ts web/src/features/ratings/utils/processing.ts)"
+      "Bash(mv /tmp/proc.ts web/src/features/ratings/utils/processing.ts)",
+      "Bash(sed -n 330,400p web/src/features/availability/pages/Disponibilidad.tsx)",
+      "Bash(awk 'NR>=400 && NR<=697' web/src/features/availability/pages/Disponibilidad.tsx)",
+      "Bash(sed -i 's/import {\\\\n    useDisponibilidad,/X/' src/features/availability/pages/Disponibilidad.tsx)",
+      "Bash(sed -i 's/    useDisponibilidad,/    useDisponibilidad,\\\\n    type Day,/' src/features/availability/pages/Disponibilidad.tsx)"
     ]
   }
 }
