@@ -81,7 +81,9 @@
       "Bash(git mv *)",
       "Bash(sed -n 5,12p README.md)",
       "Bash(sed -n 24,28p README.md)",
-      "Bash(sed -n 188,196p docs/mejoras-propuestas-por-fabel5.md)"
+      "Bash(sed -n 188,196p docs/mejoras-propuestas-por-fabel5.md)",
+      "Bash(gofmt -l internal/config/ cmd/server/)",
+      "Bash(git -C /home/jonl/.config/JetBrains/GoLand2026.1/projects/GoLandWorkspace/aether-web status --short)"
     ]
   }
 }
