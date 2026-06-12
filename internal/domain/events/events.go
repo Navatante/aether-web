@@ -135,16 +135,17 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
+	operacional := auth.RequirePermission(auth.PermOperacional)
 	g.GET("/events", h.List, mw)
-	g.POST("/events", h.Create, mw)
-	g.PUT("/events/:id", h.Update, mw)
-	g.DELETE("/events/:id", h.Delete, mw)
+	g.POST("/events", h.Create, mw, operacional)
+	g.PUT("/events/:id", h.Update, mw, operacional)
+	g.DELETE("/events/:id", h.Delete, mw, operacional)
 }
 
 func (h *Handlers) List(c echo.Context) error {
 	res, err := h.svc.List(c.Request().Context())
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }
@@ -161,7 +162,7 @@ func (h *Handlers) Create(c echo.Context) error {
 	case errors.Is(err, ErrDuplicate):
 		return echo.NewHTTPError(http.StatusConflict, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]int32{"id": id})
 }
@@ -184,7 +185,7 @@ func (h *Handlers) Update(c echo.Context) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -201,7 +202,7 @@ func (h *Handlers) Delete(c echo.Context) error {
 	case errors.Is(err, ErrInUse):
 		return echo.NewHTTPError(http.StatusConflict, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

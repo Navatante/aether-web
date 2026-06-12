@@ -875,9 +875,10 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
+	operacional := auth.RequirePermission(auth.PermOperacional)
 	g.GET("/flights", h.List, mw)
-	g.POST("/flights", h.Insert, mw)
-	g.DELETE("/flights/:id", h.Delete, mw)
+	g.POST("/flights", h.Insert, mw, operacional)
+	g.DELETE("/flights/:id", h.Delete, mw, operacional)
 }
 
 func (h *Handlers) Insert(c echo.Context) error {
@@ -894,7 +895,7 @@ func (h *Handlers) Insert(c echo.Context) error {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusCreated, res)
 }
@@ -913,7 +914,7 @@ func (h *Handlers) Delete(c echo.Context) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -941,7 +942,7 @@ func (h *Handlers) List(c echo.Context) error {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }

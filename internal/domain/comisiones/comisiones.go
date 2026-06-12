@@ -645,24 +645,25 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
+	administrativo := auth.RequirePermission(auth.PermAdministrativo)
 
 	// Comisión
 	g.GET("/comisiones", h.List, mw)
 	g.GET("/comisiones/with-people", h.ListWithPeople, mw)
 	g.GET("/comisiones/dias", h.DiasComision, mw)
-	g.POST("/comisiones", h.Create, mw)
-	g.PUT("/comisiones/:id", h.Update, mw)
-	g.DELETE("/comisiones/:id", h.Delete, mw)
+	g.POST("/comisiones", h.Create, mw, administrativo)
+	g.PUT("/comisiones/:id", h.Update, mw, administrativo)
+	g.DELETE("/comisiones/:id", h.Delete, mw, administrativo)
 
 	// person→comisión
-	g.POST("/comisiones/:id/people", h.AssignPeople, mw)
-	g.DELETE("/comisiones/:id/people/:personId", h.RemovePerson, mw)
-	g.DELETE("/person-comisiones/:id", h.DeletePersonComisionBySk, mw)
+	g.POST("/comisiones/:id/people", h.AssignPeople, mw, administrativo)
+	g.DELETE("/comisiones/:id/people/:personId", h.RemovePerson, mw, administrativo)
+	g.DELETE("/person-comisiones/:id", h.DeletePersonComisionBySk, mw, administrativo)
 
 	// comision_lugar (catálogo global)
-	g.POST("/comision-lugares", h.CreateLugar, mw)
-	g.PUT("/comision-lugares/:id", h.UpdateLugar, mw)
-	g.DELETE("/comision-lugares/:id", h.DeleteLugar, mw)
+	g.POST("/comision-lugares", h.CreateLugar, mw, administrativo)
+	g.PUT("/comision-lugares/:id", h.UpdateLugar, mw, administrativo)
+	g.DELETE("/comision-lugares/:id", h.DeleteLugar, mw, administrativo)
 }
 
 // ----- Helpers de handler -----
@@ -708,7 +709,7 @@ func (h *Handlers) List(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }
@@ -723,7 +724,7 @@ func (h *Handlers) ListWithPeople(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }
@@ -738,7 +739,7 @@ func (h *Handlers) DiasComision(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, map[string]any{"items": items})
 }
@@ -838,7 +839,7 @@ func (h *Handlers) AssignPeople(c echo.Context) error {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusCreated, res)
 }
@@ -929,7 +930,7 @@ func respondMutation(c echo.Context, successCode int, payload any, err error) er
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(successCode, payload)
 }
@@ -947,7 +948,7 @@ func respondNoContent(c echo.Context, err error) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

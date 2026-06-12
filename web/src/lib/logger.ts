@@ -16,8 +16,6 @@ interface LogPayload {
 async function sendLog(level: LogLevel, message: string, context?: string): Promise<void> {
     const payload: LogPayload = { level, message, context };
     try {
-        // Endpoint pendiente en backend (sub-lote posterior). Si falla con 404
-        // caemos al console sin ruido.
         await http<void>("POST", "/logs", { body: payload });
     } catch (error) {
         const prefix = context ? `[${context}]` : "";

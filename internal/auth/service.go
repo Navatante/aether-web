@@ -26,6 +26,7 @@ type User struct {
 	Name            string
 	LastName1       string
 	LastName2       string
+	Nk              *string // indicativo (person_nk), nullable
 	EscuadrillaID   int
 	EscuadrillaCode string
 	EscuadrillaName string
@@ -46,7 +47,7 @@ func NewService(pool *pgxpool.Pool, sessionTTL time.Duration) *Service {
 func (s *Service) Login(ctx context.Context, username, password, ipAddress string) (string, *User, error) {
 	const q = `
 		SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
-		       p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
+		       p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
 		       p.person_permission_level, p.person_password_hash
 		FROM detall.person p
 		JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
@@ -57,7 +58,7 @@ func (s *Service) Login(ctx context.Context, username, password, ipAddress strin
 	)
 	err := s.pool.QueryRow(ctx, q, username).Scan(
 		&u.ID, &u.Username, &u.Name, &u.LastName1, &u.LastName2,
-		&u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
+		&u.Nk, &u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
 		&u.PermissionLevel, &hash,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -124,7 +125,7 @@ func (s *Service) Validate(ctx context.Context, token string) (*User, error) {
 
 	const qUser = `
 		SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
-		       p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
+		       p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
 		       p.person_permission_level
 		FROM detall.person p
 		JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
@@ -132,7 +133,7 @@ func (s *Service) Validate(ctx context.Context, token string) (*User, error) {
 	var u User
 	if err := s.pool.QueryRow(ctx, qUser, personID).Scan(
 		&u.ID, &u.Username, &u.Name, &u.LastName1, &u.LastName2,
-		&u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
+		&u.Nk, &u.EscuadrillaID, &u.EscuadrillaCode, &u.EscuadrillaName,
 		&u.PermissionLevel,
 	); err != nil {
 		return nil, fmt.Errorf("load person: %w", err)

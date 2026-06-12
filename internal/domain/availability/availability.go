@@ -267,10 +267,11 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
+	gestor := auth.RequirePermission(auth.PermOperacional, auth.PermAdministrativo)
 	g.GET("/availability", h.Get, mw)
-	g.POST("/absences", h.CreateAbsence, mw)
-	g.PUT("/absences/:id", h.UpdateAbsence, mw)
-	g.DELETE("/absences/:id", h.DeleteAbsence, mw)
+	g.POST("/absences", h.CreateAbsence, mw, gestor)
+	g.PUT("/absences/:id", h.UpdateAbsence, mw, gestor)
+	g.DELETE("/absences/:id", h.DeleteAbsence, mw, gestor)
 }
 
 func (h *Handlers) Get(c echo.Context) error {
@@ -285,7 +286,7 @@ func (h *Handlers) Get(c echo.Context) error {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }
@@ -306,7 +307,7 @@ func (h *Handlers) CreateAbsence(c echo.Context) error {
 	case errors.Is(err, ErrUnknownReason):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusCreated, res)
 }
@@ -333,7 +334,7 @@ func (h *Handlers) UpdateAbsence(c echo.Context) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -352,7 +353,7 @@ func (h *Handlers) DeleteAbsence(c echo.Context) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

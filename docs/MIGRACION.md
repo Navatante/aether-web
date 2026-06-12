@@ -145,7 +145,7 @@ aether-web/
 │   │   ├── hours/
 │   │   ├── esfuerzo/
 │   │   └── lookups/            # GET /lookups/:name (datos de selectores).
-│   ├── httpx/                  # Helpers HTTP (parseo de IDs, etc.).
+│   ├── httpx/                  # Error handler central + endpoint POST /logs.
 │   ├── logger/                 # slog (logger estándar de Go) preconfigurado.
 │   └── queries/                # CÓDIGO GENERADO por sqlc. No tocar a mano.
 │
@@ -205,19 +205,23 @@ aether-web/
 Cuando ejecutas `aether-web` (o `make run`), pasa esto, en orden:
 
 1. **Crea un logger** que escribe JSON estructurado a stdout (lo recoge journald en producción).
-2. **Lee `AETHER_DATABASE_URL`** del entorno y abre el pool pgx (`db.New(...)`). Si la BD no responde, el proceso termina con código 1.
-3. **Construye el servicio de auth** (`auth.NewService(pool, sessionTTL)`).
-4. **Carga el frontend embebido** desde `web/embed.go` (la SPA buildeada con Vite).
-5. **Crea la instancia Echo** (el framework HTTP) y le pone middleware:
+2. **Carga y valida la configuración** con `internal/config` (todas las `AETHER_*` se leen ahí y solo ahí). Si falta `AETHER_DATABASE_URL`, el proceso termina con un error claro: no hay DSN por defecto.
+3. **Abre el pool pgx** (`db.New(...)`). Si la BD no responde, el proceso termina con código 1.
+4. **Construye el servicio de auth** (`auth.NewService(pool, sessionTTL)`).
+5. **Carga el frontend embebido** desde `web/embed.go` (la SPA buildeada con Vite).
+6. **Crea la instancia Echo** (el framework HTTP) y le pone middleware:
+   - `HTTPErrorHandler` central (`internal/httpx/errors.go`) — los 4xx con mensaje seguro pasan tal cual; cualquier otro error se loguea con el request ID y responde un 500 genérico (sin filtrar SQL ni esquema al navegador).
    - `Recover` — atrapa panics y devuelve 500 en vez de crashear.
    - `RequestID` — añade un `X-Request-ID` a cada request para correlar logs.
-6. **Instancia los handlers de cada dominio**:
+   - `RequestLogger` — una línea JSON por request a `/api/*` (método, ruta, status, latencia, IP, usuario, request_id). El health-check y los assets de la SPA no se loguean.
+   - `BodyLimit("2M")` — rechaza bodies desproporcionados.
+7. **Instancia los handlers de cada dominio**:
    ```go
    dashboardHandlers := dashboard.NewHandlers(dashboard.NewService(pool))
    lookupsHandlers   := lookups.NewHandlers(lookups.NewService(pool))
    // ... uno por dominio
    ```
-7. **Registra rutas** bajo `/api/v1`:
+8. **Registra rutas** bajo `/api/v1`:
    ```go
    api := e.Group("/api/v1")
    api.GET("/health", healthHandler(pool))
@@ -225,9 +229,10 @@ Cuando ejecutas `aether-web` (o `make run`), pasa esto, en orden:
    dashboardHandlers.Register(api, authSvc)
    // ... uno por dominio
    ```
-   Cada `Register(...)` declara sus propias rutas (`GET /flights`, `POST /flights`, etc.) y aplica el middleware `RequireAuth(authSvc)` donde haga falta.
-8. **Registra el handler de SPA** (`spaHandler`) en `/*`, fuera de `/api/v1`. Si el path coincide con un archivo del frontend embebido, lo sirve; si no, devuelve `index.html` (fallback de SPA para que React Router maneje rutas como `/flights`).
-9. **Arranca el servidor HTTP** en `:8080` (o lo que diga `AETHER_ADDR`). Bloquea aquí hasta que reciba `SIGTERM` o `SIGINT`.
+   Cada `Register(...)` declara sus propias rutas (`GET /flights`, `POST /flights`, etc.) y aplica `RequireAuth(authSvc)` donde haga falta, más `RequirePermission(...)` en las escrituras (ver sección 8).
+9. **Registra el handler de SPA** (`spaHandler`) en `/*`, fuera de `/api/v1`. Si el path coincide con un archivo del frontend embebido, lo sirve; si no, devuelve `index.html` (fallback de SPA para que React Router maneje rutas como `/flights`).
+10. **Lanza la purga periódica de sesiones**: una goroutine borra de `detall.session` las sesiones caducadas cada hora.
+11. **Arranca el servidor HTTP** en `:8080` (o lo que diga `AETHER_ADDR`), con timeouts (`ReadHeader` 5s, `Read` 30s, `Write` 60s, `Idle` 120s). Con `SIGTERM`/`SIGINT` hace **apagado ordenado**: deja de aceptar conexiones, espera hasta 10s a que terminen las requests en vuelo y sale limpio.
 
 **Tres claves para no perderte:**
 
@@ -564,6 +569,27 @@ async function handleDelete(festivoSk: number) {
 - Si el password es válido, el backend genera un token aleatorio, guarda una sesión en `detall.auth_session` (con TTL configurable) y devuelve la cookie `aether_session` (HttpOnly, SameSite=Lax).
 - **Cada request a `/api/v1/*` autenticado** lleva la cookie. El middleware `RequireAuth` la mira, busca la sesión en BD, y si está vigente carga el `User` en el contexto.
 - **Logout**: `POST /api/v1/auth/logout`. Borra la sesión y limpia la cookie.
+- **Rate limit en login**: por IP, ráfaga de 5 intentos y luego 1 cada 2 segundos (429 al excederse). Frena fuerza bruta de contraseñas.
+
+### Autorización por nivel de permiso
+
+Cada persona tiene un `person_permission_level`: `Común`, `Operacional`, `Administrativo` o `Seguridad`. **No es jerárquico**: cada ruta declara la lista de niveles admitidos (igual que hace el frontend con `hasPermission`). El middleware `auth.RequirePermission(niveles...)` se encadena tras `RequireAuth` en las rutas de escritura y devuelve **403** si el usuario no tiene un nivel admitido:
+
+```go
+operacional := auth.RequirePermission(auth.PermOperacional)
+g.POST("/flights", h.Insert, mw, operacional)
+```
+
+Reparto actual (espejo del gating de la UI):
+
+| Escrituras de…                                            | Niveles admitidos             |
+|-----------------------------------------------------------|-------------------------------|
+| Vuelos, papeletas, eventos, lookups de vuelo (aeronaves, lugares) | Operacional             |
+| Personal, comisiones, festivos                             | Administrativo                |
+| Ausencias, calificaciones (crew / not-crew)                | Operacional o Administrativo  |
+| Todas las lecturas (GET)                                   | Cualquier usuario autenticado |
+
+> El frontend oculta botones según el nivel, pero la garantía real está en el backend: un `curl` con sesión de nivel `Común` recibe 403 en cualquier escritura.
 
 ### Bootstrap inicial
 

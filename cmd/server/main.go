@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strconv"
+	"os/signal"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,6 +18,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/config"
 	"github.com/14esc/aether-web/internal/db"
 	"github.com/14esc/aether-web/internal/domain/availability"
 	"github.com/14esc/aether-web/internal/domain/comisiones"
@@ -30,38 +33,54 @@ import (
 	"github.com/14esc/aether-web/internal/domain/persons"
 	"github.com/14esc/aether-web/internal/domain/ratings"
 	"github.com/14esc/aether-web/internal/domain/training"
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/web"
 )
 
-const defaultSessionTTL = 8 * time.Hour
+const (
+	shutdownTimeout      = 10 * time.Second
+	sessionPurgeInterval = time.Hour
+)
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	pool, err := db.New(ctx, db.ConfigFromEnv())
-	if err != nil {
-		logger.Error("failed to connect to database", slog.Any("err", err))
+	if err := run(logger); err != nil {
+		logger.Error("aether-web terminó con error", slog.Any("err", err))
 		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+
+	// ctx se cancela con SIGINT/SIGTERM: dispara el apagado ordenado.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	pool, err := db.New(ctx, db.DefaultConfig(cfg.DatabaseURL))
+	if err != nil {
+		return err
 	}
 	defer pool.Close()
 
-	sessionTTL := readSessionTTL(logger)
-	authSvc := auth.NewService(pool, sessionTTL)
-	authHandlers := auth.NewHandlers(authSvc, sessionTTL)
+	authSvc := auth.NewService(pool, cfg.SessionTTL)
+	authHandlers := auth.NewHandlers(authSvc, cfg.SessionTTL, cfg.CookieSecure)
 
 	distFS, err := web.DistFS()
 	if err != nil {
-		logger.Error("failed to load embedded web/dist", slog.Any("err", err))
-		os.Exit(1)
+		return err
 	}
 
 	e := echo.New()
 	e.HideBanner = true
+	e.HTTPErrorHandler = httpx.NewHTTPErrorHandler(logger)
 	e.Use(middleware.Recover())
 	e.Use(middleware.RequestID())
+	e.Use(requestLogger(logger))
+	e.Use(middleware.BodyLimit("2M"))
 
 	dashboardHandlers := dashboard.NewHandlers(dashboard.NewService(pool))
 	lookupsHandlers := lookups.NewHandlers(lookups.NewService(pool))
@@ -79,6 +98,7 @@ func main() {
 
 	api := e.Group("/api/v1")
 	api.GET("/health", healthHandler(pool))
+	httpx.RegisterFrontendLogs(api, logger)
 	authHandlers.Register(api)
 	dashboardHandlers.Register(api, authSvc)
 	lookupsHandlers.Register(api, authSvc)
@@ -96,30 +116,101 @@ func main() {
 
 	e.GET("/*", spaHandler(distFS))
 
-	addr := os.Getenv("AETHER_ADDR")
-	if addr == "" {
-		addr = ":8080"
-	}
-	logger.Info("aether-web starting", slog.String("addr", addr), slog.Duration("session_ttl", sessionTTL))
-	if err := e.Start(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		logger.Error("server stopped", slog.Any("err", err))
-		os.Exit(1)
+	// Timeouts del servidor: cortan conexiones colgadas (slowloris, clientes
+	// que no leen). Write generoso para los listados pesados de vuelos.
+	e.Server.ReadHeaderTimeout = 5 * time.Second
+	e.Server.ReadTimeout = 30 * time.Second
+	e.Server.WriteTimeout = 60 * time.Second
+	e.Server.IdleTimeout = 120 * time.Second
+
+	go purgeSessionsLoop(ctx, logger, authSvc)
+
+	errCh := make(chan error, 1)
+	go func() {
+		logger.Info("aether-web starting",
+			slog.String("addr", cfg.Addr),
+			slog.Duration("session_ttl", cfg.SessionTTL),
+		)
+		if err := e.Start(cfg.Addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+		logger.Info("señal recibida, apagando ordenadamente")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+		if err := e.Shutdown(shutdownCtx); err != nil {
+			return err
+		}
+		logger.Info("apagado completado")
+		return nil
 	}
 }
 
-func readSessionTTL(logger *slog.Logger) time.Duration {
-	raw := os.Getenv("AETHER_SESSION_TTL")
-	if raw == "" {
-		return defaultSessionTTL
+// requestLogger emite una línea JSON por request a /api/* con el request ID,
+// para correlar con los errores que loguea el HTTPErrorHandler.
+func requestLogger(logger *slog.Logger) echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			// Los assets de la SPA y el health-check de polling solo meten ruido.
+			path := c.Request().URL.Path
+			return !strings.HasPrefix(path, "/api/") || path == "/api/v1/health"
+		},
+		LogStatus:    true,
+		LogMethod:    true,
+		LogURI:       true,
+		LogLatency:   true,
+		LogRemoteIP:  true,
+		LogRequestID: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			level := slog.LevelInfo
+			switch {
+			case v.Status >= 500:
+				level = slog.LevelError
+			case v.Status >= 400:
+				level = slog.LevelWarn
+			}
+			attrs := []slog.Attr{
+				slog.String("request_id", v.RequestID),
+				slog.String("method", v.Method),
+				slog.String("uri", v.URI),
+				slog.Int("status", v.Status),
+				slog.Duration("latency", v.Latency),
+				slog.String("remote_ip", v.RemoteIP),
+			}
+			if u := auth.CurrentUser(c); u != nil {
+				attrs = append(attrs, slog.String("user", u.Username))
+			}
+			logger.LogAttrs(c.Request().Context(), level, "http request", attrs...)
+			return nil
+		},
+	})
+}
+
+// purgeSessionsLoop borra sesiones caducadas cada sessionPurgeInterval para
+// que detall.session no crezca sin límite.
+func purgeSessionsLoop(ctx context.Context, logger *slog.Logger, svc *auth.Service) {
+	ticker := time.NewTicker(sessionPurgeInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			n, err := svc.PurgeExpired(ctx)
+			if err != nil {
+				logger.Error("purga de sesiones falló", slog.Any("err", err))
+				continue
+			}
+			if n > 0 {
+				logger.Info("sesiones caducadas purgadas", slog.Int64("count", n))
+			}
+		}
 	}
-	if d, err := time.ParseDuration(raw); err == nil {
-		return d
-	}
-	if secs, err := strconv.Atoi(raw); err == nil {
-		return time.Duration(secs) * time.Second
-	}
-	logger.Warn("AETHER_SESSION_TTL no parseable, usando valor por defecto", slog.String("raw", raw))
-	return defaultSessionTTL
 }
 
 func healthHandler(pool *pgxpool.Pool) echo.HandlerFunc {

@@ -13,6 +13,15 @@ const (
 	ctxUserKey = "auth.user"
 )
 
+// Niveles de permiso válidos. Espejo del CHECK chk_person_permission_level
+// en detall.person (migración 0001).
+const (
+	PermComun          = "Común"
+	PermOperacional    = "Operacional"
+	PermAdministrativo = "Administrativo"
+	PermSeguridad      = "Seguridad"
+)
+
 // RequireAuth valida la sesión y rechaza con 401 si no es válida. Inyecta
 // el User en el contexto para los handlers downstream.
 func RequireAuth(svc *Service) echo.MiddlewareFunc {
@@ -30,6 +39,28 @@ func RequireAuth(svc *Service) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusInternalServerError, "session validation failed")
 			}
 			c.Set(ctxUserKey, user)
+			return next(c)
+		}
+	}
+}
+
+// RequirePermission rechaza con 403 si el usuario autenticado no tiene uno de
+// los niveles indicados (allow-list, sin jerarquía — igual que el frontend).
+// Debe encadenarse después de RequireAuth.
+func RequirePermission(levels ...string) echo.MiddlewareFunc {
+	allowed := make(map[string]struct{}, len(levels))
+	for _, l := range levels {
+		allowed[l] = struct{}{}
+	}
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user := CurrentUser(c)
+			if user == nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, "missing session")
+			}
+			if _, ok := allowed[user.PermissionLevel]; !ok {
+				return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")
+			}
 			return next(c)
 		}
 	}

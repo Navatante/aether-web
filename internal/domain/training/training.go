@@ -284,7 +284,7 @@ func (h *Handlers) Adiestramiento(c echo.Context) error {
 	bloques := splitCSV(c.QueryParam("bloques"))
 	res, err := h.svc.Adiestramiento(c.Request().Context(), int32(user.EscuadrillaID), roles, bloques)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }
@@ -298,7 +298,7 @@ func (h *Handlers) Instruccion(c echo.Context) error {
 	planes := splitCSV(c.QueryParam("planes"))
 	res, err := h.svc.Instruccion(c.Request().Context(), int32(user.EscuadrillaID), roles, planes)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }

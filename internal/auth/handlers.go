@@ -3,10 +3,11 @@ package auth
 import (
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"golang.org/x/time/rate"
 )
 
 // Handlers agrupa los endpoints /api/v1/auth/*.
@@ -16,17 +17,25 @@ type Handlers struct {
 	cookieTTL    time.Duration
 }
 
-func NewHandlers(svc *Service, sessionTTL time.Duration) *Handlers {
+func NewHandlers(svc *Service, sessionTTL time.Duration, cookieSecure bool) *Handlers {
 	return &Handlers{
 		svc:          svc,
-		cookieSecure: os.Getenv("AETHER_COOKIE_SECURE") == "true",
+		cookieSecure: cookieSecure,
 		cookieTTL:    sessionTTL,
 	}
 }
 
 // Register monta /auth/login, /auth/logout y /auth/me bajo `g`.
 func (h *Handlers) Register(g *echo.Group) {
-	g.POST("/auth/login", h.Login)
+	// Freno anti fuerza-bruta por IP: ráfaga de 5 intentos, luego 1 cada 2s.
+	loginLimiter := middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+		Store: middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
+			Rate:      rate.Limit(0.5),
+			Burst:     5,
+			ExpiresIn: 10 * time.Minute,
+		}),
+	})
+	g.POST("/auth/login", h.Login, loginLimiter)
 	g.POST("/auth/logout", h.Logout)
 	g.GET("/auth/me", h.Me, RequireAuth(h.svc))
 }
@@ -37,15 +46,16 @@ type loginReq struct {
 }
 
 type userDTO struct {
-	ID              int    `json:"id"`
-	Username        string `json:"username"`
-	Name            string `json:"name"`
-	LastName1       string `json:"lastName1"`
-	LastName2       string `json:"lastName2"`
-	EscuadrillaID   int    `json:"escuadrillaId"`
-	EscuadrillaCode string `json:"escuadrillaCode"`
-	EscuadrillaName string `json:"escuadrillaName"`
-	PermissionLevel string `json:"permissionLevel"`
+	ID              int     `json:"id"`
+	Username        string  `json:"username"`
+	Name            string  `json:"name"`
+	LastName1       string  `json:"lastName1"`
+	LastName2       string  `json:"lastName2"`
+	Nk              *string `json:"nk"`
+	EscuadrillaID   int     `json:"escuadrillaId"`
+	EscuadrillaCode string  `json:"escuadrillaCode"`
+	EscuadrillaName string  `json:"escuadrillaName"`
+	PermissionLevel string  `json:"permissionLevel"`
 }
 
 func toDTO(u *User) userDTO {
@@ -55,6 +65,7 @@ func toDTO(u *User) userDTO {
 		Name:            u.Name,
 		LastName1:       u.LastName1,
 		LastName2:       u.LastName2,
+		Nk:              u.Nk,
 		EscuadrillaID:   u.EscuadrillaID,
 		EscuadrillaCode: u.EscuadrillaCode,
 		EscuadrillaName: u.EscuadrillaName,

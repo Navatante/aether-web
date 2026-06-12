@@ -794,10 +794,14 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
-	g.POST("/ratings/crew", h.AddCrew, mw)
-	g.DELETE("/ratings/crew/:id", h.DeleteCrew, mw)
-	g.POST("/ratings/not-crew", h.AddNotCrew, mw)
-	g.DELETE("/ratings/not-crew/:id", h.DeleteNotCrew, mw)
+	// Operacional califica tripulaciones (táctica, liderazgo, modelo);
+	// Administrativo califica mantenimiento. Los endpoints crew/not-crew
+	// están compartidos entre ambas páginas, así que se permiten ambos roles.
+	gestor := auth.RequirePermission(auth.PermOperacional, auth.PermAdministrativo)
+	g.POST("/ratings/crew", h.AddCrew, mw, gestor)
+	g.DELETE("/ratings/crew/:id", h.DeleteCrew, mw, gestor)
+	g.POST("/ratings/not-crew", h.AddNotCrew, mw, gestor)
+	g.DELETE("/ratings/not-crew/:id", h.DeleteNotCrew, mw, gestor)
 	g.GET("/ratings/model", h.Model, mw)
 	g.GET("/ratings/operational", h.Operational, mw)
 	g.GET("/ratings/general-tactical", h.GeneralTactical, mw)
@@ -928,7 +932,7 @@ func respondCreated(c echo.Context, payload any, err error) error {
 	case errors.Is(err, ErrDuplicate):
 		return echo.NewHTTPError(http.StatusConflict, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusCreated, payload)
 }
@@ -938,7 +942,7 @@ func respondNoContent(c echo.Context, err error) error {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -950,7 +954,7 @@ func getResult[T any](c echo.Context, fn func(context.Context, int32) (T, error)
 	}
 	res, err := fn(c.Request().Context(), esc)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, res)
 }

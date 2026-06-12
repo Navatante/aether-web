@@ -51,10 +51,16 @@ func main() {
 		os.Exit(2)
 	}
 
+	dsn := os.Getenv("AETHER_DATABASE_URL")
+	if dsn == "" {
+		fmt.Fprintln(os.Stderr, "error: AETHER_DATABASE_URL no está definida")
+		os.Exit(2)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	pool, err := db.New(ctx, db.ConfigFromEnv())
+	pool, err := db.New(ctx, db.DefaultConfig(dsn))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error conectando a la BD:", err)
 		os.Exit(1)

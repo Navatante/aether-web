@@ -21,17 +21,19 @@ func NewHandlers(svc *Service) *Handlers {
 // Register monta los endpoints del dominio bajo /lookups/* protegidos con RequireAuth.
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	mw := auth.RequireAuth(authSvc)
+	operacional := auth.RequirePermission(auth.PermOperacional)
 
 	// Lectura unificada: GET /lookups/:name
 	g.GET("/lookups/:name", h.Get, mw)
 
 	// Mutaciones: cada recurso CRUDable bajo su path semántico.
-	g.POST("/lookups/departure-arrival-places", h.AddDepartureArrivalPlace, mw)
-	g.DELETE("/lookups/departure-arrival-places/:id", h.DeleteDepartureArrivalPlace, mw)
+	// Se gestionan desde el formulario de registro de vuelo (Operacional).
+	g.POST("/lookups/departure-arrival-places", h.AddDepartureArrivalPlace, mw, operacional)
+	g.DELETE("/lookups/departure-arrival-places/:id", h.DeleteDepartureArrivalPlace, mw, operacional)
 
-	g.POST("/lookups/aircrafts", h.AddAircraft, mw)
-	g.DELETE("/lookups/aircrafts/:id", h.DeleteAircraft, mw)
-	g.PATCH("/lookups/aircrafts/:id", h.UpdateAircraftCurrentFlag, mw)
+	g.POST("/lookups/aircrafts", h.AddAircraft, mw, operacional)
+	g.DELETE("/lookups/aircrafts/:id", h.DeleteAircraft, mw, operacional)
+	g.PATCH("/lookups/aircrafts/:id", h.UpdateAircraftCurrentFlag, mw, operacional)
 
 	// NB: POST/DELETE de eventos vivían aquí hasta Lote 2; ahora están en /events.
 }
@@ -88,7 +90,7 @@ func (h *Handlers) Get(c echo.Context) error {
 	}
 
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, data)
 }
@@ -164,7 +166,7 @@ func (h *Handlers) UpdateAircraftCurrentFlag(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound)
 	}
 	if serr != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, serr.Error())
+		return serr
 	}
 	return c.JSON(http.StatusOK, map[string]bool{"aircraft_current_flag": persisted})
 }
@@ -213,5 +215,5 @@ func mapErrToHTTP(err error, m map[error]int, successCode int) error {
 			return echo.NewHTTPError(code, err.Error())
 		}
 	}
-	return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	return err
 }

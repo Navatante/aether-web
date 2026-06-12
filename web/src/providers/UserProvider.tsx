@@ -30,6 +30,7 @@ export interface UserSessionInfo {
     name: string;
     lastName1: string;
     lastName2: string;
+    nk: string | null;
     escuadrillaId: number;
     escuadrillaCode: string;
     escuadrillaName: string;
@@ -40,6 +41,7 @@ export interface UserState {
     id: number | null;
     userName: string | null;
     fullName: string | null;
+    nk: string | null;
     permissionLevel: PermissionLevel | null;
     escuadrillaId: number | null;
     escuadrillaCode: string | null;
@@ -67,6 +69,7 @@ const initialState: UserState = {
     id: null,
     userName: null,
     fullName: null,
+    nk: null,
     permissionLevel: null,
     escuadrillaId: null,
     escuadrillaCode: null,
@@ -108,6 +111,7 @@ function applyUser(u: UserSessionInfo): Partial<UserState> {
         id: u.id,
         userName: u.username,
         fullName: fullNameOf(u),
+        nk: u.nk ?? null,
         permissionLevel: Object.values(PermissionLevel).includes(pl) ? pl : null,
         escuadrillaId: u.escuadrillaId,
         escuadrillaCode: u.escuadrillaCode,
@@ -206,6 +210,7 @@ export function useUserData(): UserState {
         id: ctx.id,
         userName: ctx.userName,
         fullName: ctx.fullName,
+        nk: ctx.nk,
         permissionLevel: ctx.permissionLevel,
         escuadrillaId: ctx.escuadrillaId,
         escuadrillaCode: ctx.escuadrillaCode,

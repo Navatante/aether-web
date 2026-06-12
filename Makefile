@@ -94,6 +94,11 @@ fmt:
 vet:
 	go vet ./...
 
+# Linter completo (mismo que CI). Instalar con:
+#   go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+lint:
+	golangci-lint run
+
 # ---------- Producción (Linux/amd64) ----------
 
 # 1) build del frontend → web/dist (embebido en el binario via web/embed.go)

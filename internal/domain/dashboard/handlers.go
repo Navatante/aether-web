@@ -30,7 +30,7 @@ func (h *Handlers) StaticStats(c echo.Context) error {
 	}
 	stats, err := h.svc.StaticStats(c.Request().Context(), user.EscuadrillaID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, stats)
 }
@@ -53,7 +53,7 @@ func (h *Handlers) DynamicStats(c echo.Context) error {
 		if errors.Is(err, errInvalidRange) {
 			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return err
 	}
 	return c.JSON(http.StatusOK, stats)
 }

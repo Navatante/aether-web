@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,11 +15,9 @@ type Config struct {
 	MaxConnLifetime time.Duration
 }
 
-func ConfigFromEnv() Config {
-	dsn := os.Getenv("AETHER_DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgresql://postgres:aether@localhost:5432/aether"
-	}
+// DefaultConfig devuelve la configuración de pool estándar para el DSN dado.
+// El DSN viene validado desde internal/config; aquí no hay fallbacks.
+func DefaultConfig(dsn string) Config {
 	return Config{
 		DSN:             dsn,
 		MaxConns:        25,

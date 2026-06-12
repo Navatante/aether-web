@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  # Primer cortafuegos RGPD: falla si algún archivo sensible (datos personales,
+  # catálogo operativo) aparece versionado en el repo público.
+  leak-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar que no hay archivos sensibles versionados
+        run: |
+          set -euo pipefail
+          FORBIDDEN='
+          database-utils/Aether.db
+          database-utils/person_users.json
+          migrations/0002_seed_lookups.up.sql
+          migrations/0002_seed_lookups.down.sql
+          migrations/0005_seed_productive_data.up.sql
+          migrations/0005_seed_productive_data.down.sql
+          '
+          fail=0
+          for f in $FORBIDDEN; do
+            if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+              echo "::error::Archivo sensible versionado: $f"
+              fail=1
+            fi
+          done
+          # Ningún .db ni .sqlite debe entrar al repo, esté donde esté.
+          if git ls-files '*.db' '*.sqlite' '*.sqlite3' | grep .; then
+            echo "::error::Bases de datos binarias versionadas (ver listado)"
+            fail=1
+          fi
+          exit $fail
+
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: go vet
+        run: go vet ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+      - name: Build
+        run: go build ./...
+      - name: Tests
+        run: go test ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Lint
+        run: npm run lint --if-present
+      - name: Build (tsc + vite)
+        run: npm run build
