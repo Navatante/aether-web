@@ -17,10 +17,10 @@ VALUES ($1, $2, NULLIF($3::varchar, ''), $4)
 `
 
 type CreateSessionParams struct {
-	TokenHash []byte           `json:"token_hash"`
-	PersonFk  int32            `json:"person_fk"`
-	IpAddress string           `json:"ip_address"`
-	ExpiresAt pgtype.Timestamp `json:"expires_at"`
+	TokenHash []byte             `json:"token_hash"`
+	PersonFk  int32              `json:"person_fk"`
+	IpAddress string             `json:"ip_address"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {

@@ -160,7 +160,8 @@ aether-web/
 │   ├── 0002_seed_lookups.up.sql
 │   ├── 0003_auth_tables.up.sql
 │   ├── 0004_triggers.up.sql
-│   └── 0005_seed_productive_data.up.sql  # Papeletas nuevas, calificaciones, etc.
+│   ├── 0005_seed_productive_data.up.sql  # Papeletas nuevas, calificaciones, etc.
+│   └── 0006_session_timestamptz.up.sql   # Sesiones a timestamptz (fix de zonas horarias).
 │
 ├── web/                        # Frontend.
 │   ├── src/                    # Código React/TypeScript.
@@ -964,12 +965,28 @@ Abre `http://localhost:5173`. Vite recarga en caliente al guardar archivos.
 | `make db-reset`         | DROP + CREATE de la BD destino (mantiene el contenedor).    |
 | `make dev-rebuild`      | **Ciclo completo de dev**: db-reset → migraciones → SQLite → admin. |
 | `make test`             | Corre todos los tests Go.                                   |
+| `make types`            | Regenera `web/src/types/generated/*.ts` desde los DTOs Go (tygo). |
 | `make fmt`              | Formatea todo el código Go (gofmt).                         |
 | `make vet`              | Linter ligero de Go.                                        |
 | `make web-build`        | `npm ci && npm run build` (frontend → `web/dist/`).        |
 | `make build-prod`       | Build de producción del backend con frontend embebido.      |
 | `make dist`             | Genera tarball auto-contenido para desplegar.               |
 | `make clean`            | Borra `bin/`, `dist/`, `web/dist/`.                         |
+
+### Tests de integración
+
+Los tests unitarios corren siempre con `make test`. Los de integración
+(`internal/auth`, `internal/domain/festivos`) necesitan un servidor PostgreSQL
+donde crear bases de datos efímeras; se activan con:
+
+```bash
+AETHER_TEST_DATABASE_URL="postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable" make test
+```
+
+Cada test crea una BD `aether_test_<aleatorio>`, aplica las migraciones
+públicas (sin 0002/0005), siembra un catálogo mínimo (`internal/testdb`) y
+la borra al terminar. Sin la variable, se saltan (skip). En CI corren contra
+un service container de PostgreSQL.
 
 ### Ciclo de dev "desde cero"
 

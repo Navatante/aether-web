@@ -72,7 +72,7 @@ func (s *Service) Login(ctx context.Context, username, password, ipAddress strin
 		TokenHash: tokenHash,
 		PersonFk:  row.PersonSk,
 		IpAddress: ipAddress,
-		ExpiresAt: pgtype.Timestamp{Time: expires, Valid: true},
+		ExpiresAt: pgtype.Timestamptz{Time: expires, Valid: true},
 	}); err != nil {
 		return "", nil, fmt.Errorf("create session: %w", err)
 	}

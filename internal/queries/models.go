@@ -142,13 +142,13 @@ type DetallRank struct {
 }
 
 type DetallSession struct {
-	SessionSk  int64            `json:"session_sk"`
-	TokenHash  []byte           `json:"token_hash"`
-	PersonFk   int32            `json:"person_fk"`
-	IpAddress  *string          `json:"ip_address"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	ExpiresAt  pgtype.Timestamp `json:"expires_at"`
-	LastSeenAt pgtype.Timestamp `json:"last_seen_at"`
+	SessionSk  int64              `json:"session_sk"`
+	TokenHash  []byte             `json:"token_hash"`
+	PersonFk   int32              `json:"person_fk"`
+	IpAddress  *string            `json:"ip_address"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
 }
 
 type DetallUserActivity struct {

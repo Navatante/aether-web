@@ -60,7 +60,13 @@
       "Bash(tygo generate *)",
       "Bash(sed -n 48,200p web/src/types/dashboard.ts)",
       "Bash(sed -n 58,130p web/src/types/generated/dashboard.ts)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(sed -n '/CREATE TABLE detall.escuadrilla/,/^\\);/p' migrations/0001_init_schema.up.sql)",
+      "Bash(sed -n '/CREATE TABLE detall.person \\(/,/^\\);/p' migrations/0001_init_schema.up.sql)",
+      "Bash(AETHER_TEST_DATABASE_URL=\"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\" go test ./internal/auth/ ./internal/domain/festivos/ ./internal/testdb/ -v)",
+      "Bash(AETHER_TEST_DATABASE_URL=\"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\" go test ./...)",
+      "Bash(~/go/bin/migrate -path migrations -database \"postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable\" up)",
+      "Bash(git commit -q -m ' *)"
     ]
   }
 }
