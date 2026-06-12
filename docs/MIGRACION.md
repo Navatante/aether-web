@@ -25,9 +25,10 @@ Este documento explica **qué se ha migrado**, **cómo está organizado el códi
 10. [Patrones repetidos en el frontend (lookups, queries, mutaciones)](#10-patrones-repetidos-en-el-frontend-lookups-queries-mutaciones)
 11. [Tareas típicas: cómo hacer X](#11-tareas-típicas-cómo-hacer-x)
 12. [Desarrollo local](#12-desarrollo-local)
-13. [Despliegue en producción](#13-despliegue-en-producción)
-14. [Diferencias deliberadas con la app Tauri original](#14-diferencias-deliberadas-con-la-app-tauri-original)
-15. [Glosario](#15-glosario)
+13. [Estructura de repositorios (público + privado)](#13-estructura-de-repositorios-público--privado)
+14. [Despliegue en producción](#14-despliegue-en-producción)
+15. [Diferencias deliberadas con la app Tauri original](#15-diferencias-deliberadas-con-la-app-tauri-original)
+16. [Glosario](#16-glosario)
 
 ---
 
@@ -986,7 +987,70 @@ make dev-rebuild SCHEMA_CUTOFF=6      # cuando añadas 0005/0006 al esquema
 
 ---
 
-## 13. Despliegue en producción
+## 13. Estructura de repositorios (público + privado)
+
+El proyecto se distribuye en **dos repositorios separados** en GitHub:
+
+- **`aether-web`** (público, MIT) — todo el código: backend Go, frontend React, migraciones de esquema (0001, 0003, 0004), scripts genéricos, documentación, plantillas de ejemplo (`migrations/examples/`).
+- **`aether-data`** (privado) — solo los archivos sensibles:
+  - `Aether.db` — SQLite con datos personales de militares (nombres, DNIs, teléfonos, fechas de nacimiento).
+  - `person_users.json` — mapeo `person_sk` → `person_user`.
+  - `migrations/0002_seed_lookups.{up,down}.sql` — catálogo operativo de la escuadrilla (escuadrillas concretas, CAPBAs, papeletas históricas).
+  - `migrations/0005_seed_productive_data.{up,down}.sql` — datos productivos (calificaciones reales, ausencias, comisiones).
+
+### Por qué dos repos
+
+1. **RGPD y confidencialidad**: el SQLite contiene datos personales de personas reales. No pueden estar en un repo público bajo ningún concepto, ni siquiera dentro del historial de git.
+2. **Software libre real**: el código sigue siendo MIT y cualquiera puede usar la arquitectura, los handlers, el script de migración. Quien quiera correr la app contra otro dataset tiene las plantillas en `migrations/examples/*.sql.example` y `database-utils/person_users.example.json` para saber qué tablas hay que rellenar.
+3. **Backup + multi-PC**: ambos repos en GitHub son tu copia de seguridad y se clonan idénticos en cualquier máquina.
+
+### Cómo se conectan: symlinks
+
+En lugar de duplicar archivos, los sensibles **viven en `~/aether-data/`** y `aether-web/` los referencia con symlinks. Editas el archivo donde sea (los symlinks son transparentes), el cambio queda en `~/aether-data/` y desde ahí lo commiteas al repo privado.
+
+### Setup en una máquina nueva
+
+```bash
+# 1) Clonar ambos repos
+git clone https://github.com/Navatante/aether-web
+git clone https://github.com/Navatante/aether-data ~/aether-data
+
+# 2) Symlinkar los archivos sensibles desde aether-data → aether-web
+cd aether-web
+ln -sf ~/aether-data/Aether.db                                         database-utils/Aether.db
+ln -sf ~/aether-data/person_users.json                                 database-utils/person_users.json
+ln -sf ~/aether-data/migrations/0002_seed_lookups.up.sql               migrations/0002_seed_lookups.up.sql
+ln -sf ~/aether-data/migrations/0002_seed_lookups.down.sql             migrations/0002_seed_lookups.down.sql
+ln -sf ~/aether-data/migrations/0005_seed_productive_data.up.sql       migrations/0005_seed_productive_data.up.sql
+ln -sf ~/aether-data/migrations/0005_seed_productive_data.down.sql     migrations/0005_seed_productive_data.down.sql
+
+# 3) Lanzar el ciclo completo
+make dev-rebuild PG_SUPERUSER=<tu_user> DEV_USER=<tu_user> DEV_PASSWORD=<tu_pass>
+```
+
+### Día a día — dónde commitea cada cambio
+
+| Cambio | Commiteas desde | Push a |
+|---|---|---|
+| Código Go, React, scripts, migraciones de esquema (0001, 0003, 0004), docs | `aether-web/` | repo público |
+| SQLite (`Aether.db`), papeletas históricas (0002), datos productivos (0005), mapeo de usuarios | `~/aether-data/` | repo privado |
+
+Los symlinks hacen que editar `aether-web/migrations/0002_seed_lookups.up.sql` modifique de hecho el archivo en `~/aether-data/migrations/0002_seed_lookups.up.sql`. El cambio queda registrado en el repo privado, no en el público.
+
+### Verificación antes de cada push al público
+
+Pásate por `git status` desde `aether-web/` y verifica con tus ojos que **no aparecen**:
+
+- `database-utils/Aether.db`
+- `database-utils/person_users.json`
+- `migrations/0002_seed_lookups.*.sql` (los sin `.example`)
+- `migrations/0005_seed_productive_data.*.sql` (los sin `.example`)
+
+Esos archivos están en `.gitignore` y deberían quedar ocultos automáticamente, pero un cambio inadvertido en `.gitignore` o un `git add -f` distraído puede colarlos. **Una vez en GitHub público, GitHub indexa rápido y no hay vuelta atrás limpia**: aunque borres el commit, los clones de terceros y los archivos cacheados por buscadores ya están fuera de tu control.
+
+---
+
+## 14. Despliegue en producción
 
 El runbook completo está en `deploy/README.md`. Resumen muy abreviado:
 
@@ -1001,7 +1065,7 @@ Para actualizaciones posteriores: `sudo ./deploy/update.sh` desde el tarball nue
 
 ---
 
-## 14. Diferencias deliberadas con la app Tauri original
+## 15. Diferencias deliberadas con la app Tauri original
 
 | Tauri (antes)                                  | Web (ahora)                                                   |
 |------------------------------------------------|---------------------------------------------------------------|
@@ -1019,7 +1083,7 @@ Para actualizaciones posteriores: `sudo ./deploy/update.sh` desde el tarball nue
 
 ---
 
-## 15. Glosario
+## 16. Glosario
 
 - **Backend**: el servidor (en este caso, el binario Go). Recibe peticiones HTTP y responde.
 - **Frontend**: el código que corre en el navegador (React + JavaScript).
