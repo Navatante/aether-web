@@ -153,14 +153,21 @@ normalizar el contrato, no de fosilizarlo.
    - ✅ Generación de tipos TS con tygo (`make types` + check en CI);
      `types/dashboard.ts` adoptado como patrón (e4fc94c).
    - ✅ `FestivosDialog` estandarizado a TanStack Query.
-   - ⬜ **Pendiente**: refactor de los componentes React de 700+ líneas
-     (`RegisterAbsenceDialog` 855, `ManageFlightDataDialog` 762,
-     `GeneralTacticalRatings` 745...): extraer la lógica de datos/formulario
-     a hooks por feature, siguiendo el patrón de `FestivosDialog`. Conviene
-     hacerlo con la app corriendo para verificar visualmente cada uno.
-   - ⬜ **Pendiente**: adoptar los tipos generados en el resto de
-     `web/src/types/*` (flights, comisiones, ratings) como se hizo con
-     dashboard.
+   - ✅ `RegisterAbsenceDialog` (855) partido: modelo en
+     `availability/absences.ts`, lógica en `hooks/useAbsenceDialog.ts`,
+     componente solo render (bbe981d).
+   - ✅ `ManageFlightDataDialog` (762) partido en tabs por archivo bajo
+     `dialogs/manage-flight-data/` (0fab533).
+   - ✅ Tipos generados adoptados también en `types/comisions.ts` y en la
+     entrada de `transformFlightsFromDB` (antes `any[]`); eliminado el hook
+     muerto `useRatings` y utilidades sin uso de `features/ratings`
+     (~370 líneas) (bbe981d).
+   - ⬜ **Pendiente (menor)**: mismo tratamiento para los siguientes
+     componentes grandes si se quiere seguir: `GeneralTacticalRatings`
+     (744), `Disponibilidad` (697), `RegisterComisionForm` (686),
+     `Personnel` (575). El patrón está establecido (modelo + hook + render,
+     o tabs por archivo). Conviene verificar visualmente cada uno con
+     `npm run dev` al refactorizarlo.
 
 ---
 
