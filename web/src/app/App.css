@@ -18,9 +18,21 @@
         @apply border-border outline-ring/50;
     }
 
-    /* Estilos del body */
+    /* Estilos del body — Inter para cuerpo/UI/resto */
     body {
         @apply bg-background text-foreground;
+        font-family: var(--font-sans);
+        font-optical-sizing: auto;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+    }
+
+    /* Titulares con el corte óptico "Display" de Inter (opsz alto a tamaños
+       grandes gracias a font-optical-sizing). */
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
     }
 }
 
