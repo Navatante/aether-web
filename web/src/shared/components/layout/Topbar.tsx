@@ -2,7 +2,8 @@ import { TopbarMenus } from "./TopbarMenus"
 import { ModeToggle } from "@/components/theme/mode-toggle"
 import OutlineGradientButton from "@/shared/components/common/OutlineGradientButton"
 import { SuperuserButton } from "@/features/superuser"
-import { useUserData, PermissionLevel } from "@/providers"
+import { useUser, useUserData, PermissionLevel } from "@/providers"
+import { LogOut } from "lucide-react"
 import {
   Sheet,
   SheetClose,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button"
 
 export function Topbar() {
   const { nk, escuadrillaId, permissionLevel } = useUserData();
+  const { logout } = useUser();
 
   return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -81,7 +83,15 @@ export function Topbar() {
                         </div>
                       </div>
 
-                      <SheetFooter className="mt-8">
+                      <SheetFooter className="mt-8 gap-2">
+                        <Button
+                            variant="destructive"
+                            className="w-full"
+                            onClick={() => void logout()}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Cerrar sesión
+                        </Button>
                         <SheetClose asChild>
                           <Button variant="outline" className="w-full">
                             Cerrar

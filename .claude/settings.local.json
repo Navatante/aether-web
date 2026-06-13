@@ -92,7 +92,8 @@
       "Bash(awk '{print $5, $9}')",
       "Bash(~/go/bin/sqlc generate *)",
       "Bash(ps -o pid,lstart,etime,cmd -p 164347)",
-      "Bash(grep -c \"order_position\" /proc/164347/exe)"
+      "Bash(grep -c \"order_position\" /proc/164347/exe)",
+      "Bash(git restore *)"
     ]
   }
 }

@@ -18,6 +18,8 @@ SCHEMA_CUTOFF ?= 3
 # Usuario jon para dev (debe existir en SQLite tras load-sqlite).
 DEV_USER      ?= jon
 DEV_PASSWORD  ?= 1234
+# Nivel de permiso que se fija al usuario de dev (Común|Operacional|Administrativo|Seguridad|Superusuario).
+DEV_LEVEL     ?= Superusuario
 
 # ---------- Desarrollo local ----------
 
@@ -67,10 +69,10 @@ db-reset:
 #   2) migraciones 1..N     (esquema + lookups + auth + triggers)
 #   3) load-sqlite          (carga personas, vuelos, etc. desde Aether.db)
 #   4) migraciones N+1..    (datos productivos que referencian personas)
-#   5) bootstrap admin      (DEV_USER / DEV_PASSWORD)
+#   5) bootstrap admin      (DEV_USER / DEV_PASSWORD, nivel DEV_LEVEL)
 #
 # Sobrescribibles:
-#   make dev-rebuild DEV_USER=otro DEV_PASSWORD=otra SCHEMA_CUTOFF=5
+#   make dev-rebuild DEV_USER=otro DEV_PASSWORD=otra DEV_LEVEL=Operacional SCHEMA_CUTOFF=5
 dev-rebuild: db-reset
 	@echo "==> Aplicando migraciones 1..$(SCHEMA_CUTOFF) (esquema)…"
 	migrate -path migrations -database "$(DATABASE_URL)" goto $(SCHEMA_CUTOFF)
@@ -78,10 +80,10 @@ dev-rebuild: db-reset
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)"
 	@echo "==> Aplicando migraciones $(SCHEMA_CUTOFF)+ (datos dependientes de personas)…"
 	migrate -path migrations -database "$(DATABASE_URL)" up
-	@echo "==> Configurando contraseña de '$(DEV_USER)'…"
-	@AETHER_DATABASE_URL="$(DATABASE_URL)" go run $(BOOTSTRAP_PKG) -user $(DEV_USER) -password $(DEV_PASSWORD)
+	@echo "==> Configurando contraseña y nivel '$(DEV_LEVEL)' de '$(DEV_USER)'…"
+	@AETHER_DATABASE_URL="$(DATABASE_URL)" go run $(BOOTSTRAP_PKG) -user $(DEV_USER) -password $(DEV_PASSWORD) -level $(DEV_LEVEL)
 	@echo
-	@echo "==> Listo. Usuario '$(DEV_USER)' / contraseña '$(DEV_PASSWORD)'."
+	@echo "==> Listo. Usuario '$(DEV_USER)' / contraseña '$(DEV_PASSWORD)' / nivel '$(DEV_LEVEL)'."
 
 test:
 	go test ./...
