@@ -1,0 +1,13 @@
+Se debe contabilizar las horas de mantenimiento para poder saber cuantas horas hay disponibles. La oficina de operaciones debe poder programar vuelos previstos y las revisiones de mtto se deben automatizar, se debe poder hacer todo de manera flexible.
+
+de un vistazo puedes responder las dos preguntas clave:
+
+¿Qué aeronaves tengo disponibles hoy y cuántas horas les quedan?
+¿Cuándo va a entrar cada aeronave en mantenimiento y cuánto tiempo estará fuera de servicio?
+
+Para este caso concreto, un timeline por aeronave con estados de disponibilidad y mantenimiento
+
+AC-01 | ██████████████|██|█████████████|███|█████████████████
+          25h disp.   25h   25h disp.   50h   50h disp.
+
+AC-02 | █████████|██|██████████████████|██|█████████████
