@@ -61,7 +61,7 @@ El gating de la UI (`hasPermission`) es solo cosmético; la garantía real es el
 
 - **RGPD — jamás versionar en este repo (público)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.*.sql`, `migrations/0005_seed_productive_data.*.sql`. Son symlinks al repo privado `~/aether-data`. El CI tiene leak-guard, pero revisa `git status` antes de cada push igualmente. Nunca `git add -f`.
 - **No editar código generado**: `internal/queries/` (sqlc) ni `web/src/types/generated/` (tygo).
-- **Migraciones**: numeradas secuencialmente con par `.up.sql`/`.down.sql` en `migrations/` (mira el último número antes de crear una; convenciones en `migrations/README.md`). Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs → `make types`.
+- **Migraciones**: numeradas secuencialmente en `migrations/` (mira el último número antes de crear una; convenciones en `migrations/README.md`). Las de **esquema** llevan par `.up.sql`/`.down.sql`; las de **seed** (0002, 0005) son **solo-up** (dev hace drop+create y prod solo aplica `up`). Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs → `make types`.
 - **Timestamps**: usar `timestamptz`, nunca `TIMESTAMP` sin zona (la migración 0006 corrigió un bug real de sesiones por esto).
 - Commits y push solo cuando el usuario lo pida; el frontend embebido (`web/dist/`) está versionado — reconstruirlo (`cd web && npm run build`) antes de commitear cambios de frontend relevantes.
 

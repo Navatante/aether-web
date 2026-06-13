@@ -1102,10 +1102,9 @@ git clone https://github.com/Navatante/aether-data ~/aether-data
 cd aether-web
 ln -sf ~/aether-data/Aether.db                                         database-utils/Aether.db
 ln -sf ~/aether-data/person_users.json                                 database-utils/person_users.json
+# Los seeds son solo-up (no hay .down): dev hace drop+create y prod solo aplica `up`.
 ln -sf ~/aether-data/migrations/0002_seed_lookups.up.sql               migrations/0002_seed_lookups.up.sql
-ln -sf ~/aether-data/migrations/0002_seed_lookups.down.sql             migrations/0002_seed_lookups.down.sql
 ln -sf ~/aether-data/migrations/0005_seed_productive_data.up.sql       migrations/0005_seed_productive_data.up.sql
-ln -sf ~/aether-data/migrations/0005_seed_productive_data.down.sql     migrations/0005_seed_productive_data.down.sql
 
 # 3) Lanzar el ciclo completo
 make dev-rebuild PG_SUPERUSER=<tu_user> DEV_USER=<tu_user> DEV_PASSWORD=<tu_pass>
@@ -1182,7 +1181,7 @@ Para actualizaciones posteriores: `sudo ./deploy/update.sh` desde el tarball nue
 - **Cookie HttpOnly**: cookie que el JavaScript no puede leer. Solo el navegador la envía. Defensa contra XSS.
 - **Argon2id**: algoritmo de hashing de contraseñas resistente a GPUs y a ataques de tiempo. Lo recomienda OWASP.
 - **Pool de conexiones**: el binario mantiene N conexiones a PostgreSQL abiertas y las reutiliza, en vez de abrir una por request.
-- **Migration**: cambio versionado del esquema de la BD. Cada una tiene un `.up.sql` (aplicar) y un `.down.sql` (revertir).
+- **Migration**: cambio versionado del esquema de la BD. Las de esquema tienen `.up.sql` (aplicar) y `.down.sql` (revertir); las de seed (0002, 0005) son solo-up.
 - **SPA**: Single Page Application. El navegador descarga un único `index.html` + JS y navega sin recargar la página.
 - **RLS** (Row-Level Security): aquí lo aplicamos a mano en cada query con `WHERE escuadrilla_fk = $X`. El concepto: cada usuario solo ve filas de su escuadrilla.
 - **Sub-lote**: porción de trabajo dentro de un hito. La migración del frontend (Hito 5) se dividió en 8 sub-lotes por feature.

@@ -4,7 +4,8 @@ Migraciones SQL gestionadas con golang-migrate. Se aplican con `make migrate-up`
 
 ## Convenciones
 
-- Numeración secuencial `NNNN_nombre`, siempre en par `.up.sql` / `.down.sql`. Mira el último número existente antes de crear una.
+- Numeración secuencial `NNNN_nombre`. Mira el último número existente antes de crear una.
+- Las migraciones de **esquema** llevan par `.up.sql` / `.down.sql`. Las de **seed** (0002, 0005) son **solo-up**: el ciclo de dev es _drop+create_ (`make dev-rebuild`) y producción solo aplica `up`, así que un `.down` de seed no se ejecuta nunca (y mantener uno correcto era pura carga). `reload-sqlite` / `migrate down 1` siguen funcionando porque revierten la cima (que sí es de esquema). No bajes con `migrate down` por debajo de la 5: no hay reversa.
 - Timestamps siempre `timestamptz`, nunca `TIMESTAMP` sin zona (la 0006 corrigió un bug real de sesiones por esto).
 - Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs Go → `make types`.
 
