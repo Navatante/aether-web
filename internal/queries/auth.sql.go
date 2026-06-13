@@ -115,6 +115,24 @@ func (q *Queries) SetPersonPassword(ctx context.Context, arg SetPersonPasswordPa
 	return result.RowsAffected(), nil
 }
 
+const setPersonPermissionLevelByUser = `-- name: SetPersonPermissionLevelByUser :execrows
+UPDATE detall.person SET person_permission_level = $1 WHERE person_user = $2
+`
+
+type SetPersonPermissionLevelByUserParams struct {
+	PersonPermissionLevel string `json:"person_permission_level"`
+	PersonUser            string `json:"person_user"`
+}
+
+// Usado por cmd/bootstrap para fijar el nivel (p. ej. crear el primer Superusuario).
+func (q *Queries) SetPersonPermissionLevelByUser(ctx context.Context, arg SetPersonPermissionLevelByUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setPersonPermissionLevelByUser, arg.PersonPermissionLevel, arg.PersonUser)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const touchSessionAndGetUser = `-- name: TouchSessionAndGetUser :one
 UPDATE detall.session s
 SET last_seen_at = CURRENT_TIMESTAMP

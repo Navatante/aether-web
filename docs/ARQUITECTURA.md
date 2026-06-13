@@ -159,13 +159,11 @@ aether-web/
 │   └── ...                     # Una por dominio.
 │
 ├── migrations/                 # Migraciones SQL (golang-migrate).
-│   ├── 0001_init_schema.up.sql
+│   ├── 0001_init_schema.up.sql           # Esquema + auth (person_password_hash, session en timestamptz).
 │   ├── 0001_init_schema.down.sql
 │   ├── 0002_seed_lookups.up.sql
-│   ├── 0003_auth_tables.up.sql
-│   ├── 0004_triggers.up.sql
-│   ├── 0005_seed_productive_data.up.sql  # Papeletas nuevas, calificaciones, etc.
-│   └── 0006_session_timestamptz.up.sql   # Sesiones a timestamptz (fix de zonas horarias).
+│   ├── 0003_triggers.up.sql
+│   └── 0004_seed_productive_data.up.sql  # Papeletas nuevas, calificaciones, etc.
 │
 ├── web/                        # Frontend.
 │   ├── src/                    # Código React/TypeScript.
@@ -1024,7 +1022,7 @@ AETHER_TEST_DATABASE_URL="postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disa
 ```
 
 Cada test crea una BD `aether_test_<aleatorio>`, aplica las migraciones
-públicas (sin 0002/0005), siembra un catálogo mínimo (`internal/testdb`) y
+públicas (sin 0002/0004), siembra un catálogo mínimo (`internal/testdb`) y
 la borra al terminar. Sin la variable, se saltan (skip). En CI corren contra
 un service container de PostgreSQL.
 
@@ -1079,7 +1077,7 @@ El proyecto se distribuye en **dos repositorios separados** en GitHub:
   - `Aether.db` — SQLite con datos personales de militares (nombres, DNIs, teléfonos, fechas de nacimiento).
   - `person_users.json` — mapeo `person_sk` → `person_user`.
   - `migrations/0002_seed_lookups.{up,down}.sql` — catálogo operativo de la escuadrilla (escuadrillas concretas, CAPBAs, papeletas históricas).
-  - `migrations/0005_seed_productive_data.{up,down}.sql` — datos productivos (calificaciones reales, ausencias, comisiones).
+  - `migrations/0004_seed_productive_data.up.sql` — datos productivos (calificaciones reales, ausencias, comisiones).
 
 ### Por qué dos repos
 
@@ -1104,7 +1102,7 @@ ln -sf ~/aether-data/Aether.db                                         database-
 ln -sf ~/aether-data/person_users.json                                 database-utils/person_users.json
 # Los seeds son solo-up (no hay .down): dev hace drop+create y prod solo aplica `up`.
 ln -sf ~/aether-data/migrations/0002_seed_lookups.up.sql               migrations/0002_seed_lookups.up.sql
-ln -sf ~/aether-data/migrations/0005_seed_productive_data.up.sql       migrations/0005_seed_productive_data.up.sql
+ln -sf ~/aether-data/migrations/0004_seed_productive_data.up.sql       migrations/0004_seed_productive_data.up.sql
 
 # 3) Lanzar el ciclo completo
 make dev-rebuild PG_SUPERUSER=<tu_user> DEV_USER=<tu_user> DEV_PASSWORD=<tu_pass>
@@ -1114,8 +1112,8 @@ make dev-rebuild PG_SUPERUSER=<tu_user> DEV_USER=<tu_user> DEV_PASSWORD=<tu_pass
 
 | Cambio | Commiteas desde | Push a |
 |---|---|---|
-| Código Go, React, scripts, migraciones de esquema (0001, 0003, 0004), docs | `aether-web/` | repo público |
-| SQLite (`Aether.db`), papeletas históricas (0002), datos productivos (0005), mapeo de usuarios | `~/aether-data/` | repo privado |
+| Código Go, React, scripts, migraciones de esquema (0001, 0003), docs | `aether-web/` | repo público |
+| SQLite (`Aether.db`), papeletas históricas (0002), datos productivos (0004), mapeo de usuarios | `~/aether-data/` | repo privado |
 
 Los symlinks hacen que editar `aether-web/migrations/0002_seed_lookups.up.sql` modifique de hecho el archivo en `~/aether-data/migrations/0002_seed_lookups.up.sql`. El cambio queda registrado en el repo privado, no en el público.
 
@@ -1126,7 +1124,7 @@ Pásate por `git status` desde `aether-web/` y verifica con tus ojos que **no ap
 - `database-utils/Aether.db`
 - `database-utils/person_users.json`
 - `migrations/0002_seed_lookups.*.sql` (los sin `.example`)
-- `migrations/0005_seed_productive_data.*.sql` (los sin `.example`)
+- `migrations/0004_seed_productive_data.*.sql` (los sin `.example`)
 
 Esos archivos están en `.gitignore` y deberían quedar ocultos automáticamente, pero un cambio inadvertido en `.gitignore` o un `git add -f` distraído puede colarlos. **Una vez en GitHub público, GitHub indexa rápido y no hay vuelta atrás limpia**: aunque borres el commit, los clones de terceros y los archivos cacheados por buscadores ya están fuera de tu control.
 
@@ -1181,7 +1179,7 @@ Para actualizaciones posteriores: `sudo ./deploy/update.sh` desde el tarball nue
 - **Cookie HttpOnly**: cookie que el JavaScript no puede leer. Solo el navegador la envía. Defensa contra XSS.
 - **Argon2id**: algoritmo de hashing de contraseñas resistente a GPUs y a ataques de tiempo. Lo recomienda OWASP.
 - **Pool de conexiones**: el binario mantiene N conexiones a PostgreSQL abiertas y las reutiliza, en vez de abrir una por request.
-- **Migration**: cambio versionado del esquema de la BD. Las de esquema tienen `.up.sql` (aplicar) y `.down.sql` (revertir); las de seed (0002, 0005) son solo-up.
+- **Migration**: cambio versionado del esquema de la BD. Las de esquema tienen `.up.sql` (aplicar) y `.down.sql` (revertir); las de seed (0002, 0004) son solo-up.
 - **SPA**: Single Page Application. El navegador descarga un único `index.html` + JS y navega sin recargar la página.
 - **RLS** (Row-Level Security): aquí lo aplicamos a mano en cada query con `WHERE escuadrilla_fk = $X`. El concepto: cada usuario solo ve filas de su escuadrilla.
 - **Sub-lote**: porción de trabajo dentro de un hito. La migración del frontend (Hito 5) se dividió en 8 sub-lotes por feature.

@@ -33,5 +33,9 @@ RETURNING p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.per
 -- name: SetPersonPassword :execrows
 UPDATE detall.person SET person_password_hash = $1 WHERE person_user = $2;
 
+-- name: SetPersonPermissionLevelByUser :execrows
+-- Usado por cmd/bootstrap para fijar el nivel (p. ej. crear el primer Superusuario).
+UPDATE detall.person SET person_permission_level = $1 WHERE person_user = $2;
+
 -- name: PurgeExpiredSessions :execrows
 DELETE FROM detall.session WHERE expires_at <= CURRENT_TIMESTAMP;

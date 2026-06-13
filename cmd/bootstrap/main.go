@@ -1,10 +1,12 @@
-// Bootstrap: configura la contraseña de un usuario existente.
+// Bootstrap: configura la contraseña y/o el nivel de permiso de un usuario existente.
 //
 // Uso:
 //
-//	go run ./cmd/bootstrap -user jcarm20                    # lee de stdin (con eco)
-//	go run ./cmd/bootstrap -user jcarm20 -password 'xxxx'   # pasa por flag (no recomendado en producción)
+//	go run ./cmd/bootstrap -user jcarm20                          # contraseña por stdin (con eco)
+//	go run ./cmd/bootstrap -user jcarm20 -password 'xxxx'         # contraseña por flag (no recomendado en producción)
 //	AETHER_BOOTSTRAP_PASSWORD=xxxx go run ./cmd/bootstrap -user jcarm20
+//	go run ./cmd/bootstrap -user jon -level Superusuario          # solo fija el nivel (sin tocar la contraseña)
+//	go run ./cmd/bootstrap -user jon -password 'xxxx' -level Superusuario  # ambas cosas
 package main
 
 import (
@@ -20,10 +22,20 @@ import (
 	"github.com/14esc/aether-web/internal/db"
 )
 
+// validLevels son los niveles de permiso asignables (espejo del CHECK de BD).
+var validLevels = map[string]struct{}{
+	auth.PermComun:          {},
+	auth.PermOperacional:    {},
+	auth.PermAdministrativo: {},
+	auth.PermSeguridad:      {},
+	auth.PermSuperusuario:   {},
+}
+
 func main() {
 	var (
 		username = flag.String("user", "", "person_user a actualizar (obligatorio)")
-		password = flag.String("password", "", "contraseña en claro (si vacía, se lee de stdin o $AETHER_BOOTSTRAP_PASSWORD)")
+		password = flag.String("password", "", "contraseña en claro (si vacía y sin -level, se lee de stdin o $AETHER_BOOTSTRAP_PASSWORD)")
+		level    = flag.String("level", "", "person_permission_level a fijar (opcional): Común|Operacional|Administrativo|Seguridad|Superusuario")
 	)
 	flag.Parse()
 
@@ -33,11 +45,21 @@ func main() {
 		os.Exit(2)
 	}
 
+	if *level != "" {
+		if _, ok := validLevels[*level]; !ok {
+			fmt.Fprintln(os.Stderr, "error: nivel inválido:", *level)
+			os.Exit(2)
+		}
+	}
+
+	// Resolver contraseña: flag > env > stdin. Si se indicó -level, la
+	// contraseña es opcional (no se pregunta por stdin: permite fijar solo
+	// el nivel sin tocar las credenciales).
 	pwd := *password
 	if pwd == "" {
 		pwd = os.Getenv("AETHER_BOOTSTRAP_PASSWORD")
 	}
-	if pwd == "" {
+	if pwd == "" && *level == "" {
 		fmt.Fprint(os.Stderr, "Contraseña para ", *username, ": ")
 		line, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
@@ -46,8 +68,9 @@ func main() {
 		}
 		pwd = strings.TrimRight(line, "\r\n")
 	}
-	if pwd == "" {
-		fmt.Fprintln(os.Stderr, "error: contraseña vacía")
+
+	if pwd == "" && *level == "" {
+		fmt.Fprintln(os.Stderr, "error: nada que hacer (indica -password o -level)")
 		os.Exit(2)
 	}
 
@@ -68,14 +91,30 @@ func main() {
 	defer pool.Close()
 
 	svc := auth.NewService(pool, 0)
-	n, err := svc.SetPassword(ctx, *username, pwd)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "error actualizando contraseña:", err)
-		os.Exit(1)
+
+	if pwd != "" {
+		n, err := svc.SetPassword(ctx, *username, pwd)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error actualizando contraseña:", err)
+			os.Exit(1)
+		}
+		if n == 0 {
+			fmt.Fprintln(os.Stderr, "usuario no encontrado:", *username)
+			os.Exit(1)
+		}
+		fmt.Printf("OK: contraseña actualizada para %s\n", *username)
 	}
-	if n == 0 {
-		fmt.Fprintln(os.Stderr, "usuario no encontrado:", *username)
-		os.Exit(1)
+
+	if *level != "" {
+		n, err := svc.SetPermissionLevel(ctx, *username, *level)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "error actualizando nivel de permiso:", err)
+			os.Exit(1)
+		}
+		if n == 0 {
+			fmt.Fprintln(os.Stderr, "usuario no encontrado:", *username)
+			os.Exit(1)
+		}
+		fmt.Printf("OK: nivel '%s' fijado para %s\n", *level, *username)
 	}
-	fmt.Printf("OK: contraseña actualizada para %s (%d fila)\n", *username, n)
 }

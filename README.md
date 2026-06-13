@@ -17,7 +17,7 @@ Este repositorio es **público y software libre (MIT)**, pero algunos artefactos
 | `database-utils/Aether.db` | BD SQLite con datos personales de militares (RGPD). | Repo privado separado, contacto con el autor. |
 | `database-utils/person_users.json` | Mapeo `person_sk` → nombre de usuario. | Idem. Hay plantilla pública en `person_users.example.json`. |
 | `migrations/0002_seed_lookups.up.sql` | Lookups con catálogo operativo específico (escuadrillas, papeletas históricas). | Idem. Hay plantilla en `migrations/examples/`. |
-| `migrations/0005_seed_productive_data.up.sql` | Calificaciones, ausencias y comisiones reales. | Idem. |
+| `migrations/0004_seed_productive_data.up.sql` | Calificaciones, ausencias y comisiones reales. | Idem. |
 
 Si quieres correr la aplicación contra tu propio dataset, los archivos `migrations/examples/*.sql.example` describen qué tablas hay que rellenar y con qué forma.
 
@@ -34,7 +34,7 @@ Si quieres correr la aplicación contra tu propio dataset, los archivos `migrati
 
 GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)) en cada push y PR:
 
-- **Leak-guard RGPD**: el job falla si algún archivo sensible (SQLite, seeds 0002/0005, mapeo de usuarios o cualquier `*.db`) aparece versionado.
+- **Leak-guard RGPD**: el job falla si algún archivo sensible (SQLite, seeds 0002/0004, mapeo de usuarios o cualquier `*.db`) aparece versionado.
 - **Backend**: `go vet`, `golangci-lint`, build y tests — unitarios y de **integración** contra un PostgreSQL efímero (service container; en local, `AETHER_TEST_DATABASE_URL` + `make test`).
 - **Frontend**: `npm ci` + typecheck/build de producción (`tsc -b` + Vite).
 - **Contrato de tipos Go → TS**: los tipos de `web/src/types/generated/` se generan desde los structs Go con tygo (`make types`); el CI falla si están desactualizados.

@@ -5,7 +5,7 @@
 // está definida, los tests se saltan.
 //
 // Por cada llamada a New se crea una BD aether_test_<aleatorio>, se aplican
-// las migraciones públicas (se omiten las privadas 0002/0005 de datos), se
+// las migraciones públicas (se omiten las privadas 0002/0004 de datos), se
 // siembra un catálogo mínimo y se borra todo al terminar el test.
 package testdb
 
@@ -125,7 +125,7 @@ func applyMigrations(t *testing.T, ctx context.Context, dsn string) {
 
 	for _, f := range files {
 		if strings.Contains(filepath.Base(f), "seed") {
-			continue // datos privados (0002, 0005): no necesarios para el esquema
+			continue // datos privados (0002, 0004): no necesarios para el esquema
 		}
 		sql, err := os.ReadFile(f)
 		if err != nil {

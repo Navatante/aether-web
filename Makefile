@@ -14,10 +14,10 @@ PG_ADMIN_DB   ?= postgres
 # BD destino que vamos a tirar y recrear.
 PG_TARGET_DB  ?= aether
 # Última versión de migración que NO depende de personas (las posteriores se aplican tras load-sqlite).
-SCHEMA_CUTOFF ?= 4
-# Usuario admin para dev (debe existir en SQLite tras load-sqlite).
-DEV_USER      ?= admin
-DEV_PASSWORD  ?= changeme
+SCHEMA_CUTOFF ?= 3
+# Usuario jon para dev (debe existir en SQLite tras load-sqlite).
+DEV_USER      ?= jon
+DEV_PASSWORD  ?= 1234
 
 # ---------- Desarrollo local ----------
 
@@ -41,19 +41,17 @@ migrate-down:
 	migrate -path migrations -database "$(DATABASE_URL)" down 1
 
 # Carga datos productivos desde database-utils/Aether.db al PostgreSQL apuntado por $DATABASE_URL.
-# Requiere haber aplicado migraciones 0001-0004 (NO 0005 todavía).
+# Requiere haber aplicado migraciones 0001-0003 (NO 0004 todavía).
 load-sqlite:
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)"
 
 # Re-importa desde cero usando un Aether.db actualizado:
-#   1) revierte 0005 (borra sus inserts dependientes de personas)
-#   2) TRUNCATE las tablas que carga el script Python (CASCADE)
-#   3) recarga desde SQLite
-#   4) re-aplica 0005
+#   1) TRUNCATE (CASCADE) las tablas que carga el script Python
+#   2) recarga desde SQLite
+# El seed productivo (0004) es solo-up y queda como cima de migración, así que
+# aquí no hay migrate down/up. Para un reset total del esquema usa `make dev-rebuild`.
 reload-sqlite:
-	migrate -path migrations -database "$(DATABASE_URL)" down 1
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)" --truncate
-	migrate -path migrations -database "$(DATABASE_URL)" up
 
 # DROP + CREATE de la BD destino. Mantiene el contenedor PostgreSQL en marcha.
 # Útil para empezar de cero sin esperar 5-10s a que el contenedor arranque.

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -84,13 +85,46 @@ type PersonSkNk struct {
 	PersonNk string `json:"person_nk"`
 }
 
+// ===== Superusuario (god-mode) DTOs =====
+
+// SuperuserPersonItem es una persona de la escuadrilla del superusuario, para
+// su panel (gestión de credenciales y permisos, acotada a la escuadrilla).
+type SuperuserPersonItem struct {
+	ID              int32  `json:"id"`
+	NombreCompleto  string `json:"nombreCompleto"`
+	Usuario         string `json:"usuario"`
+	PermissionLevel string `json:"permissionLevel"`
+	TienePassword   bool   `json:"tienePassword"`
+}
+
+type SetPasswordReq struct {
+	Password string `json:"password"`
+}
+
+type SetPermissionLevelReq struct {
+	PermissionLevel string `json:"permissionLevel"`
+}
+
 // ===== Sentinel errors =====
 
 var (
-	ErrNotFound     = errors.New("persons: not found or no state change")
-	ErrDuplicate    = errors.New("persons: duplicate person_user, person_nk or person_dni")
-	ErrInvalidInput = errors.New("persons: invalid input")
+	ErrNotFound      = errors.New("persons: not found or no state change")
+	ErrDuplicate     = errors.New("persons: duplicate person_user, person_nk or person_dni")
+	ErrInvalidInput  = errors.New("persons: invalid input")
+	ErrInvalidLevel  = errors.New("persons: nivel de permiso inválido")
+	ErrEmptyPassword = errors.New("persons: la contraseña no puede estar vacía")
+	ErrLastSuperuser = errors.New("persons: no se puede quitar el último Superusuario")
 )
+
+// validPermissionLevels es la allow-list de niveles asignables (espejo del
+// CHECK chk_person_permission_level).
+var validPermissionLevels = map[string]struct{}{
+	auth.PermComun:          {},
+	auth.PermOperacional:    {},
+	auth.PermAdministrativo: {},
+	auth.PermSeguridad:      {},
+	auth.PermSuperusuario:   {},
+}
 
 // ===== Service =====
 
@@ -267,6 +301,91 @@ func (s *Service) BySks(ctx context.Context, esc int32, sks []int32) ([]PersonSk
 	return out, nil
 }
 
+// ===== Superusuario (god-mode acotado a la escuadrilla) =====
+//
+// El superusuario gestiona credenciales y niveles de permiso, pero SOLO de
+// personas de su propia escuadrilla. Igual que el resto del dominio, estas
+// operaciones filtran por person_escuadrilla_fk (el esc de la sesión): una
+// persona de otra escuadrilla simplemente no existe para estas queries.
+
+func (s *Service) ListForSuperuser(ctx context.Context, esc int32) ([]SuperuserPersonItem, error) {
+	rows, err := s.q.ListPersonsForSuperuser(ctx, esc)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]SuperuserPersonItem, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, SuperuserPersonItem{
+			ID:              r.ID,
+			NombreCompleto:  r.NombreCompleto,
+			Usuario:         r.Usuario,
+			PermissionLevel: r.Nivel,
+			TienePassword:   r.TienePassword,
+		})
+	}
+	return out, nil
+}
+
+func (s *Service) SetPassword(ctx context.Context, esc, id int32, password string) error {
+	if password == "" {
+		return ErrEmptyPassword
+	}
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	n, err := s.q.SetPersonPasswordBySk(ctx, queries.SetPersonPasswordBySkParams{
+		PersonPasswordHash:  &hash,
+		PersonSk:            id,
+		PersonEscuadrillaFk: esc,
+	})
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Service) SetPermissionLevel(ctx context.Context, esc, id int32, level string) error {
+	if _, ok := validPermissionLevels[level]; !ok {
+		return ErrInvalidLevel
+	}
+	current, err := s.q.GetPersonPermissionLevelInEscuadrilla(ctx, queries.GetPersonPermissionLevelInEscuadrillaParams{
+		PersonSk:            id,
+		PersonEscuadrillaFk: esc,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+	// Anti-lockout: no degradar al último Superusuario que queda en la escuadrilla.
+	if current == auth.PermSuperusuario && level != auth.PermSuperusuario {
+		count, err := s.q.CountSuperusersInEscuadrilla(ctx, esc)
+		if err != nil {
+			return err
+		}
+		if count <= 1 {
+			return ErrLastSuperuser
+		}
+	}
+	n, err := s.q.SetPersonPermissionLevel(ctx, queries.SetPersonPermissionLevelParams{
+		PersonPermissionLevel: level,
+		PersonSk:              id,
+		PersonEscuadrillaFk:   esc,
+	})
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 // ===== Handlers =====
 
 type Handlers struct{ svc *Service }
@@ -282,6 +401,13 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.POST("/persons/:id/deactivate", h.Deactivate, mw, administrativo)
 	g.POST("/persons/:id/activate", h.Activate, mw, administrativo)
 	g.GET("/persons/by-sks", h.BySks, mw)
+
+	// Panel de superusuario (god-mode): gestión global de credenciales y
+	// permisos, fuera de la RLS por escuadrilla.
+	superusuario := auth.RequirePermission(auth.PermSuperusuario)
+	g.GET("/superuser/persons", h.SuperuserList, mw, superusuario)
+	g.PUT("/superuser/persons/:id/password", h.SuperuserSetPassword, mw, superusuario)
+	g.PATCH("/superuser/persons/:id/permission-level", h.SuperuserSetPermissionLevel, mw, superusuario)
 }
 
 func (h *Handlers) List(c echo.Context) error {
@@ -389,6 +515,72 @@ func (h *Handlers) BySks(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, res)
+}
+
+// ===== Superusuario handlers =====
+
+func (h *Handlers) SuperuserList(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	res, err := h.svc.ListForSuperuser(c.Request().Context(), int32(user.EscuadrillaID))
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) SuperuserSetPassword(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, herr := parseID(c, "id")
+	if herr != nil {
+		return herr
+	}
+	var req SetPasswordReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	err := h.svc.SetPassword(c.Request().Context(), int32(user.EscuadrillaID), id, req.Password)
+	switch {
+	case errors.Is(err, ErrEmptyPassword):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case err != nil:
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *Handlers) SuperuserSetPermissionLevel(c echo.Context) error {
+	user := auth.CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, herr := parseID(c, "id")
+	if herr != nil {
+		return herr
+	}
+	var req SetPermissionLevelReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	err := h.svc.SetPermissionLevel(c.Request().Context(), int32(user.EscuadrillaID), id, req.PermissionLevel)
+	switch {
+	case errors.Is(err, ErrInvalidLevel):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrLastSuperuser):
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	case errors.Is(err, ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case err != nil:
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 // ===== Helpers =====

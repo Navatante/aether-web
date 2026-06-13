@@ -118,4 +118,9 @@ export const queryKeys = {
         list: (escuadrillaId: number, params: Record<string, unknown>) =>
             ['effort', 'list', escuadrillaId, params] as const,
     },
+
+    // Superusuario: acotado a la escuadrilla (god-mode solo en nivel de permiso).
+    superuser: {
+        persons: (escuadrillaId: number) => ['superuser', 'persons', escuadrillaId] as const,
+    },
 } as const;

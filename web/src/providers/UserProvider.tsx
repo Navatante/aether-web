@@ -22,6 +22,9 @@ export enum PermissionLevel {
     OPERACIONAL = "Operacional",
     ADMINISTRATIVO = "Administrativo",
     SEGURIDAD = "Seguridad",
+    // Excepción god-mode: ve y puede todo (espejo del bypass del backend en
+    // RequirePermission). hasPermission/canAccess devuelven true para este nivel.
+    SUPERUSUARIO = "Superusuario",
 }
 
 export interface UserSessionInfo {
@@ -171,12 +174,15 @@ export function UserProvider({ children, onUserLoaded, onError }: UserProviderPr
     }, []);
 
     const hasPermission = useCallback(
-        (level: PermissionLevel) => state.permissionLevel === level,
+        (level: PermissionLevel) =>
+            state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
+            state.permissionLevel === level,
         [state.permissionLevel],
     );
     const canAccess = useCallback(
         (levels: PermissionLevel[]) =>
-            state.permissionLevel !== null && levels.includes(state.permissionLevel),
+            state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
+            (state.permissionLevel !== null && levels.includes(state.permissionLevel)),
         [state.permissionLevel],
     );
 

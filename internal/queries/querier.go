@@ -64,6 +64,7 @@ type Querier interface {
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
 	CountPersons(ctx context.Context, personEscuadrillaFk int32) (int32, error)
+	CountSuperusersInEscuadrilla(ctx context.Context, personEscuadrillaFk int32) (int32, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	// Calificaciones por persona, filtradas por (type, role[]) y escuadrilla.
 	// Sólo las que tienen date_qualified, ordenadas por crew_ratings_fk.
@@ -146,6 +147,7 @@ type Querier interface {
 	GetEventsAll(ctx context.Context) ([]OperationsEvent, error)
 	// Queries de autenticación y sesiones (internal/auth).
 	GetLoginPerson(ctx context.Context, personUser string) (GetLoginPersonRow, error)
+	GetPersonPermissionLevelInEscuadrilla(ctx context.Context, arg GetPersonPermissionLevelInEscuadrillaParams) (string, error)
 	GetStaticAdministrativosStats(ctx context.Context, personEscuadrillaFk int32) (GetStaticAdministrativosStatsRow, error)
 	// Airflow medio: por persona (rol piloto/dotación), si días sin volar >= 60 → 0,
 	// en otro caso 100 - dias/60 * 100. Promedio global.
@@ -258,6 +260,15 @@ type Querier interface {
 	// (src/features/personnel/utils/transformPersonnelFromDB.ts).
 	ListPersons(ctx context.Context, personEscuadrillaFk int32) ([]ListPersonsRow, error)
 	// ============================================================
+	// Superusuario (god-mode acotado a la escuadrilla). Gestiona credenciales y
+	// niveles de permiso, pero SOLO de personas de su propia escuadrilla: igual
+	// que el resto del dominio, todas estas queries filtran por person_escuadrilla_fk.
+	// ============================================================
+	// Personas ACTIVAS de la escuadrilla, con nivel y estado de credenciales,
+	// ordenadas por la lógica de v_person_ordered (order_position). El hash de
+	// contraseña no está en la vista: se trae con un JOIN a detall.person.
+	ListPersonsForSuperuser(ctx context.Context, personEscuadrillaFk int32) ([]ListPersonsForSuperuserRow, error)
+	// ============================================================
 	// Lookups (Hito 4, lote 1)
 	//
 	// Traducción de src-tauri/src/database/commands/lookups.rs (29 fns).
@@ -355,6 +366,10 @@ type Querier interface {
 	// Una sola query para alta/baja con verificación del estado deseado.
 	SetPersonCurrentFlag(ctx context.Context, arg SetPersonCurrentFlagParams) (int64, error)
 	SetPersonPassword(ctx context.Context, arg SetPersonPasswordParams) (int64, error)
+	SetPersonPasswordBySk(ctx context.Context, arg SetPersonPasswordBySkParams) (int64, error)
+	SetPersonPermissionLevel(ctx context.Context, arg SetPersonPermissionLevelParams) (int64, error)
+	// Usado por cmd/bootstrap para fijar el nivel (p. ej. crear el primer Superusuario).
+	SetPersonPermissionLevelByUser(ctx context.Context, arg SetPersonPermissionLevelByUserParams) (int64, error)
 	// Valida la sesión, actualiza last_seen_at y devuelve el usuario en un solo
 	// round-trip (antes eran un UPDATE + un SELECT separados).
 	TouchSessionAndGetUser(ctx context.Context, tokenHash []byte) (TouchSessionAndGetUserRow, error)

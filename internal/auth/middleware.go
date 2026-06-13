@@ -15,11 +15,16 @@ const (
 
 // Niveles de permiso válidos. Espejo del CHECK chk_person_permission_level
 // en detall.person (migración 0001).
+//
+// EXCEPCIÓN al modelo plano: PermSuperusuario es god-mode. A diferencia del
+// resto (allow-list exacta, sin jerarquía), un Superusuario pasa cualquier
+// RequirePermission (ver el bypass abajo). Es el único nivel jerárquico.
 const (
 	PermComun          = "Común"
 	PermOperacional    = "Operacional"
 	PermAdministrativo = "Administrativo"
 	PermSeguridad      = "Seguridad"
+	PermSuperusuario   = "Superusuario"
 )
 
 // RequireAuth valida la sesión y rechaza con 401 si no es válida. Inyecta
@@ -57,6 +62,11 @@ func RequirePermission(levels ...string) echo.MiddlewareFunc {
 			user := CurrentUser(c)
 			if user == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "missing session")
+			}
+			// God-mode: el Superusuario pasa toda ruta protegida, presente o
+			// futura, sin necesidad de listarlo en cada RequirePermission.
+			if user.PermissionLevel == PermSuperusuario {
+				return next(c)
 			}
 			if _, ok := allowed[user.PermissionLevel]; !ok {
 				return echo.NewHTTPError(http.StatusForbidden, "insufficient permissions")

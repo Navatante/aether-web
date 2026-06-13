@@ -689,20 +689,18 @@ El **listado** (`List`) hace lo contrario al insert: para una página de vuelos,
 
 **Conceptos nuevos.** Dos tipos de migración:
 
-- **De esquema** (0001 init, 0003 auth, 0004 triggers, 0006 timestamptz): llevan **par `up`/`down`** (aplicar/revertir).
-- **De seed** (datos): `0002_seed_lookups`, `0005_seed_productive_data` son **solo-up** (no se revierten; en dev se hace drop+create, en prod solo se aplican).
+- **De esquema** (0001 init+auth, 0003 triggers): llevan **par `up`/`down`** (aplicar/revertir).
+- **De seed** (datos): `0002_seed_lookups`, `0004_seed_productive_data` son **solo-up** (no se revierten; en dev se hace drop+create, en prod solo se aplican).
 
-**Regla crítica (RGPD).** Algunos archivos contienen datos personales y **no se versionan en este repo público**: `0002_seed_lookups.up.sql`, `0005_seed_productive_data.up.sql`, la BD SQLite y el mapeo de usuarios. Son **symlinks** al repo privado `aether-data`, que debe estar clonado **junto a** `aether-web`. El CI tiene un *leak-guard* que falla si alguno aparece versionado. Revisa `git status` antes de cada push y **nunca** `git add -f`.
+**Regla crítica (RGPD).** Algunos archivos contienen datos personales y **no se versionan en este repo público**: `0002_seed_lookups.up.sql`, `0004_seed_productive_data.up.sql`, la BD SQLite y el mapeo de usuarios. Son **symlinks** al repo privado `aether-data`, que debe estar clonado **junto a** `aether-web`. El CI tiene un *leak-guard* que falla si alguno aparece versionado. Revisa `git status` antes de cada push y **nunca** `git add -f`.
 
-**Timestamps.** Usar siempre `timestamptz` (con zona), nunca `TIMESTAMP` pelado: la migración 0006 corrigió un bug real de sesiones por esto.
+**Timestamps.** Usar siempre `timestamptz` (con zona), nunca `TIMESTAMP` pelado: las sesiones lo usan por un bug real de zonas horarias (el esquema de auth/sesión vive consolidado en `0001`).
 
 | Archivo (representativos) | Rol |
 |---|---|
-| `0001_init_schema.up/down.sql` | Esquema base (tablas `detall.*`, CHECK de permisos...). |
-| `0003_auth_tables.up/down.sql` | Tablas de sesión/auth. |
-| `0004_triggers.up/down.sql` | Triggers de auditoría (`tr_audit_flight` y los GUCs `aether.*`). |
-| `0006_session_timestamptz.up/down.sql` | Corrección a `timestamptz` en sesiones. |
-| `0002_seed_lookups.up.sql`, `0005_seed_productive_data.up.sql` | **Symlinks privados** (RGPD), solo-up. |
+| `0001_init_schema.up/down.sql` | Esquema base + auth (tablas `detall.*`, CHECK de permisos, `person_password_hash`, tabla `session` en `timestamptz`). |
+| `0003_triggers.up/down.sql` | Triggers de auditoría (`tr_audit_flight` y los GUCs `aether.*`). |
+| `0002_seed_lookups.up.sql`, `0004_seed_productive_data.up.sql` | **Symlinks privados** (RGPD), solo-up. |
 | `examples/*.sql.example`, `README.md` | Plantillas públicas y convenciones de migración. |
 
 ---
@@ -1086,7 +1084,7 @@ Cuatro jobs en cada push/PR:
 
 | Job | Qué verifica |
 |---|---|
-| **leak-guard** | Que **ningún archivo sensible (RGPD)** esté versionado (SQLite, seeds 0002/0005, mapeo de usuarios, cualquier `*.db`). Falla el build si aparece. |
+| **leak-guard** | Que **ningún archivo sensible (RGPD)** esté versionado (SQLite, seeds 0002/0004, mapeo de usuarios, cualquier `*.db`). Falla el build si aparece. |
 | **theme-guard** | Que no haya colores hardcodeados fuera de `theme.css`. |
 | **backend** | `go vet`, `golangci-lint`, `go build`, `go test` (con un **PostgreSQL efímero** como *service container* → corren los tests de integración), y que **tygo esté al día**. |
 | **frontend** | `npm ci` + `npm run build` (typecheck + build de producción). |

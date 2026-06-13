@@ -1,7 +1,8 @@
 import { TopbarMenus } from "./TopbarMenus"
 import { ModeToggle } from "@/components/theme/mode-toggle"
 import OutlineGradientButton from "@/shared/components/common/OutlineGradientButton"
-import { useUserData } from "@/providers"
+import { SuperuserButton } from "@/features/superuser"
+import { useUserData, PermissionLevel } from "@/providers"
 import {
   Sheet,
   SheetClose,
@@ -15,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 export function Topbar() {
-  const { nk, escuadrillaId } = useUserData();
+  const { nk, escuadrillaId, permissionLevel } = useUserData();
 
   return (
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -90,6 +91,7 @@ export function Topbar() {
                     </SheetContent>
                   </Sheet>
               )}
+              {permissionLevel === PermissionLevel.SUPERUSUARIO && <SuperuserButton/>}
               <ModeToggle/>
             </div>
           </div>

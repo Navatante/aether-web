@@ -19,7 +19,7 @@ jobs:
           database-utils/Aether.db
           database-utils/person_users.json
           migrations/0002_seed_lookups.up.sql
-          migrations/0005_seed_productive_data.up.sql
+          migrations/0004_seed_productive_data.up.sql
           '
           fail=0
           for f in $FORBIDDEN; do

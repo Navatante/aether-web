@@ -215,9 +215,10 @@ CREATE TABLE detall.person (
     person_num_escalafon      INTEGER      NOT NULL,
     person_current_flag       BOOLEAN      NOT NULL DEFAULT TRUE,
     person_permission_level   VARCHAR(50)  NOT NULL DEFAULT 'Común',
+    person_password_hash      VARCHAR(255),
     person_escuadrilla_fk     INTEGER      NOT NULL,
     CONSTRAINT chk_person_permission_level CHECK (
-        person_permission_level IN ('Común', 'Operacional', 'Administrativo', 'Seguridad')
+        person_permission_level IN ('Común', 'Operacional', 'Administrativo', 'Seguridad', 'Superusuario')
     ),
     CONSTRAINT fk_person_rank          FOREIGN KEY (person_rank)         REFERENCES detall.rank(rank_name),
     CONSTRAINT fk_person_localidad     FOREIGN KEY (person_localidad)    REFERENCES detall.localidad(localidad_name),
@@ -579,8 +580,29 @@ CREATE TABLE detall.audit_log (
     changed_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- detall.session_info no se traduce: la nueva tabla detall.session se crea en
--- 0003_auth_tables.up.sql con el modelo de sesión web (token SHA-256 + TTL).
+-- ============================================================
+-- Auth: sesiones web (consolidado de los antiguos 0003/0006).
+--   - detall.person.person_password_hash (arriba): argon2id PHC string.
+--   - detall.session: sesiones server-side, una fila por sesión activa. El
+--     cliente recibe un token aleatorio en cookie HttpOnly; en BD guardamos
+--     SHA-256(token) — robar la BD no permite reusar tokens.
+--   - Timestamps con zona (timestamptz): la expiración se compara bien aunque
+--     la app y la BD estén en zonas distintas (TIMESTAMP pelado daba un bug real).
+-- (detall.session_info del modelo antiguo no se traduce.)
+-- ============================================================
+CREATE TABLE detall.session (
+    session_sk     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    token_hash     BYTEA        NOT NULL,
+    person_fk      INTEGER      NOT NULL REFERENCES detall.person(person_sk) ON DELETE CASCADE,
+    ip_address     VARCHAR(45),
+    created_at     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expires_at     TIMESTAMPTZ  NOT NULL,
+    last_seen_at   TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX ix_session_token_hash ON detall.session (token_hash);
+CREATE INDEX ix_session_expires_at        ON detall.session (expires_at);
+CREATE INDEX ix_session_person_fk         ON detall.session (person_fk);
 
 -- ============================================================
 -- VIEWS

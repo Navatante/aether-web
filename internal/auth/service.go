@@ -140,6 +140,16 @@ func (s *Service) SetPassword(ctx context.Context, username, password string) (i
 	})
 }
 
+// SetPermissionLevel fija el nivel de permiso de un usuario existente.
+// Usado por cmd/bootstrap (p. ej. para crear el primer Superusuario).
+// Devuelve número de filas afectadas. El nivel se valida contra el CHECK de BD.
+func (s *Service) SetPermissionLevel(ctx context.Context, username, level string) (int64, error) {
+	return s.q.SetPersonPermissionLevelByUser(ctx, queries.SetPersonPermissionLevelByUserParams{
+		PersonPermissionLevel: level,
+		PersonUser:            username,
+	})
+}
+
 // PurgeExpired elimina sesiones caducadas. Lo llama el job periódico de main.
 func (s *Service) PurgeExpired(ctx context.Context) (int64, error) {
 	return s.q.PurgeExpiredSessions(ctx)

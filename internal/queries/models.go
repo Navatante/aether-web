@@ -119,8 +119,8 @@ type DetallPerson struct {
 	PersonNumEscalafon    int32       `json:"person_num_escalafon"`
 	PersonCurrentFlag     bool        `json:"person_current_flag"`
 	PersonPermissionLevel string      `json:"person_permission_level"`
-	PersonEscuadrillaFk   int32       `json:"person_escuadrilla_fk"`
 	PersonPasswordHash    *string     `json:"person_password_hash"`
+	PersonEscuadrillaFk   int32       `json:"person_escuadrilla_fk"`
 }
 
 type DetallPersonComision struct {

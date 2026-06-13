@@ -89,7 +89,10 @@
       "Bash(rm -v /home/jon/GolandProjects/aether-data/migrations/0005_seed_productive_data.down.sql)",
       "Bash(ln -sfn ../../aether-data/migrations/0002_seed_lookups.up.sql migrations/0002_seed_lookups.up.sql)",
       "Bash(ln -sfn ../../aether-data/migrations/0005_seed_productive_data.up.sql migrations/0005_seed_productive_data.up.sql)",
-      "Bash(awk '{print $5, $9}')"
+      "Bash(awk '{print $5, $9}')",
+      "Bash(~/go/bin/sqlc generate *)",
+      "Bash(ps -o pid,lstart,etime,cmd -p 164347)",
+      "Bash(grep -c \"order_position\" /proc/164347/exe)"
     ]
   }
 }

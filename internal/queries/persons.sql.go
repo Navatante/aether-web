@@ -22,6 +22,19 @@ func (q *Queries) CountPersons(ctx context.Context, personEscuadrillaFk int32) (
 	return column_1, err
 }
 
+const countSuperusersInEscuadrilla = `-- name: CountSuperusersInEscuadrilla :one
+SELECT COUNT(*)::int
+FROM detall.person
+WHERE person_permission_level = 'Superusuario' AND person_escuadrilla_fk = $1
+`
+
+func (q *Queries) CountSuperusersInEscuadrilla(ctx context.Context, personEscuadrillaFk int32) (int32, error) {
+	row := q.db.QueryRow(ctx, countSuperusersInEscuadrilla, personEscuadrillaFk)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const getCrewMembersBySk = `-- name: GetCrewMembersBySk :many
 SELECT person_sk, person_nk
 FROM detall.person
@@ -58,6 +71,24 @@ func (q *Queries) GetCrewMembersBySk(ctx context.Context, arg GetCrewMembersBySk
 		return nil, err
 	}
 	return items, nil
+}
+
+const getPersonPermissionLevelInEscuadrilla = `-- name: GetPersonPermissionLevelInEscuadrilla :one
+SELECT person_permission_level
+FROM detall.person
+WHERE person_sk = $1 AND person_escuadrilla_fk = $2
+`
+
+type GetPersonPermissionLevelInEscuadrillaParams struct {
+	PersonSk            int32 `json:"person_sk"`
+	PersonEscuadrillaFk int32 `json:"person_escuadrilla_fk"`
+}
+
+func (q *Queries) GetPersonPermissionLevelInEscuadrilla(ctx context.Context, arg GetPersonPermissionLevelInEscuadrillaParams) (string, error) {
+	row := q.db.QueryRow(ctx, getPersonPermissionLevelInEscuadrilla, arg.PersonSk, arg.PersonEscuadrillaFk)
+	var person_permission_level string
+	err := row.Scan(&person_permission_level)
+	return person_permission_level, err
 }
 
 const insertPerson = `-- name: InsertPerson :one
@@ -232,6 +263,63 @@ func (q *Queries) ListPersons(ctx context.Context, personEscuadrillaFk int32) ([
 	return items, nil
 }
 
+const listPersonsForSuperuser = `-- name: ListPersonsForSuperuser :many
+
+SELECT
+    vpo.person_sk                                                                              AS id,
+    BTRIM(vpo.person_rank || ' ' || vpo.person_last_name_1 || ' ' || vpo.person_last_name_2)::text AS nombre_completo,
+    vpo.person_user                                                                            AS usuario,
+    vpo.person_permission_level                                                                AS nivel,
+    (p.person_password_hash IS NOT NULL)::boolean                                              AS tiene_password
+FROM detall.v_person_ordered vpo
+JOIN detall.person p ON p.person_sk = vpo.person_sk
+WHERE vpo.person_escuadrilla_fk = $1
+  AND vpo.person_current_flag = TRUE
+ORDER BY vpo.order_position
+`
+
+type ListPersonsForSuperuserRow struct {
+	ID             int32  `json:"id"`
+	NombreCompleto string `json:"nombre_completo"`
+	Usuario        string `json:"usuario"`
+	Nivel          string `json:"nivel"`
+	TienePassword  bool   `json:"tiene_password"`
+}
+
+// ============================================================
+// Superusuario (god-mode acotado a la escuadrilla). Gestiona credenciales y
+// niveles de permiso, pero SOLO de personas de su propia escuadrilla: igual
+// que el resto del dominio, todas estas queries filtran por person_escuadrilla_fk.
+// ============================================================
+// Personas ACTIVAS de la escuadrilla, con nivel y estado de credenciales,
+// ordenadas por la lógica de v_person_ordered (order_position). El hash de
+// contraseña no está en la vista: se trae con un JOIN a detall.person.
+func (q *Queries) ListPersonsForSuperuser(ctx context.Context, personEscuadrillaFk int32) ([]ListPersonsForSuperuserRow, error) {
+	rows, err := q.db.Query(ctx, listPersonsForSuperuser, personEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPersonsForSuperuserRow
+	for rows.Next() {
+		var i ListPersonsForSuperuserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.NombreCompleto,
+			&i.Usuario,
+			&i.Nivel,
+			&i.TienePassword,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setPersonCurrentFlag = `-- name: SetPersonCurrentFlag :execrows
 UPDATE detall.person
 SET person_current_flag = $1
@@ -249,6 +337,44 @@ type SetPersonCurrentFlagParams struct {
 // Una sola query para alta/baja con verificación del estado deseado.
 func (q *Queries) SetPersonCurrentFlag(ctx context.Context, arg SetPersonCurrentFlagParams) (int64, error) {
 	result, err := q.db.Exec(ctx, setPersonCurrentFlag, arg.PersonCurrentFlag, arg.PersonSk, arg.PersonEscuadrillaFk)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setPersonPasswordBySk = `-- name: SetPersonPasswordBySk :execrows
+UPDATE detall.person SET person_password_hash = $1
+WHERE person_sk = $2 AND person_escuadrilla_fk = $3
+`
+
+type SetPersonPasswordBySkParams struct {
+	PersonPasswordHash  *string `json:"person_password_hash"`
+	PersonSk            int32   `json:"person_sk"`
+	PersonEscuadrillaFk int32   `json:"person_escuadrilla_fk"`
+}
+
+func (q *Queries) SetPersonPasswordBySk(ctx context.Context, arg SetPersonPasswordBySkParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setPersonPasswordBySk, arg.PersonPasswordHash, arg.PersonSk, arg.PersonEscuadrillaFk)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const setPersonPermissionLevel = `-- name: SetPersonPermissionLevel :execrows
+UPDATE detall.person SET person_permission_level = $1
+WHERE person_sk = $2 AND person_escuadrilla_fk = $3
+`
+
+type SetPersonPermissionLevelParams struct {
+	PersonPermissionLevel string `json:"person_permission_level"`
+	PersonSk              int32  `json:"person_sk"`
+	PersonEscuadrillaFk   int32  `json:"person_escuadrilla_fk"`
+}
+
+func (q *Queries) SetPersonPermissionLevel(ctx context.Context, arg SetPersonPermissionLevelParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setPersonPermissionLevel, arg.PersonPermissionLevel, arg.PersonSk, arg.PersonEscuadrillaFk)
 	if err != nil {
 		return 0, err
 	}

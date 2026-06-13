@@ -95,3 +95,43 @@ FROM detall.person
 WHERE person_sk = ANY($1::int[])
   AND person_escuadrilla_fk = $2
 ORDER BY person_sk;
+
+-- ============================================================
+-- Superusuario (god-mode acotado a la escuadrilla). Gestiona credenciales y
+-- niveles de permiso, pero SOLO de personas de su propia escuadrilla: igual
+-- que el resto del dominio, todas estas queries filtran por person_escuadrilla_fk.
+-- ============================================================
+
+-- name: ListPersonsForSuperuser :many
+-- Personas ACTIVAS de la escuadrilla, con nivel y estado de credenciales,
+-- ordenadas por la lógica de v_person_ordered (order_position). El hash de
+-- contraseña no está en la vista: se trae con un JOIN a detall.person.
+SELECT
+    vpo.person_sk                                                                              AS id,
+    BTRIM(vpo.person_rank || ' ' || vpo.person_last_name_1 || ' ' || vpo.person_last_name_2)::text AS nombre_completo,
+    vpo.person_user                                                                            AS usuario,
+    vpo.person_permission_level                                                                AS nivel,
+    (p.person_password_hash IS NOT NULL)::boolean                                              AS tiene_password
+FROM detall.v_person_ordered vpo
+JOIN detall.person p ON p.person_sk = vpo.person_sk
+WHERE vpo.person_escuadrilla_fk = $1
+  AND vpo.person_current_flag = TRUE
+ORDER BY vpo.order_position;
+
+-- name: GetPersonPermissionLevelInEscuadrilla :one
+SELECT person_permission_level
+FROM detall.person
+WHERE person_sk = $1 AND person_escuadrilla_fk = $2;
+
+-- name: CountSuperusersInEscuadrilla :one
+SELECT COUNT(*)::int
+FROM detall.person
+WHERE person_permission_level = 'Superusuario' AND person_escuadrilla_fk = $1;
+
+-- name: SetPersonPasswordBySk :execrows
+UPDATE detall.person SET person_password_hash = $1
+WHERE person_sk = $2 AND person_escuadrilla_fk = $3;
+
+-- name: SetPersonPermissionLevel :execrows
+UPDATE detall.person SET person_permission_level = $1
+WHERE person_sk = $2 AND person_escuadrilla_fk = $3;
