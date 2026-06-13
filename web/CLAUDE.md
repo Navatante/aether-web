@@ -45,6 +45,44 @@ Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no 
    }
    ```
 
+## Tablas (responsividad — patrón canónico)
+
+La app es **solo navegador de escritorio**; "responsivo" = comportarse bien en cualquier ancho de ventana (incl. split-screen), no maquetar para móvil. **Todas las tablas anchas usan el archetipo "container-scroll"**: la zona de tabla scrollea (X/Y) dentro de un contenedor de altura acotada, con cabecera (y 1ª columna en matrices) congeladas; la cabecera y los controles quedan fijos arriba. **No** uses el viejo patrón page-scroll (`overflow-y-auto` en la raíz + `StickyTableHeader offset="topbar"`).
+
+Piezas compartidas en `shared/components/common/`: `PageTableContainer`, `StickyTableHeader`, `TableRow`, `DetailsRow`, y `stickyColumn.ts` (`STICKY_CORNER`, `stickyFirstColClass`).
+
+**Esqueleto (lista — pocas columnas; ref: `flights/pages/Flights.tsx`, `personnel/pages/Personnel.tsx`):**
+```tsx
+<div className="h-full p-3 sm:p-6 pb-8 flex flex-col">                 {/* p-3 sm:p-6 = respira en estrecho */}
+  <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
+    <div className="… flex-shrink-0">{/* título */}</div>
+    <PageControls className="flex-shrink-0">{/* filtros */}</PageControls>
+    <PageTableContainer className="flex-1 flex flex-col min-h-0">
+      <div className="overflow-x-auto flex-1">
+        <table className="w-full min-w-[760px]" role="table">  {/* min-w → scroll antes de aplastar */}
+          <StickyTableHeader> … </StickyTableHeader>             {/* offset="none" (por defecto) */}
+          <tbody>{rows.map((r, idx) => <TableRow index={idx} …>…</TableRow>)}</tbody>
+        </table>
+      </div>
+      {/* paginación: flex flex-wrap … para que no desborde */}
+    </PageTableContainer>
+    {/* contador u otros: fuera del scroll, flex-shrink-0 */}
+  </div>
+</div>
+```
+
+**Matriz (muchas columnas, p. ej. personal × algo; ref: `training/**`, `availability/pages/Disponibilidad.tsx`, `ratings/components/RatingTable.tsx`):** igual, pero **congela también la 1ª columna**:
+- `PageTableContainer className="flex-1 overflow-auto"` (sin div interno extra).
+- `<thead>` ⇒ siempre el componente `StickyTableHeader` (nunca `<thead className="sticky…">` a mano).
+- Celda esquina sup-izq: ``className={`… ${STICKY_CORNER}`}``.
+- Celda de cuerpo de la 1ª columna: `className={stickyFirstColClass(idx, "p-4 …")}`.
+- Capas z resultantes: cuerpo normal auto · 1ª col `z-10` · cabecera `z-20` · esquina `z-30`.
+
+**Reglas de oro (errores reales que esto evita):**
+- **Fondo opaco en celdas congeladas**: usa `bg-table-sticky-even/odd` (vía `stickyFirstColClass`) y `bg-table-header` en la esquina — los `bg-table-row-*` son **traslúcidos en dark** y dejan ver lo que scrollea por detrás.
+- **`z-5` no existe** en Tailwind (escala 0/10/20/30/40/50): usa el helper, no inventes z-index.
+- Para que el scroll interno funcione, la cadena de flex necesita `flex-1` + `min-h-0` en cada nivel hasta el contenedor; los hermanos no-tabla van `flex-shrink-0`.
+
 ## Colores y theming
 
 - **Fuente única de verdad**: `src/app/theme.css` — tokens OKLCH en `:root` (claro) y `.dark` (oscuro), mapeados a clases Tailwind vía `@theme inline`. El modo oscuro lo gestiona `ThemeProvider` (clase `.dark` en `<html>`); nunca dual-codees colores con `dark:` a mano.

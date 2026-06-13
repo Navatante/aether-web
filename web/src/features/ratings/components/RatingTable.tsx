@@ -8,7 +8,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PageTableContainer, StickyTableHeader, TableRow } from '@/shared/components/common';
+import { PageTableContainer, StickyTableHeader, TableRow, STICKY_CORNER, stickyFirstColClass } from '@/shared/components/common';
 import type { Rating, CertificationData } from '../types';
 import type { ColorName } from '../utils/colors';
 import { COLOR_PALETTE } from '../utils/colors';
@@ -47,11 +47,11 @@ export function RatingTable({
     renderCell,
 }: RatingTableProps) {
     return (
-        <PageTableContainer>
+        <PageTableContainer className="flex-1 overflow-auto">
             <table className="w-full" role="table">
-                <StickyTableHeader offset="topbar">
+                <StickyTableHeader offset="none">
                     <tr>
-                        <th className="text-left p-4 font-semibold text-table-header-foreground">
+                        <th className={`text-left p-4 font-semibold text-table-header-foreground ${STICKY_CORNER}`}>
                             {personColumnLabel}
                         </th>
                         {ratings.map((rating) => {
@@ -82,7 +82,7 @@ export function RatingTable({
                             index={idx}
                             className="cursor-default"
                         >
-                            <td className="p-4">
+                            <td className={stickyFirstColClass(idx, "p-4")}>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className="font-medium text-lg text-muted-foreground cursor-help">

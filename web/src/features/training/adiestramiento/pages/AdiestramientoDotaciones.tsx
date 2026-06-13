@@ -20,6 +20,9 @@ import {
     GradientTitle,
     PageControls,
     PageTableContainer,
+    StickyTableHeader,
+    STICKY_CORNER,
+    stickyFirstColClass,
 } from "@/shared/components/common";
 import {ToggleButton} from "@/shared/components/common/ToggleButton.tsx";
 import { useApiQuery } from "@/lib/apiQuery";
@@ -227,7 +230,7 @@ export default function AdiestramientoDotaciones() {
     if (!data) return null;
 
     return (
-            <div className="h-full flex flex-col p-6 pb-8">
+            <div className="h-full flex flex-col p-3 sm:p-6 pb-8">
                 <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                     {/* Header - Sticky */}
                     <div className="flex-shrink-0 sticky top-0 z-20 bg-inherit pb-4">
@@ -236,7 +239,7 @@ export default function AdiestramientoDotaciones() {
                         </div>
 
                         {/* Contenedor principal: Controles + GlassProgressBarBig */}
-                        <div className="flex gap-6 items-center">
+                        <div className="flex flex-wrap gap-6 items-center">
                             {/* Controles */}
                             <PageControls className="space-y-4 flex-1">
                                 <div className="flex flex-wrap gap-4 items-center">
@@ -346,9 +349,9 @@ export default function AdiestramientoDotaciones() {
                     {/* Tabla con scroll */}
                     <PageTableContainer className="flex-1 overflow-auto">
                         <table className="w-full" role="table">
-                            <thead className="sticky top-0 z-10 bg-table-header">
+                            <StickyTableHeader>
                             <tr>
-                                <th className="text-left font-semibold text-table-header-foreground p-4 w-0 whitespace-nowrap sticky left-0 z-20 bg-table-header">
+                                <th className={`text-left font-semibold text-table-header-foreground p-4 whitespace-nowrap ${STICKY_CORNER}`}>
                                     {/* Puedes dejar vacío o poner un título si quieres */}
                                 </th>
                                 {visiblePersonas.map(persona => (
@@ -385,7 +388,7 @@ export default function AdiestramientoDotaciones() {
                                     </th>
                                 ))}
                             </tr>
-                            </thead>
+                            </StickyTableHeader>
                             <tbody>
                             {filteredPapeletas.length === 0 ? (
                                 <tr>
@@ -401,9 +404,7 @@ export default function AdiestramientoDotaciones() {
                                             idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
                                         }`}
                                     >
-                                        <td className={`p-4 min-w-0 whitespace-nowrap sticky left-0 z-5 border-b border-border ${
-                                            idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
-                                        }`}>
+                                        <td className={stickyFirstColClass(idx, "p-4 min-w-0 whitespace-nowrap border-b border-border")}>
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <div className="cursor-help">

@@ -139,7 +139,7 @@ const Comisiones = () => {
     };
 
     return (
-        <div className="h-full p-6 pb-8 flex flex-col">
+        <div className="h-full p-3 sm:p-6 pb-8 flex flex-col">
             <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                 {/* Header */}
                 <div className="mb-8 text-center flex-shrink-0">

@@ -239,7 +239,7 @@ export default function DiasDeComision() {
     }
 
     return (
-        <div className="h-full flex flex-col p-6 pb-8">
+        <div className="h-full flex flex-col p-3 sm:p-6 pb-8">
             {/* Header */}
             <div className="mb-6 text-center">
                 <GradientTitle>Días de comisión</GradientTitle>
@@ -381,11 +381,11 @@ export default function DiasDeComision() {
                                             className="cursor-default"
                                         >
                                             <td className="p-4">
-                                                <div className="flex items-center justify-between">
+                                                <div className="flex flex-wrap items-center justify-between gap-2">
                                                     <span className="text-sm text-foreground font-medium">
                                                         {`${persona.person_rank} ${persona.full_name}`}
                                                     </span>
-                                                    <div className="flex items-center gap-1.5 ml-4">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
                                                         <span className={getTableBadgeClass('rol', persona.person_rol)}>
                                                             {persona.person_rol}
                                                         </span>

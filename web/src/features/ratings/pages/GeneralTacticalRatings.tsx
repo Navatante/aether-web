@@ -110,8 +110,8 @@ export default function GeneralTacticalRatings() {
     }
 
     return (
-            <div className="h-full overflow-y-auto p-6 pb-8">
-                <div className="w-full mx-auto">
+            <div className="h-full flex flex-col p-3 sm:p-6 pb-8">
+                <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                     {/* Header */}
                     <div className="mb-8 text-center">
                         <div className="inline-flex items-center gap-3 mb-4">

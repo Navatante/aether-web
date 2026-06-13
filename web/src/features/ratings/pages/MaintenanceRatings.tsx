@@ -13,6 +13,8 @@ import {
     PageTableContainer,
     StickyTableHeader,
     TableRow,
+    STICKY_CORNER,
+    stickyFirstColClass,
 } from '@/shared/components/common';
 
 // Utilidades del feature
@@ -219,11 +221,11 @@ function MaintenanceTable({
     renderCell,
 }: MaintenanceTableProps) {
     return (
-        <PageTableContainer>
+        <PageTableContainer className="flex-1 overflow-auto">
             <table className="w-full" role="table">
-                <StickyTableHeader offset="topbar">
+                <StickyTableHeader offset="none">
                     <tr>
-                        <th className="text-left p-4 font-semibold text-table-header-foreground">Mantenedor</th>
+                        <th className={`text-left p-4 font-semibold text-table-header-foreground ${STICKY_CORNER}`}>Mantenedor</th>
                         {ratings.map((rating) => {
                             const colorName = colorMap[rating.crew_rating_sk] || 'gray';
                             const color = COLOR_PALETTE[colorName];
@@ -252,7 +254,7 @@ function MaintenanceTable({
                             index={idx}
                             className="cursor-default"
                         >
-                            <td className="p-4">
+                            <td className={stickyFirstColClass(idx, "p-4")}>
                                 <span className="font-medium text-lg text-foreground">
                                     {personKey}
                                 </span>
@@ -350,8 +352,8 @@ export default function MaintenanceRatings() {
     }
 
     return (
-            <div className="h-full overflow-y-auto p-6 pb-8">
-                <div className="w-full mx-auto">
+            <div className="h-full flex flex-col p-3 sm:p-6 pb-8">
+                <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                     {/* Header */}
                     <div className="mb-8 text-center">
                         <div className="inline-flex items-center gap-3 mb-4">

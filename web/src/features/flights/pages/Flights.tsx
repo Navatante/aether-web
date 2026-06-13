@@ -301,7 +301,7 @@ const Flights = () => {
     };
 
     return (
-        <div className="h-full p-6 pb-8 flex flex-col">
+        <div className="h-full p-3 sm:p-6 pb-8 flex flex-col">
             <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                 {/* Header */}
                 <div className="mb-8 text-center flex-shrink-0">
@@ -357,7 +357,7 @@ const Flights = () => {
                 {/* Tabla */}
                 <PageTableContainer className="flex-1 flex flex-col min-h-0">
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full" role="table">
+                        <table className="w-full min-w-[760px]" role="table">
                             <StickyTableHeader>
                             <tr>
                                 <th className="text-left p-4 font-semibold text-table-header-foreground">ID</th>
@@ -528,7 +528,7 @@ const Flights = () => {
                     </div>
 
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-between px-6 py-4 bg-muted/50 border-t border-border">
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 bg-muted/50 border-t border-border">
                             <div className="text-sm text-muted-foreground">
                                 Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCount)} de {totalCount} vuelos
                             </div>

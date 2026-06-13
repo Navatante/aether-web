@@ -65,15 +65,15 @@ const Personnel = () => {
     } = usePersonnel();
 
     return (
-        <div className="h-full overflow-y-auto p-6 pb-8">
-            <div className="w-full mx-auto">
+        <div className="h-full p-3 sm:p-6 pb-8 flex flex-col">
+            <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                 {/* Header */}
-                <div className="mb-8 text-center">
+                <div className="mb-8 text-center flex-shrink-0">
                     <GradientTitle>Personal</GradientTitle>
                 </div>
 
                 {/* Controles */}
-                <PageControls>
+                <PageControls className="flex-shrink-0">
                     <div className="flex flex-wrap gap-4 items-center">
                         <div className="flex-1 min-w-[200px]">
                             <SearchInput
@@ -157,9 +157,10 @@ const Personnel = () => {
                 </PageControls>
 
                 {/* Tabla */}
-                <PageTableContainer>
-                    <table className="w-full" role="table">
-                        <StickyTableHeader offset="topbar">
+                <PageTableContainer className="flex-1 flex flex-col min-h-0">
+                    <div className="overflow-x-auto flex-1">
+                    <table className="w-full min-w-[900px]" role="table">
+                        <StickyTableHeader offset="none">
                         <tr>
                             <th className="text-left p-4 font-semibold text-table-header-foreground">ID</th>
                             <th className="text-center p-4 font-semibold text-table-header-foreground">Usuario</th>
@@ -314,10 +315,11 @@ const Personnel = () => {
                         )}
                         </tbody>
                     </table>
+                    </div>
                 </PageTableContainer>
 
                 {/* Contador */}
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-muted-foreground flex-shrink-0 pt-4">
                     Mostrando {filteredPersonnel.length} de {personnel.length} personas
                 </div>
             </div>

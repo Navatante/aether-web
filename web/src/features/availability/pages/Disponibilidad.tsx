@@ -9,6 +9,9 @@ import {
     GradientTitle,
     PageControls,
     PageTableContainer,
+    StickyTableHeader,
+    STICKY_CORNER,
+    stickyFirstColClass,
 } from "@/shared/components/common";
 import {HoverCard, HoverCardContent, HoverCardTrigger} from "@/components/ui/hover-card";
 import {
@@ -77,7 +80,7 @@ export default function Disponibilidad(): React.ReactElement {
     } = useDisponibilidad();
 
     return (
-        <div className="h-full flex flex-col p-6 pb-8">
+        <div className="h-full flex flex-col p-3 sm:p-6 pb-8">
             <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
                 {/* Header - Sticky */}
                 <div className="flex-shrink-0 sticky top-0 z-20 bg-inherit pb-4">
@@ -249,9 +252,9 @@ export default function Disponibilidad(): React.ReactElement {
                 {!isLoading && (
                     <PageTableContainer className="flex-1 overflow-auto">
                         <table className="w-full" role="table">
-                            <thead className="sticky top-0 z-10 bg-table-header backdrop-blur-md">
+                            <StickyTableHeader>
                             <tr>
-                                <th className="text-left p-4 font-semibold text-table-header-foreground min-w-[220px] sticky left-0 z-20 bg-table-header">
+                                <th className={`text-left p-4 font-semibold text-table-header-foreground min-w-[220px] ${STICKY_CORNER}`}>
                                 </th>
                                 {days.map((day: Day) => {
                                     const holiday = isHoliday(day.dateStr);
@@ -295,7 +298,7 @@ export default function Disponibilidad(): React.ReactElement {
                                     );
                                 })}
                             </tr>
-                            </thead>
+                            </StickyTableHeader>
                             <tbody>
                             {filteredPersons.length === 0 ? (
                                 <tr>
@@ -309,7 +312,7 @@ export default function Disponibilidad(): React.ReactElement {
                                         key={person.person_sk}
                                         className={`border-b border-border hover:bg-table-row-hover transition-colors ${idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'}`}
                                     >
-                                        <td className={`p-3 sticky left-0 z-5 border-b border-border shadow-sm ${idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'}`}>
+                                        <td className={stickyFirstColClass(idx, "p-3 border-b border-border shadow-sm")}>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex flex-col">
                                                         <span className="text-sm font-medium text-foreground">

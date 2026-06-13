@@ -188,6 +188,9 @@
     --table-row-odd: oklch(0.98 0 0);
     --table-row-selected: oklch(0.97 0.02 250);
     --table-row-hover: oklch(0.98 0 0);
+    /* Variantes opacas para la 1ª columna congelada (no deja traslucir lo que scrollea) */
+    --table-sticky-even: oklch(1 0 0);
+    --table-sticky-odd: oklch(0.98 0 0);
 
     /* ========== DETAILS ROW ========== */
     --details-from: oklch(0.97 0.02 250);
@@ -406,6 +409,9 @@
     --table-row-odd: transparent;
     --table-row-selected: oklch(0.6 0.15 250 / 0.1);
     --table-row-hover: oklch(1 0 0 / 0.05);
+    /* Variantes opacas para la 1ª columna congelada (no deja traslucir lo que scrollea) */
+    --table-sticky-even: oklch(0.235 0.006 225);
+    --table-sticky-odd: oklch(0.215 0.006 225);
 
     /* ========== DETAILS ROW ========== */
     --details-from: oklch(0.6 0.15 250 / 0.05);
@@ -566,6 +572,8 @@
     --color-table-row-odd: var(--table-row-odd);
     --color-table-row-selected: var(--table-row-selected);
     --color-table-row-hover: var(--table-row-hover);
+    --color-table-sticky-even: var(--table-sticky-even);
+    --color-table-sticky-odd: var(--table-sticky-odd);
 
     /* Details */
     --color-details-from: var(--details-from);
