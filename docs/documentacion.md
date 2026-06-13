@@ -1,7 +1,5 @@
-# Aether-Web — Manual de estudio (de Java a Go + React)
+# Aether-Web — Manual de estudio
 
-> **Para quién es esto.** Para ti: programador de Java que ha levantado este proyecto con ayuda de la IA y ahora quiere **entenderlo de verdad** para mantenerlo y evolucionarlo con criterio. Este documento es **autónomo**: se lee de principio a fin sin saltar a otros ficheros. Asume que sabes programar (Java) pero **no** que conoces Go, TypeScript ni React, así que cada concepto nuevo se explica desde cero y, cuando ayuda, se compara con su equivalente en Java.
->
 > **Cómo se relaciona con el resto de docs.** `docs/ARQUITECTURA.md` es la guía **de referencia y operativa** (cómo arranca el binario, recetas de "cómo añado X", despliegue, glosario). Este `documentacion.md` es el **manual didáctico**: explica *por qué* del stack y recorre el código directorio por directorio enseñando los patrones. Cuando una tarea operativa concreta esté mejor cubierta allí, lo indico, pero no necesitas abrirla para seguir este texto.
 
 ---
