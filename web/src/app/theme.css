@@ -201,6 +201,10 @@
     --brand-from: oklch(0.69 0.105 183);
     --brand-via: oklch(0.66 0.103 215);
     --brand-to: oklch(0.56 0.083 196);
+    /* Texto/iconos sobre el gradiente de marca (panel teal del login). El
+       gradiente es el mismo en claro y oscuro, así que estos también. */
+    --brand-foreground: oklch(0.99 0.006 190);
+    --brand-foreground-muted: oklch(0.99 0.006 190 / 0.72);
 
     /* ========== DISPONIBILIDAD ========== */
     /* Comisión en el calendario (antes rgba(79,164,200,0.76)) */
@@ -564,6 +568,8 @@
     --color-brand-from: var(--brand-from);
     --color-brand-via: var(--brand-via);
     --color-brand-to: var(--brand-to);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-foreground-muted: var(--brand-foreground-muted);
 
     /* Disponibilidad */
     --color-comision: var(--comision);
