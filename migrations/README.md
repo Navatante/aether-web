@@ -11,9 +11,9 @@ Migraciones SQL gestionadas con golang-migrate. Se aplican con `make migrate-up`
 
 ## ⚠️ Archivos sensibles (RGPD) — symlinks al repo privado
 
-`0002_seed_lookups.*.sql` y `0005_seed_productive_data.*.sql` **no están versionados en este repo (público)**: son symlinks a `~/aether-data` (repo privado). Contienen catálogo operativo y datos personales reales.
+`0002_seed_lookups.*.sql` y `0005_seed_productive_data.*.sql` **no están versionados en este repo (público)**: son symlinks a `~/GolandProjects/aether-data` (repo privado), que debe estar clonado **junto a** `aether-web` (mismo directorio padre): los symlinks son relativos (`../../aether-data/...`) y no resuelven si el repo privado vive en otra ruta. Contienen catálogo operativo y datos personales reales.
 
-- Editarlos funciona con normalidad (el symlink es transparente), pero el commit del cambio se hace **desde `~/aether-data`**, al repo privado.
+- Editarlos funciona con normalidad (el symlink es transparente), pero el commit del cambio se hace **desde `~/GolandProjects/aether-data`**, al repo privado.
 - Jamás `git add -f` sobre ellos aquí. El CI tiene leak-guard, pero revisa `git status` antes de cada push igualmente.
 - Las plantillas públicas equivalentes (qué tablas rellenan y con qué forma) están en `examples/*.sql.example`.
 

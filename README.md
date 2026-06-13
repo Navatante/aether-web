@@ -60,14 +60,21 @@ export AETHER_DATABASE_URL="$DATABASE_URL"
 python -m venv .venv && .venv/bin/pip install -r database-utils/requirements.txt
 
 # 4) Reconstruir todo de cero (drop + create BD, migraciones, datos, admin)
-make dev-rebuild
+#    DEV_USER debe coincidir con un person_user real de tus datos (ver nota abajo).
+make dev-rebuild DEV_USER=jon DEV_PASSWORD=changeme
 
 # 5) Arrancar
 make run                              # terminal 1
 cd web && npm install && npm run dev  # terminal 2
 ```
 
-Abre `http://localhost:5173`.
+Abre `http://localhost:5173`. Login: `jon` / `changeme`.
+
+> **Nota sobre `DEV_USER`.** El último paso de `make dev-rebuild` fija la contraseña de un usuario **que ya debe existir** en `detall.person` (no lo crea). El default del Makefile es `DEV_USER=admin`, que solo existe si usas el `person_users.example.json` público (mapea `sk 66 → admin`). Con el `person_users.json` privado real, ese `sk 66` es **`jon`**, así que hay que pasar `DEV_USER=jon` o el paso falla con `usuario no encontrado: admin`. Si solo falló ese último paso (la BD ya quedó cargada), basta con relanzar el bootstrap suelto:
+>
+> ```bash
+> go run ./cmd/bootstrap -user jon -password changeme
+> ```
 
 ## Despliegue en producción
 
