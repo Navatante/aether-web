@@ -34,7 +34,7 @@ function PilotCard({
     const p = (field: string) => `pilots.${index}.${field}`;
 
     return (
-        <div className="p-4 border rounded-lg background-secondary">
+        <div className="p-4 border rounded-lg bg-card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">
                     Piloto {index + 1}

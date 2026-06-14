@@ -33,7 +33,7 @@ function DvCard({
     const p = (field: string) => `dvs.${index}.${field}`;
 
     return (
-        <div className="p-4 border rounded-lg background-secondary">
+        <div className="p-4 border rounded-lg bg-card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">
                     Dotación {index + 1}

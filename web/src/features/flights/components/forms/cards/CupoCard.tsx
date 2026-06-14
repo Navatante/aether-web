@@ -28,7 +28,7 @@ function CupoCard({
     })) || [];
 
     return (
-        <div className="p-4 border rounded-lg min-h-40 background-secondary">
+        <div className="p-4 border rounded-lg min-h-40 bg-card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">
                     Cupo {index + 1}

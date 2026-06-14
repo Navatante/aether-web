@@ -243,12 +243,12 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
 
     return (
         <ScrollArea className="h-[calc(100vh-120px)] rounded-md border">
-            <div className="w-full p-6 space-y-12 background-secondary">
+            <div className="w-full p-6 space-y-12 bg-background">
 
                 {/* General */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h1 className="text-xl font-bold">General</h1>
+                        <h1 className="text-xl font-semibold">General</h1>
                         <Button
                             type="button"
                             variant="ghost"

@@ -13,7 +13,7 @@ interface SectionHeaderProps {
 function SectionHeader({ title, onAdd }: SectionHeaderProps) {
     return (
         <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold">{title}</h1>
+            <h1 className="text-xl font-semibold">{title}</h1>
             <Button
                 type="button"
                 onClick={onAdd}
