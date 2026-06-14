@@ -1,4 +1,4 @@
-.PHONY: run build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild test fmt vet dist clean theme-guard
+.PHONY: run dev pg-up build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild test fmt vet dist clean theme-guard
 
 BIN := ./bin/aether-web
 BOOTSTRAP_BIN := ./bin/aether-bootstrap
@@ -21,10 +21,49 @@ DEV_PASSWORD  ?= 1234
 # Nivel de permiso que se fija al usuario de dev (Común|Operacional|Administrativo|Seguridad|Superusuario).
 DEV_LEVEL     ?= Superusuario
 
+# Credenciales/URL de Postgres para desarrollo local (usadas por `make dev`).
+# Sobrescribibles: make dev DEV_DB_PASSWORD=tu_password
+DEV_DB_PASSWORD  ?= CHANGEME
+DEV_DATABASE_URL ?= postgres://$(PG_SUPERUSER):$(DEV_DB_PASSWORD)@127.0.0.1:5432/$(PG_TARGET_DB)?sslmode=disable
+
 # ---------- Desarrollo local ----------
 
 run:
 	go run $(PKG)
+
+# Asegura que el contenedor de PostgreSQL esté arriba y aceptando conexiones:
+#   - Si no existe, lo crea con `docker run` (usa PG_SUPERUSER/DEV_DB_PASSWORD/PG_TARGET_DB).
+#   - Si existe pero está parado, lo arranca con `docker start`.
+#   - Si ya está corriendo, no hace nada.
+pg-up:
+	@if [ -z "$$(docker ps -q -f name=^/$(PG_CONTAINER)$$)" ]; then \
+	  if [ -z "$$(docker ps -aq -f name=^/$(PG_CONTAINER)$$)" ]; then \
+	    echo "==> Creando contenedor $(PG_CONTAINER)..."; \
+	    docker run -d --name $(PG_CONTAINER) \
+	      -e POSTGRES_USER=$(PG_SUPERUSER) -e POSTGRES_PASSWORD=$(DEV_DB_PASSWORD) \
+	      -e POSTGRES_DB=$(PG_TARGET_DB) \
+	      -p 5432:5432 postgres:18 >/dev/null; \
+	  else \
+	    echo "==> Arrancando contenedor existente $(PG_CONTAINER)..."; \
+	    docker start $(PG_CONTAINER) >/dev/null; \
+	  fi; \
+	  echo -n "==> Esperando a que Postgres acepte conexiones"; \
+	  for i in $$(seq 1 30); do \
+	    docker exec $(PG_CONTAINER) pg_isready -U $(PG_SUPERUSER) >/dev/null 2>&1 && break; \
+	    echo -n "."; sleep 1; \
+	  done; \
+	  echo; \
+	else \
+	  echo "==> $(PG_CONTAINER) ya está corriendo."; \
+	fi
+
+# Arranca el entorno de desarrollo completo:
+#   - PostgreSQL: lo levanta/crea si hace falta (pg-up).
+#   - Frontend: nueva ventana de Alacritty con `cd web && npm install && npm run dev`.
+#   - Backend:  `make run` en esta misma terminal, con DATABASE_URL/AETHER_DATABASE_URL exportadas.
+dev: pg-up
+	alacritty --working-directory "$(CURDIR)" --hold -e bash -c "cd web && npm install && npm run dev" &
+	DATABASE_URL="$(DEV_DATABASE_URL)" AETHER_DATABASE_URL="$(DEV_DATABASE_URL)" $(MAKE) run
 
 build:
 	mkdir -p bin
