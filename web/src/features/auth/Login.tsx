@@ -72,7 +72,6 @@ export default function Login() {
                 />
 
                 <div className="relative flex items-center gap-3 text-brand-foreground">
-                    <img src="/escudo-14.svg" alt="Escudo de la Decimocuarta Escuadrilla" className="h-11 w-11 drop-shadow" />
                     <div className="leading-tight">
                         <p className="text-lg font-semibold tracking-tight">AETHER</p>
                         <p className="text-xs font-medium uppercase tracking-[0.2em] text-brand-foreground-muted">
@@ -87,12 +86,12 @@ export default function Login() {
                     </h2>
                     <p className="mt-4 text-pretty text-sm leading-relaxed text-brand-foreground-muted">
                         Vuelos, horas, calificaciones, papeletas, ausencias y comisiones de la
-                        escuadrilla en un único sistema.
+                        Escuadrilla en un único sistema.
                     </p>
                 </div>
 
                 <p className="relative text-xs text-brand-foreground-muted">
-                    Acceso restringido · Uso interno de la escuadrilla
+                    Acceso restringido · Uso interno de la Escuadrilla
                 </p>
             </aside>
 
