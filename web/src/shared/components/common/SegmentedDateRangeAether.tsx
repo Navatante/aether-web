@@ -107,7 +107,7 @@ const segmentButtonVariants = cva(
 // Utility Functions (pure, outside component)
 // ============================================================================
 
-const formatDateDisplay = (dateString: string, includeYear: boolean = true): string => {
+export const formatDateDisplay = (dateString: string, includeYear: boolean = true): string => {
     const date = new Date(dateString + 'T00:00:00');
     const options: Intl.DateTimeFormatOptions = {
         day: '2-digit',

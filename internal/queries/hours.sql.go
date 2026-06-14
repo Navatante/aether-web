@@ -48,28 +48,37 @@ sim_agg AS (
     FROM operations.previous_model_sim_hour
     WHERE previous_model_sim_hours_date >= $1 AND previous_model_sim_hours_date <= $2
     GROUP BY previous_model_sim_hours_person_fk
+),
+prev_agg AS (
+    SELECT
+        previous_hours_person_fk AS person_sk,
+        CASE WHEN $5::bool THEN previous_hours_day        ELSE 0 END::numeric AS day,
+        CASE WHEN $5::bool THEN previous_hours_conv_night ELSE 0 END::numeric AS night,
+        CASE WHEN $5::bool THEN previous_hours_gvn        ELSE 0 END::numeric AS gvn
+    FROM operations.previous_hour
 )
 SELECT
     p.person_nk,
     -- Días
-    ROUND(COALESCE(ph.real_day, 0)  + COALESCE(r.day,   0), 1)::numeric AS real_day_hour_qty,
+    ROUND(COALESCE(ph.real_day, 0)  + COALESCE(r.day,   0) + COALESCE(pv.day, 0), 1)::numeric AS real_day_hour_qty,
     ROUND(COALESCE(ph.sim_day,  0)  + COALESCE(s.day,   0), 1)::numeric AS sim_day_hour_qty,
     ROUND(COALESCE(ph.real_day, 0)  + COALESCE(ph.sim_day, 0)
-        + COALESCE(r.day, 0) + COALESCE(s.day, 0), 1)::numeric            AS total_day_hour_qty,
+        + COALESCE(r.day, 0) + COALESCE(s.day, 0) + COALESCE(pv.day, 0), 1)::numeric          AS total_day_hour_qty,
     -- Noche
-    ROUND(COALESCE(ph.real_night, 0) + COALESCE(r.night, 0), 1)::numeric AS real_night_hour_qty,
+    ROUND(COALESCE(ph.real_night, 0) + COALESCE(r.night, 0) + COALESCE(pv.night, 0), 1)::numeric AS real_night_hour_qty,
     ROUND(COALESCE(ph.sim_night,  0) + COALESCE(s.night, 0), 1)::numeric AS sim_night_hour_qty,
     ROUND(COALESCE(ph.real_night, 0) + COALESCE(ph.sim_night, 0)
-        + COALESCE(r.night, 0) + COALESCE(s.night, 0), 1)::numeric        AS total_night_hour_qty,
+        + COALESCE(r.night, 0) + COALESCE(s.night, 0) + COALESCE(pv.night, 0), 1)::numeric      AS total_night_hour_qty,
     -- GVN
-    ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(r.gvn, 0), 1)::numeric    AS real_gvn_hour_qty,
+    ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(r.gvn, 0) + COALESCE(pv.gvn, 0), 1)::numeric    AS real_gvn_hour_qty,
     ROUND(COALESCE(ph.sim_gvn,  0)  + COALESCE(s.gvn, 0), 1)::numeric    AS sim_gvn_hour_qty,
     ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(ph.sim_gvn, 0)
-        + COALESCE(r.gvn, 0) + COALESCE(s.gvn, 0), 1)::numeric            AS total_gvn_hour_qty
+        + COALESCE(r.gvn, 0) + COALESCE(s.gvn, 0) + COALESCE(pv.gvn, 0), 1)::numeric            AS total_gvn_hour_qty
 FROM detall.v_person_ordered p
 LEFT JOIN person_hour_agg ph ON ph.person_sk = p.person_sk
 LEFT JOIN real_agg        r  ON r.person_sk  = p.person_sk
 LEFT JOIN sim_agg         s  ON s.person_sk  = p.person_sk
+LEFT JOIN prev_agg        pv ON pv.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
@@ -81,6 +90,7 @@ type NH90PeriodHoursParams struct {
 	FlightDate_2        pgtype.Date `json:"flight_date_2"`
 	PersonEscuadrillaFk int32       `json:"person_escuadrilla_fk"`
 	Column4             []string    `json:"column_4"`
+	Column5             bool        `json:"column_5"`
 }
 
 type NH90PeriodHoursRow struct {
@@ -105,13 +115,21 @@ type NH90PeriodHoursRow struct {
 //
 // RLS explícita: $3 = escuadrilla_fk.
 // $4 = roles permitidos (array vacío = todos los roles).
+// $5 = incluir horas de arrastre (operations.previous_hour): modo "Totales".
+//
+//	previous_hour es acumulado vitalicio por persona (sin filtro de fecha) y
+//	son horas reales, por lo que solo suman a la parte real (y al total).
+//
 // ============================================================
+// Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
+// activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
 func (q *Queries) NH90PeriodHours(ctx context.Context, arg NH90PeriodHoursParams) ([]NH90PeriodHoursRow, error) {
 	rows, err := q.db.Query(ctx, nH90PeriodHours,
 		arg.FlightDate,
 		arg.FlightDate_2,
 		arg.PersonEscuadrillaFk,
 		arg.Column4,
+		arg.Column5,
 	)
 	if err != nil {
 		return nil, err

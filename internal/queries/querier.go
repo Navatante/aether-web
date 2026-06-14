@@ -321,7 +321,12 @@ type Querier interface {
 	//
 	// RLS explícita: $3 = escuadrilla_fk.
 	// $4 = roles permitidos (array vacío = todos los roles).
+	// $5 = incluir horas de arrastre (operations.previous_hour): modo "Totales".
+	//      previous_hour es acumulado vitalicio por persona (sin filtro de fecha) y
+	//      son horas reales, por lo que solo suman a la parte real (y al total).
 	// ============================================================
+	// Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
+	// activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
 	NH90PeriodHours(ctx context.Context, arg NH90PeriodHoursParams) ([]NH90PeriodHoursRow, error)
 	NotCrewQualificationsByPerson(ctx context.Context, personEscuadrillaFk int32) ([]NotCrewQualificationsByPersonRow, error)
 	NotCrewRatingsCatalog(ctx context.Context) ([]DetallNotcrewRatingType, error)

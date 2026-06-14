@@ -874,6 +874,34 @@ Cambia la variable de entorno `AETHER_SESSION_TTL` y reinicia el servicio. En pr
 
 Mismo mecanismo: `AETHER_ADDR=":9090"` y reinicio.
 
+### H. Añadir un modo/toggle opcional a una query (sin duplicar la query)
+
+Caso real: el endpoint `/hours/nh90-period` tiene un modo "Totales" que suma además las horas de arrastre de `operations.previous_hour`. En vez de escribir una segunda query casi idéntica, se parametriza con **un flag booleano** que activa/desactiva una contribución.
+
+La técnica: un `CASE WHEN $N::bool` dentro de un CTE (o en el `SELECT`), y se suma con `COALESCE(...)` al resto. Cuando el flag es `false`, ese término aporta 0 y la query equivale al modo base.
+
+1. **`queries/<dominio>.sql`** — añade el CTE/columna gobernado por el flag (será el siguiente `$N` posicional):
+   ```sql
+   prev_agg AS (
+       SELECT previous_hours_person_fk AS person_sk,
+           CASE WHEN $5::bool THEN previous_hours_day ELSE 0 END::numeric AS day
+       FROM operations.previous_hour
+   )
+   -- ...
+   SELECT ROUND(COALESCE(ph.real_day,0) + COALESCE(pv.day,0), 1) AS real_day_hour_qty
+   FROM ... LEFT JOIN prev_agg pv ON pv.person_sk = p.person_sk
+   ```
+2. `make sqlc`. El parámetro nuevo aparece en `*Params` como `Column5 bool` (sin nombre, porque la query usa posicionales; consistente con el `Column4` que ya tenía). Si prefieres nombre legible, usa `sqlc.arg(include_previous)::bool` en toda la query.
+3. **`Request` + service + handler** (`internal/domain/<dominio>/`): añade el campo (`IncludePrevious bool`), pásalo al `*Params` y léelo del query param en el handler:
+   ```go
+   IncludePrevious: c.QueryParam("include_previous") == "true",
+   ```
+4. **Frontend**: el flag es un query param más. Mételo en los query params del hook (y por tanto en la `queryKey`) para que TanStack Query cachee cada modo por separado y refetchee al cambiarlo. Si un modo solo tiene sentido con cierto rango (p. ej. "Totales" = siempre histórico), fuerza ese rango en el hook e **ignora/oculta** el selector en ese modo.
+
+> Ventaja: una sola query, un solo camino de mantenimiento. La RLS se preserva sola si el CTE se une por persona y el `WHERE` externo ya filtra por `*_escuadrilla_fk` (la tabla del flag no necesita su propio filtro de escuadrilla).
+>
+> Valídalo contra la BD dev en **ambos** valores del flag: la diferencia entre `true` y `false` debe ser exactamente la contribución añadida.
+
 ---
 
 ## 12. Desarrollo local

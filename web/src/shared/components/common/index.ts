@@ -12,7 +12,7 @@ export * from './ActionButton'
 
 export * from './DateTimePicker'
 export * from './DatePicker'
-export { default as SegmentedDateRangeAether, type StatsParams, type PredefinedRange } from './SegmentedDateRangeAether'
+export { default as SegmentedDateRangeAether, formatDateDisplay, type StatsParams, type PredefinedRange } from './SegmentedDateRangeAether'
 export * from './ToggleButton'
 
 // Badges

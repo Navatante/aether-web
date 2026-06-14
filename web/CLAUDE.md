@@ -45,6 +45,33 @@ Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no 
    }
    ```
 
+## Gráficos de estadísticas (patrón canónico)
+
+Charts con recharts alimentados por un endpoint de stats con rango de fechas. Separación en **3 capas** — no metas todo en la página. Referencia completa: `features/hours/**`.
+
+1. **Andamiaje genérico** `shared/components/charts/StatsChartCard.tsx`: `Card` + cabecera (`title`/`description`) + el triple estado **carga / error / vacío**. Agnóstico de recharts y del shape de datos; el chart concreto entra como `children`. Reutilízalo en **todo** chart de stats (no recrees el spinner / bloque de error / "sin datos" a mano).
+2. **Chart concreto** en `features/<feature>/components/<Nombre>Chart.tsx`: dueño de su `chartConfig`, leyenda, tooltip y los `<Bar>/<Line>/…`. Recibe `data` por props y **nada más** (sin fetching). Ej.: `NH90HoursChart`.
+3. **Hook de datos** en `features/<feature>/hooks/use<Nombre>.ts`: estado del rango + `useApiQuery` + derivados (memoizados). Parametriza por filtros (`personRol`, `includePrevious`, …) para reutilizar la misma vista con distintos datos. Ej.: `useHorasVuelo`.
+
+La **página** queda como composición solo-render (~70 líneas):
+```tsx
+const { loading, errorMsg, chartData, enrichedChartData, startDate, endDate, handleDateRangeChange }
+    = useHorasVuelo({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+// ...
+<SegmentedDateRangeAether onDataReceived={handleDateRangeChange} currentDateFrom={startDate} currentDateTo={endDate} />
+<StatsChartCard title="…" description="…" isLoading={loading} error={errorMsg} isEmpty={chartData.length === 0}>
+    <NH90HoursChart data={enrichedChartData} />
+</StatsChartCard>
+```
+
+**Reglas de oro (errores reales que esto evita):**
+- **Datos por `useApiQuery`, nunca `http()`+`useState`** (regla 5). El rango lo emite `SegmentedDateRangeAether` (`shared/components/common`) vía `onDataReceived: (StatsParams) => void`; tradúcelo a query params en el hook. Mete los query params en la `queryKey` → TanStack refetchea solo y cachea por combinación (y por escuadrilla).
+- **Estado inicial = default del selector** (`ultimos-30-dias`) para no disparar un fetch extra en el montaje.
+- **Separa estado-de-rango de los query-params finales**: el rango es estado mutable (lo cambia el selector); rol/flags son props que se mezclan vía `useMemo`. Así un cambio de prop refetchea sin tocar el estado del rango.
+- **Tipos del backend, no a mano**: el endpoint devuelve un DTO Go → split en `dto.go`, añádelo a `tygo.yaml`, `make types`, y consume el tipo generado (adaptador fino en `types/`). No re-declares interfaces que espejen el JSON.
+- **Fechas**: el backend devuelve `YYYY-MM-DD`; formatéalas con `formatDateDisplay` (export de `shared/components/common`), no con un helper ad-hoc.
+- **Colores**: solo tokens (`var(--color-…)`, `var(--foreground)`); en recharts el `fill`/`stroke` van como `var(--token)`. Pasa `make theme-guard`.
+
 ## Tablas (responsividad — patrón canónico)
 
 La app es **solo navegador de escritorio**; "responsivo" = comportarse bien en cualquier ancho de ventana (incl. split-screen), no maquetar para móvil. **Todas las tablas anchas usan el archetipo "container-scroll"**: la zona de tabla scrollea (X/Y) dentro de un contenedor de altura acotada, con cabecera (y 1ª columna en matrices) congeladas; la cabecera y los controles quedan fijos arriba. **No** uses el viejo patrón page-scroll (`overflow-y-auto` en la raíz + `StickyTableHeader offset="topbar"`).

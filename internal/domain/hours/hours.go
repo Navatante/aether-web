@@ -21,34 +21,15 @@ import (
 )
 
 // ============================================================
-// DTOs
+// Request (interno; no es contrato JSON, ver dto.go para el response)
 // ============================================================
-
-// Tripulante espeja el shape del SP (snake_case con sufijos _qty).
-type Tripulante struct {
-	PersonNk          string  `json:"person_nk"`
-	RealDayHourQty    float64 `json:"real_day_hour_qty"`
-	SimDayHourQty     float64 `json:"sim_day_hour_qty"`
-	TotalDayHourQty   float64 `json:"total_day_hour_qty"`
-	RealNightHourQty  float64 `json:"real_night_hour_qty"`
-	SimNightHourQty   float64 `json:"sim_night_hour_qty"`
-	TotalNightHourQty float64 `json:"total_night_hour_qty"`
-	RealGvnHourQty    float64 `json:"real_gvn_hour_qty"`
-	SimGvnHourQty     float64 `json:"sim_gvn_hour_qty"`
-	TotalGvnHourQty   float64 `json:"total_gvn_hour_qty"`
-}
-
-type Result struct {
-	StartDate    string       `json:"startDate"`
-	EndDate      string       `json:"endDate"`
-	Tripulantes  []Tripulante `json:"tripulantes"`
-}
 
 type Request struct {
 	TimeRange       string   // predefined key (vacío + customs vacíos → "ultimos-7-dias")
 	PersonRoles     []string // CSV recibido en query, ya partido
 	CustomStartDate string   // YYYY-MM-DD
 	CustomEndDate   string   // YYYY-MM-DD
+	IncludePrevious bool     // modo "Totales": suma operations.previous_hour (arrastre)
 }
 
 // ============================================================
@@ -167,6 +148,7 @@ func (s *Service) NH90PeriodHours(ctx context.Context, esc int32, req Request) (
 		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
 		PersonEscuadrillaFk: esc,
 		Column4:             req.PersonRoles,
+		Column5:             req.IncludePrevious,
 	})
 	if err != nil {
 		return Result{}, err
@@ -219,6 +201,7 @@ func (h *Handlers) NH90PeriodHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
+		IncludePrevious: c.QueryParam("include_previous") == "true",
 	}
 	res, err := h.svc.NH90PeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {

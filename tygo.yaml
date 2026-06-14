@@ -27,3 +27,8 @@ packages:
     include_files: ["dto.go"]
     frontmatter: |
       // Código generado por tygo desde internal/domain/lookups/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/hours"
+    output_path: "web/src/types/generated/hours.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/hours/dto.go. NO EDITAR.
