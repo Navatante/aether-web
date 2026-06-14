@@ -98,7 +98,8 @@
       "Bash(git -C /home/jon/GolandProjects/aether-web status --short)",
       "Bash(git -C /home/jon/GolandProjects/aether-web diff --stat)",
       "Bash(make theme-guard *)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(make dev-rebuild *)"
     ]
   }
 }

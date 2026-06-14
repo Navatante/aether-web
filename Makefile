@@ -121,13 +121,13 @@ db-reset:
 #   make dev-rebuild DEV_USER=otro DEV_PASSWORD=otra DEV_LEVEL=Operacional SCHEMA_CUTOFF=5
 dev-rebuild: db-reset
 	@echo "==> Aplicando migraciones 1..$(SCHEMA_CUTOFF) (esquema)…"
-	migrate -path migrations -database "$(DATABASE_URL)" goto $(SCHEMA_CUTOFF)
+	migrate -path migrations -database "$(DEV_DATABASE_URL)" goto $(SCHEMA_CUTOFF)
 	@echo "==> Cargando datos productivos desde SQLite…"
-	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)"
+	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DEV_DATABASE_URL)"
 	@echo "==> Aplicando migraciones $(SCHEMA_CUTOFF)+ (datos dependientes de personas)…"
-	migrate -path migrations -database "$(DATABASE_URL)" up
+	migrate -path migrations -database "$(DEV_DATABASE_URL)" up
 	@echo "==> Configurando contraseña y nivel '$(DEV_LEVEL)' de '$(DEV_USER)'…"
-	@AETHER_DATABASE_URL="$(DATABASE_URL)" go run $(BOOTSTRAP_PKG) -user $(DEV_USER) -password $(DEV_PASSWORD) -level $(DEV_LEVEL)
+	@AETHER_DATABASE_URL="$(DEV_DATABASE_URL)" go run $(BOOTSTRAP_PKG) -user $(DEV_USER) -password $(DEV_PASSWORD) -level $(DEV_LEVEL)
 	@echo
 	@echo "==> Listo. Usuario '$(DEV_USER)' / contraseña '$(DEV_PASSWORD)' / nivel '$(DEV_LEVEL)'."
 
