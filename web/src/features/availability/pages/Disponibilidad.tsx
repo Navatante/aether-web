@@ -23,7 +23,7 @@ import {
     type PersonComision,
 } from "../components";
 import {AvailabilityTooltip} from "../components/AvailabilityTooltip";
-import {AbsenceTooltip} from "../components/AbsenceTooltip";
+import {CalendarCell} from "../components/CalendarCell";
 import { EMOJI_SUN, EMOJI_MOON } from "../absences";
 import {
     useDisponibilidad,
@@ -59,7 +59,7 @@ export default function Disponibilidad(): React.ReactElement {
         setRoleFilter,
         escalaFilter,
         setEscalaFilter,
-        getAbsenceForDay,
+        getAbsencesForDay,
         getComisionForDay,
         getAbsentPersonsForDay,
         getAvailabilityForDay,
@@ -74,7 +74,9 @@ export default function Disponibilidad(): React.ReactElement {
         setIsFestivosDialogOpen,
         handleFestivosDialogClose,
         handleDialogSuccess,
-        handleCellClick,
+        handleViewAbsence,
+        handleViewComision,
+        handleCreateForCell,
         handleRefresh,
         hasAdministrativePermission,
     } = useDisponibilidad();
@@ -321,75 +323,19 @@ export default function Disponibilidad(): React.ReactElement {
                                                 </div>
                                             </div>
                                         </td>
-                                        {days.map((day: Day) => {
-                                            const absence = getAbsenceForDay(person.person_sk, day.dateStr);
-                                            const comision = getComisionForDay(person.person_sk, day.dateStr);
-
-                                            const event = absence || comision;
-
-                                            let isStart = false;
-                                            let isEnd = false;
-                                            let color = '';
-                                            let isVueloDia = false;
-                                            let isVueloNoche = false;
-
-                                            if (absence) {
-                                                isStart = absence.absence_start_date.startsWith(day.dateStr);
-                                                isEnd = absence.absence_end_date.startsWith(day.dateStr);
-                                                color = getReasonColor(absence.absence_reason).color;
-                                                isVueloDia = absence.absence_reason === 'Vuelo día';
-                                                isVueloNoche = absence.absence_reason === 'Vuelo noche';
-                                            } else if (comision) {
-                                                isStart = comision.comision_start_date.startsWith(day.dateStr);
-                                                isEnd = comision.comision_end_date.startsWith(day.dateStr);
-                                                color = 'var(--comision)';
-                                            }
-
-                                            return (
-                                                <td
-                                                    key={day.day}
-                                                    className={`p-1 text-center border-b border-border cursor-pointer transition-colors hover:bg-table-row-hover ${getDayCellClass(day)}`}
-                                                    onClick={() => handleCellClick(person, day)}
-                                                >
-                                                    {event && (
-                                                        <HoverCard>
-                                                            <HoverCardTrigger
-                                                                delay={0}
-                                                                closeDelay={150}
-                                                                render={
-                                                                    <div
-                                                                        className="h-7 flex items-center justify-center transition-transform hover:scale-105"
-                                                                        style={{
-                                                                            backgroundColor:
-                                                                                isVueloDia || isVueloNoche ? "transparent" : color,
-                                                                            borderRadius: isStart && isEnd
-                                                                                ? "6px"
-                                                                                : isStart
-                                                                                    ? "6px 0 0 6px"
-                                                                                    : isEnd
-                                                                                        ? "0 6px 6px 0"
-                                                                                        : "0",
-                                                                            marginLeft: isStart ? "2px" : "-1px",
-                                                                            marginRight: isEnd ? "2px" : "-1px",
-                                                                        }}
-                                                                    />
-                                                                }
-                                                            >
-                                                                {isVueloDia && EMOJI_SUN}
-                                                                {isVueloNoche && EMOJI_MOON}
-                                                            </HoverCardTrigger>
-                                                            <HoverCardContent side="top" className="w-auto p-4">
-                                                                <AbsenceTooltip
-                                                                    person={person}
-                                                                    absence={absence}
-                                                                    comision={comision}
-                                                                />
-                                                            </HoverCardContent>
-                                                        </HoverCard>
-                                                    )}
-                                                </td>
-                                            );
-                                        })}
+                                        {days.map((day: Day) => (
+                                            <CalendarCell
+                                                key={day.day}
+                                                person={person}
+                                                day={day}
+                                                absences={getAbsencesForDay(person.person_sk, day.dateStr)}
+                                                comision={getComisionForDay(person.person_sk, day.dateStr)}
+                                                cellClass={getDayCellClass(day)}
+                                                onViewAbsence={handleViewAbsence}
+                                                onViewComision={handleViewComision}
+                                                onCreate={handleCreateForCell}
+                                            />
+                                        ))}
                                     </tr>
                                 ))
                             )}

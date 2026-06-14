@@ -1,9 +1,9 @@
 // Estado, datos y handlers de la página Disponibilidad. La página queda
 // solo con el render; aquí vive el calendario, filtros, festivos y diálogos.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLogger } from '@/lib/logger';
-import { PermissionLevel, useHasPermission, useEscuadrilla } from '@/providers';
+import { PermissionLevel, useHasPermission, useEscuadrilla, useUser } from '@/providers';
 import { http } from '@/lib/http';
 import { useApiQuery } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
@@ -38,7 +38,10 @@ export function useDisponibilidad() {
     const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
     const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
     const hasAdministrativePermission = useHasPermission(PermissionLevel.ADMINISTRATIVO);
-    const hasCommonPermission = useHasPermission(PermissionLevel.COMUN);
+    const { canAccess } = useUser();
+    // Escritura de ausencias = Operacional o Administrativo (Superusuario hace
+    // bypass vía canAccess). Espejo de la allow-list del backend.
+    const canWriteAbsence = canAccess([PermissionLevel.OPERACIONAL, PermissionLevel.ADMINISTRATIVO]);
     const { id: escId } = useEscuadrilla();
 
     // Availability data via TanStack Query
@@ -65,6 +68,28 @@ export function useDisponibilidad() {
         person_comisions: availabilityData?.person_comisions ?? [],
     };
     const error = availabilityError?.message ?? null;
+
+    // Índices persona -> eventos, para evitar barridos O(días×personas×N) por celda.
+    // Las fechas del backend son YYYY-MM-DD, así que se comparan como strings.
+    const absencesByPerson = useMemo(() => {
+        const map = new Map<number, Absence[]>();
+        for (const a of availabilityData?.absenses ?? []) {
+            const arr = map.get(a.absence_person_fk);
+            if (arr) arr.push(a);
+            else map.set(a.absence_person_fk, [a]);
+        }
+        return map;
+    }, [availabilityData]);
+
+    const comisionsByPerson = useMemo(() => {
+        const map = new Map<number, PersonComision[]>();
+        for (const c of availabilityData?.person_comisions ?? []) {
+            const arr = map.get(c.person_fk);
+            if (arr) arr.push(c);
+            else map.set(c.person_fk, [c]);
+        }
+        return map;
+    }, [availabilityData]);
 
     // Estado para festivos (uses invoke without RLS)
     const [festivos, setFestivos] = useState<Festivo[]>([]);
@@ -183,40 +208,43 @@ export function useDisponibilidad() {
         });
     })();
 
-    // Obtener ausencia para un día específico
-    const getAbsenceForDay = (personId: number, dateStr: string): Absence | undefined => {
-        return data.absenses.find((absence: Absence) => {
-            if (absence.absence_person_fk !== personId) return false;
-            const start = new Date(absence.absence_start_date);
-            const end = new Date(absence.absence_end_date);
-            const current = new Date(dateStr);
-            return current >= start && current <= end;
-        });
+    // Todas las ausencias que cubren un día concreto (una persona puede tener
+    // varias solapadas). Fechas YYYY-MM-DD → comparación directa de strings.
+    const getAbsencesForDay = (personId: number, dateStr: string): Absence[] => {
+        const arr = absencesByPerson.get(personId);
+        if (!arr) return [];
+        return arr.filter(a =>
+            a.absence_start_date.slice(0, 10) <= dateStr &&
+            dateStr <= a.absence_end_date.slice(0, 10)
+        );
     };
 
-    // Obtener comisión para un día específico
+    // Comisión para un día específico (a lo sumo una: los triggers impiden
+    // comisiones solapadas y comisión+ausencia a la vez).
     const getComisionForDay = (personId: number, dateStr: string): PersonComision | undefined => {
-        return data.person_comisions.find((comision: PersonComision) => {
-            if (comision.person_fk !== personId) return false;
-            const start = new Date(comision.comision_start_date);
-            const end = new Date(comision.comision_end_date);
-            const current = new Date(dateStr);
-            return current >= start && current <= end;
-        });
+        const arr = comisionsByPerson.get(personId);
+        if (!arr) return undefined;
+        return arr.find(c =>
+            c.comision_start_date.slice(0, 10) <= dateStr &&
+            dateStr <= c.comision_end_date.slice(0, 10)
+        );
     };
 
-    // Obtener personas ausentes para un día específico (para el tooltip)
+    // Personas ausentes para un día (para el tooltip): una entrada por cada
+    // ausencia, de modo que AvailabilityTooltip las agrupe por motivo.
     const getAbsentPersonsForDay = (dateStr: string) => {
-        return filteredPersons
-            .map(person => {
-                const absence = getAbsenceForDay(person.person_sk, dateStr);
-                const comision = getComisionForDay(person.person_sk, dateStr);
-                if (absence || comision) {
-                    return { person, absence, comision };
-                }
-                return null;
-            })
-            .filter((item): item is { person: Person; absence: Absence | undefined; comision: PersonComision | undefined } => item !== null);
+        const items: Array<{ person: Person; absence?: Absence; comision?: PersonComision }> = [];
+        for (const person of filteredPersons) {
+            const comision = getComisionForDay(person.person_sk, dateStr);
+            if (comision) {
+                items.push({ person, comision });
+                continue;
+            }
+            for (const absence of getAbsencesForDay(person.person_sk, dateStr)) {
+                items.push({ person, absence });
+            }
+        }
+        return items;
     };
 
     // === FUNCIONES PARA ABRIR EL DIALOG ===
@@ -254,29 +282,26 @@ export function useDisponibilidad() {
         setIsDialogOpen(true);
     };
 
-    // === HANDLER PARA EL GRID ===
+    // === HANDLERS PARA EL GRID ===
+    // Granulares para soportar varias ausencias por celda: cada franja abre la
+    // suya; clicar la celda vacía crea una nueva.
 
-    const handleCellClick = (person: Person, day: Day): void => {
-        const absence = getAbsenceForDay(person.person_sk, day.dateStr);
-        const comision = getComisionForDay(person.person_sk, day.dateStr);
+    const handleViewAbsence = (person: Person, absence: Absence): void => {
+        if (canWriteAbsence) openViewAbsenceDialog(person, absence);
+    };
 
-        if (absence) {
-            {!hasCommonPermission && (
-                openViewAbsenceDialog(person, absence)
-            )}
-        } else if (comision) {
-            {hasAdministrativePermission && (
-                openViewComisionDialog(person, comision)
-            )}
-        } else {
-            {!hasCommonPermission && (
-                openCreateDialog({
-                    personId: person.person_sk,
-                    startDate: day.dateStr,
-                    endDate: day.dateStr,
-                    reason: 'Permiso'
-                })
-            )}
+    const handleViewComision = (person: Person, comision: PersonComision): void => {
+        if (hasAdministrativePermission) openViewComisionDialog(person, comision);
+    };
+
+    const handleCreateForCell = (person: Person, day: Day): void => {
+        if (canWriteAbsence) {
+            openCreateDialog({
+                personId: person.person_sk,
+                startDate: day.dateStr,
+                endDate: day.dateStr,
+                reason: 'Permiso',
+            });
         }
     };
 
@@ -295,7 +320,7 @@ export function useDisponibilidad() {
 
     const getAvailabilityForDay = (dateStr: string): number => {
         const absentCount = filteredPersons.filter((person: Person) => {
-            const hasAbsence = getAbsenceForDay(person.person_sk, dateStr) !== undefined;
+            const hasAbsence = getAbsencesForDay(person.person_sk, dateStr).length > 0;
             const hasComision = getComisionForDay(person.person_sk, dateStr) !== undefined;
             return hasAbsence || hasComision;
         }).length;
@@ -361,7 +386,7 @@ export function useDisponibilidad() {
         setEscalaFilter,
 
         // consultas por celda
-        getAbsenceForDay,
+        getAbsencesForDay,
         getComisionForDay,
         getAbsentPersonsForDay,
         getAvailabilityForDay,
@@ -380,7 +405,9 @@ export function useDisponibilidad() {
         handleDialogSuccess,
 
         // acciones
-        handleCellClick,
+        handleViewAbsence,
+        handleViewComision,
+        handleCreateForCell,
         handleRefresh,
 
         // permisos

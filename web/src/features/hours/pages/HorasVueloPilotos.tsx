@@ -46,7 +46,7 @@ export default function HorasVueloPilotos() {
                     title={viewMode === 'totals' ? 'Horas de vuelo totales' : 'Horas de vuelo NH-90'}
                     description={
                         viewMode === 'totals'
-                            ? 'Histórico completo · incluye horas de arrastre'
+                            ? 'Histórico completo · incluye horas con otras aeronaves'
                             : startDate && endDate
                                 ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
                                 : 'Selecciona un rango de fechas'
