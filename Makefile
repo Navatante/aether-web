@@ -59,11 +59,18 @@ pg-up:
 
 # Arranca el entorno de desarrollo completo:
 #   - PostgreSQL: lo levanta/crea si hace falta (pg-up).
-#   - Frontend: nueva ventana de Alacritty con `cd web && npm install && npm run dev`.
+#   - Frontend: nueva ventana de Alacritty con `npm run dev` (instala deps solo si faltan).
 #   - Backend:  `make run` en esta misma terminal, con DATABASE_URL/AETHER_DATABASE_URL exportadas.
+#   Al cerrar el backend (Ctrl-C) se cierra también la ventana del frontend (trap EXIT).
+#
+# OJO: pg-up solo asegura que Postgres esté arriba, NO que la BD tenga esquema/datos.
+# La primera vez (o tras `make db-reset`) ejecuta antes `make dev-rebuild`.
 dev: pg-up
-	alacritty --working-directory "$(CURDIR)" --hold -e bash -c "cd web && npm install && npm run dev" &
-	DATABASE_URL="$(DEV_DATABASE_URL)" AETHER_DATABASE_URL="$(DEV_DATABASE_URL)" $(MAKE) run
+	@[ -d web/node_modules ] || (cd web && npm install)
+	@alacritty --working-directory "$(CURDIR)/web" --hold -e npm run dev & \
+	  FRONT_PID=$$!; \
+	  trap "kill $$FRONT_PID 2>/dev/null" EXIT; \
+	  DATABASE_URL="$(DEV_DATABASE_URL)" AETHER_DATABASE_URL="$(DEV_DATABASE_URL)" $(MAKE) run
 
 build:
 	mkdir -p bin

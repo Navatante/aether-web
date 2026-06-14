@@ -18,7 +18,7 @@ Guía extensa (walkthroughs, setup paso a paso, despliegue, glosario): `docs/ARQ
 | `make dev-rebuild` | BD desde cero: drop+create, migraciones, datos SQLite, admin. |
 | `make build-prod` / `make dist` | Binario de producción con frontend embebido / tarball desplegable. |
 
-BD de desarrollo: contenedor Docker `aether-pg`. DSN típico: `postgres://jon:1234@127.0.0.1:5432/aether?sslmode=disable` (sirve también para `AETHER_TEST_DATABASE_URL`).
+BD de desarrollo: contenedor Docker `aether-pg`. DSN típico: `postgres://aether_admin:CHANGEME@127.0.0.1:5432/aether?sslmode=disable` (sirve también para `AETHER_TEST_DATABASE_URL`). Estas credenciales son las que usa `make dev`/`pg-up` (variables `PG_SUPERUSER` / `DEV_DB_PASSWORD` del Makefile).
 
 ## Arquitectura backend
 
