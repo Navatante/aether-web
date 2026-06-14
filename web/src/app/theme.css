@@ -132,6 +132,25 @@
     --role-default: oklch(0.97 0.005 0);
     --role-default-foreground: oklch(0.5 0.01 0);
 
+    /* ========== BLOCK BADGES (bloques de instrucción) ========== */
+    --block-entrenador: oklch(0.97 0.015 25);
+    --block-entrenador-foreground: oklch(0.45 0.16 25);
+
+    --block-simulador: oklch(0.97 0.02 160);
+    --block-simulador-foreground: oklch(0.45 0.12 160);
+
+    --block-teorico: oklch(0.97 0.03 85);
+    --block-teorico-foreground: oklch(0.45 0.12 85);
+
+    --block-practico: oklch(0.97 0.025 300);
+    --block-practico-foreground: oklch(0.45 0.16 300);
+
+    --block-vuelo: oklch(0.97 0.02 240);
+    --block-vuelo-foreground: oklch(0.45 0.14 240);
+
+    --block-default: oklch(0.97 0.005 0);
+    --block-default-foreground: oklch(0.5 0.01 0);
+
     /* ========== EVENT BADGES (7 variantes) ========== */
     --event-mision: oklch(0.97 0.03 85);
     --event-mision-foreground: oklch(0.45 0.12 85);
@@ -353,6 +372,25 @@
     --role-default: oklch(0.3 0.005 0 / 0.3);
     --role-default-foreground: oklch(0.65 0.01 0);
 
+    /* ========== BLOCK BADGES (bloques de instrucción) ========== */
+    --block-entrenador: oklch(0.35 0.12 25 / 0.3);
+    --block-entrenador-foreground: oklch(0.75 0.12 25);
+
+    --block-simulador: oklch(0.35 0.1 160 / 0.3);
+    --block-simulador-foreground: oklch(0.75 0.1 160);
+
+    --block-teorico: oklch(0.35 0.1 85 / 0.3);
+    --block-teorico-foreground: oklch(0.75 0.1 85);
+
+    --block-practico: oklch(0.35 0.12 300 / 0.3);
+    --block-practico-foreground: oklch(0.75 0.12 300);
+
+    --block-vuelo: oklch(0.35 0.12 240 / 0.3);
+    --block-vuelo-foreground: oklch(0.75 0.12 240);
+
+    --block-default: oklch(0.3 0.005 0 / 0.3);
+    --block-default-foreground: oklch(0.65 0.01 0);
+
     /* ========== EVENT BADGES ========== */
     --event-mision: oklch(0.35 0.1 85 / 0.3);
     --event-mision-foreground: oklch(0.75 0.1 85);
@@ -526,6 +564,20 @@
     --color-role-no-crew-foreground: var(--role-no-crew-foreground);
     --color-role-default: var(--role-default);
     --color-role-default-foreground: var(--role-default-foreground);
+
+    /* Bloques de instrucción */
+    --color-block-entrenador: var(--block-entrenador);
+    --color-block-entrenador-foreground: var(--block-entrenador-foreground);
+    --color-block-simulador: var(--block-simulador);
+    --color-block-simulador-foreground: var(--block-simulador-foreground);
+    --color-block-teorico: var(--block-teorico);
+    --color-block-teorico-foreground: var(--block-teorico-foreground);
+    --color-block-practico: var(--block-practico);
+    --color-block-practico-foreground: var(--block-practico-foreground);
+    --color-block-vuelo: var(--block-vuelo);
+    --color-block-vuelo-foreground: var(--block-vuelo-foreground);
+    --color-block-default: var(--block-default);
+    --color-block-default-foreground: var(--block-default-foreground);
 
     /* Events (7) */
     --color-event-mision: var(--event-mision);

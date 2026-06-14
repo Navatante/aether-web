@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { Search, Loader2, X, RefreshCw } from 'lucide-react';
 import {
@@ -28,6 +28,7 @@ import {ToggleButton} from "@/shared/components/common/ToggleButton.tsx";
 import { useApiQuery } from "@/lib/apiQuery";
 import { useEscuadrilla } from "@/providers";
 import { queryKeys } from "@/lib/queryKeys";
+import { BlockBadge, PlanDividerRow, byPlanThenName } from "@/features/training/blocks";
 
 // Types
 interface Papeleta {
@@ -165,7 +166,7 @@ export default function AdiestramientoPilotos() {
             return true;
         });
 
-        result = result.sort((a, b) => a.papeleta_name.localeCompare(b.papeleta_name));
+        result = result.sort(byPlanThenName);
 
         return result;
     })();
@@ -402,14 +403,23 @@ export default function AdiestramientoPilotos() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredPapeletas.map((papeleta, idx) => (
+                                filteredPapeletas.map((papeleta, idx) => {
+                                    const showDivider =
+                                        idx === 0 ||
+                                        papeleta.papeleta_plan !== filteredPapeletas[idx - 1].papeleta_plan;
+                                    return (
+                                    <Fragment key={papeleta.papeleta_sk}>
+                                    {showDivider && (
+                                        <PlanDividerRow plan={papeleta.papeleta_plan} colSpan={visiblePersonas.length + 1} />
+                                    )}
                                     <tr
-                                        key={papeleta.papeleta_sk}
                                         className={`border-b border-border hover:bg-table-row-hover ${
                                             idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
                                         }`}
                                     >
                                         <td className={stickyFirstColClass(idx, "p-4 min-w-0 whitespace-nowrap border-b border-border")}>
+                                            <div className="flex items-center gap-2">
+                                                <BlockBadge block={papeleta.papeleta_block} />
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <div className="cursor-help">
@@ -445,6 +455,7 @@ export default function AdiestramientoPilotos() {
                                                     </div>
                                                 </TooltipContent>
                                             </Tooltip>
+                                            </div>
                                         </td>
                                         {visiblePersonas.map(persona => {
                                             const status = getPapeletaStatus(persona, papeleta.papeleta_sk);
@@ -509,7 +520,9 @@ export default function AdiestramientoPilotos() {
                                             );
                                         })}
                                     </tr>
-                                ))
+                                    </Fragment>
+                                    );
+                                })
                             )}
                             </tbody>
                         </table>

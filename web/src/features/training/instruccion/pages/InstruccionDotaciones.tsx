@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import {cn, formatearFecha} from "@/lib/utils";
 import { Search, Loader2, X, RefreshCw } from 'lucide-react';
 import {
@@ -26,6 +26,7 @@ import {ToggleButton} from "@/shared/components/common/ToggleButton.tsx";
 import { useApiQuery } from "@/lib/apiQuery";
 import { useEscuadrilla } from "@/providers";
 import { queryKeys } from "@/lib/queryKeys";
+import { BlockBadge, PlanDividerRow, byPlanThenName } from "@/features/training/blocks";
 
 interface Papeleta {
     papeleta_sk: number;
@@ -153,7 +154,7 @@ export default function InstruccionDotaciones() {
                 if (selectedBlock !== 'Todos los bloques' && papeleta.papeleta_block !== selectedBlock) return false;
                 return true;
             })
-            .sort((a, b) => a.papeleta_name.localeCompare(b.papeleta_name));
+            .sort(byPlanThenName);
     })();
 
     if (isLoading) {
@@ -308,9 +309,16 @@ export default function InstruccionDotaciones() {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredPapeletas.map((papeleta, idx) => (
+                                filteredPapeletas.map((papeleta, idx) => {
+                                    const showDivider =
+                                        idx === 0 ||
+                                        papeleta.papeleta_plan !== filteredPapeletas[idx - 1].papeleta_plan;
+                                    return (
+                                    <Fragment key={papeleta.papeleta_sk}>
+                                    {showDivider && (
+                                        <PlanDividerRow plan={papeleta.papeleta_plan} colSpan={visiblePersons.length + 1} />
+                                    )}
                                     <tr
-                                        key={papeleta.papeleta_sk}
                                         className={cn(
                                             "border-b border-border hover:bg-table-row-hover",
                                             idx % 2 === 0 ? 'bg-table-row-even' : 'bg-table-row-odd'
@@ -318,6 +326,8 @@ export default function InstruccionDotaciones() {
                                     >
                                         {/* Celda de papeleta con tooltip de descripción */}
                                         <td className={stickyFirstColClass(idx, "p-4 min-w-0 whitespace-nowrap border-b border-border")}>
+                                            <div className="flex items-center gap-2">
+                                                <BlockBadge block={papeleta.papeleta_block} />
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                         <span className="font-medium text-foreground cursor-help">
@@ -334,6 +344,7 @@ export default function InstruccionDotaciones() {
                                                     </p>
                                                 </TooltipContent>
                                             </Tooltip>
+                                            </div>
                                         </td>
 
                                         {/* Celdas de estado por piloto - usa StatusCell memoizado con tooltip nativo */}
@@ -346,7 +357,9 @@ export default function InstruccionDotaciones() {
                                             />
                                         ))}
                                     </tr>
-                                ))
+                                    </Fragment>
+                                    );
+                                })
                             )}
                             </tbody>
                         </table>
