@@ -32,6 +32,7 @@ import (
 	"github.com/14esc/aether-web/internal/domain/lookups"
 	"github.com/14esc/aether-web/internal/domain/papeletas"
 	"github.com/14esc/aether-web/internal/domain/persons"
+	"github.com/14esc/aether-web/internal/domain/projectiles"
 	"github.com/14esc/aether-web/internal/domain/ratings"
 	"github.com/14esc/aether-web/internal/domain/training"
 	"github.com/14esc/aether-web/internal/httpx"
@@ -108,6 +109,7 @@ func run(logger *slog.Logger) error {
 	ratingsHandlers := ratings.NewHandlers(ratings.NewService(pool))
 	hoursHandlers := hours.NewHandlers(hours.NewService(pool))
 	landingsHandlers := landings.NewHandlers(landings.NewService(pool))
+	projectilesHandlers := projectiles.NewHandlers(projectiles.NewService(pool))
 	esfuerzoHandlers := esfuerzo.NewHandlers(esfuerzo.NewService(pool))
 	flightsHandlers := flights.NewHandlers(flights.NewService(pool))
 
@@ -127,6 +129,7 @@ func run(logger *slog.Logger) error {
 	ratingsHandlers.Register(api, authSvc)
 	hoursHandlers.Register(api, authSvc)
 	landingsHandlers.Register(api, authSvc)
+	projectilesHandlers.Register(api, authSvc)
 	esfuerzoHandlers.Register(api, authSvc)
 	flightsHandlers.Register(api, authSvc)
 

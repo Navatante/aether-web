@@ -363,6 +363,19 @@ type Querier interface {
 	PersonHasOverlapComision(ctx context.Context, arg PersonHasOverlapComisionParams) (bool, error)
 	// Personas activas filtradas por rol[] dentro de una escuadrilla.
 	PersonsByRoles(ctx context.Context, arg PersonsByRolesParams) ([]PersonsByRolesRow, error)
+	// ============================================================
+	// Projectiles (proyectiles disparados por dotación)
+	//
+	// Agrega operations.projectile por persona sobre un rango de fechas resuelto
+	// en Go (mismo parser que hours/landings), filtrando por dotación.
+	//
+	// projectile_type_fk: 1 = M3M (7.62), 2 = MAG58 (12.7).
+	//
+	// Solo dotación: person_rol NOT IN ('Piloto', 'No Tripulante') — regla fija de
+	// esta página (/dotaciones/proyectiles), por eso va en la propia query.
+	// RLS explícita: $3 = escuadrilla_fk. Rango por f.flight_date.
+	// ============================================================
+	ProjectilesByCrew(ctx context.Context, arg ProjectilesByCrewParams) ([]ProjectilesByCrewRow, error)
 	PurgeExpiredSessions(ctx context.Context) (int64, error)
 	// =============== sp_get_modelRatings ===============
 	// Catálogo filtrable por type/role para componer múltiples sub-listas.

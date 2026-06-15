@@ -37,3 +37,8 @@ packages:
     include_files: ["dto.go"]
     frontmatter: |
       // Código generado por tygo desde internal/domain/landings/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/projectiles"
+    output_path: "web/src/types/generated/projectiles.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/projectiles/dto.go. NO EDITAR.
