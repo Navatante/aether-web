@@ -191,6 +191,7 @@ const Papeletas = () => {
             papeleta_pilot_crp_value: papeleta.papeleta_pilot_crp_value ?? undefined,
             papeleta_dv_crp_value: papeleta.papeleta_dv_crp_value ?? undefined,
             papeleta_expiration: papeleta.papeleta_expiration ?? undefined,
+                papeleta_order: papeleta.papeleta_order ?? undefined,
         };
     };
 
@@ -378,6 +379,12 @@ const Papeletas = () => {
                                                             <PageCardLabel>Tiempo de vuelo</PageCardLabel>
                                                             <p className="text-sm text-foreground">{papeleta.papeleta_tv}</p>
                                                         </div>
+
+                                                        <div>
+                                                            <PageCardLabel>Orden</PageCardLabel>
+                                                            <p className="text-sm text-foreground">{papeleta.papeleta_order}</p>
+                                                        </div>
+                                                        
                                                     </div>
                                                 </PageCard>
 
@@ -400,6 +407,7 @@ const Papeletas = () => {
                                                             <PageCardLabel>Vigencia</PageCardLabel>
                                                             <p className="text-sm text-foreground">{papeleta.papeleta_expiration}</p>
                                                         </div>
+
                                                     </div>
                                                 </PageCard>
 

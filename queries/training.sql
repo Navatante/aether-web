@@ -12,12 +12,12 @@
 -- name: AdiestramientoPapeletas :many
 -- Papeletas filtradas por block IN ($1) y plan IN ('Adi Básico', 'Adi Avanzado').
 SELECT papeleta_sk, papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
-       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration, papeleta_order
 FROM operations.papeleta
 WHERE papeleta_plan IN ('Adiestramiento Básico', 'Adiestramiento Avanzado')
   AND papeleta_block = ANY($1::text[])
   AND papeleta_escuadrilla_fk = $2
-ORDER BY papeleta_plan, papeleta_block, papeleta_name;
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name;
 
 -- name: AdiestramientoPersonas :many
 -- Por persona (filtrada por rol/escuadrilla): full_name, CRP, días sin volar/real/simulador.
@@ -116,11 +116,11 @@ WHERE pr.rn = 1
 
 -- name: InstruccionPapeletas :many
 SELECT papeleta_sk, papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
-       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration, papeleta_order
 FROM operations.papeleta
 WHERE papeleta_plan = ANY($1::text[])
   AND papeleta_escuadrilla_fk = $2
-ORDER BY papeleta_plan, papeleta_block, papeleta_name;
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name;
 
 -- name: InstruccionPersonas :many
 SELECT

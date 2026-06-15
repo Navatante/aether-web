@@ -13,10 +13,11 @@
 SELECT
     papeleta_sk, papeleta_name, papeleta_description,
     papeleta_block, papeleta_plan, papeleta_tv,
-    papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+    papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration,
+    papeleta_order
 FROM operations.papeleta
 WHERE papeleta_escuadrilla_fk = $1
-ORDER BY papeleta_plan, papeleta_block, papeleta_name;
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name;
 
 -- name: CountPapeletas :one
 SELECT COUNT(*)::int AS total
@@ -27,8 +28,8 @@ WHERE papeleta_escuadrilla_fk = $1;
 INSERT INTO operations.papeleta (
     papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
     papeleta_tv, papeleta_pilot_crp_value, papeleta_dv_crp_value,
-    papeleta_expiration, papeleta_escuadrilla_fk
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    papeleta_expiration, papeleta_order, papeleta_escuadrilla_fk
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING papeleta_sk;
 
 -- name: UpdatePapeleta :execrows
@@ -40,5 +41,6 @@ SET papeleta_name = $1,
     papeleta_tv = $5,
     papeleta_pilot_crp_value = $6,
     papeleta_dv_crp_value = $7,
-    papeleta_expiration = $8
-WHERE papeleta_sk = $9 AND papeleta_escuadrilla_fk = $10;
+    papeleta_expiration = $8,
+    papeleta_order = $9
+WHERE papeleta_sk = $10 AND papeleta_escuadrilla_fk = $11;

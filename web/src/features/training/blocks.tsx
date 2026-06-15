@@ -21,10 +21,16 @@ export function blockBadgeClass(block: string): string {
     return 'bg-block-default text-block-default-foreground';
 }
 
-// Ordena papeletas por plan y, dentro de cada plan, por nombre.
-export function byPlanThenName<T extends { papeleta_plan: string; papeleta_name: string }>(a: T, b: T): number {
+// Ordena papeletas por plan y, dentro de cada plan, por papeleta_order
+// (las que no tienen orden van al final) y, a igualdad, por nombre.
+export function byPlanThenName<
+    T extends { papeleta_plan: string; papeleta_name: string; papeleta_order?: number | null }
+>(a: T, b: T): number {
     const planCmp = a.papeleta_plan.localeCompare(b.papeleta_plan);
     if (planCmp !== 0) return planCmp;
+    const ao = a.papeleta_order ?? Number.POSITIVE_INFINITY;
+    const bo = b.papeleta_order ?? Number.POSITIVE_INFINITY;
+    if (ao !== bo) return ao - bo;
     return a.papeleta_name.localeCompare(b.papeleta_name);
 }
 

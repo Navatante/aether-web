@@ -62,6 +62,7 @@ export function AddEditPapeletaForm({
     const [pilotCrpValue, setPilotCrpValue] = React.useState<string>("");
     const [dvCrpValue, setDvCrpValue] = React.useState<string>("");
     const [expirationValue, setExpirationValue] = React.useState<string>("");
+    const [orderValue, setOrderValue] = React.useState<string>("");
 
     // Crear esquema dinámico con los datos cargados
     const papeletaSchema = (() => {
@@ -81,6 +82,7 @@ export function AddEditPapeletaForm({
                 papeleta_pilot_crp_value: null,
                 papeleta_dv_crp_value: null,
                 papeleta_expiration: null,
+                papeleta_order: null,
             };
         }
 
@@ -94,6 +96,7 @@ export function AddEditPapeletaForm({
             papeleta_pilot_crp_value: (defaultValues.papeleta_pilot_crp_value === 0 || defaultValues.papeleta_pilot_crp_value === undefined) ? null : defaultValues.papeleta_pilot_crp_value,
             papeleta_dv_crp_value: (defaultValues.papeleta_dv_crp_value === 0 || defaultValues.papeleta_dv_crp_value === undefined) ? null : defaultValues.papeleta_dv_crp_value,
             papeleta_expiration: (defaultValues.papeleta_expiration === 0 || defaultValues.papeleta_expiration === undefined) ? null : defaultValues.papeleta_expiration,
+            papeleta_order: (defaultValues.papeleta_order === 0 || defaultValues.papeleta_order === undefined) ? null : defaultValues.papeleta_order,
         };
     })();
 
@@ -122,11 +125,13 @@ export function AddEditPapeletaForm({
         const pilot_crp = processedDefaultValues.papeleta_pilot_crp_value;
         const dv_crp = processedDefaultValues.papeleta_dv_crp_value;
         const exp = processedDefaultValues.papeleta_expiration;
+        const order = processedDefaultValues.papeleta_order;
 
         setTvValue(tv != null && tv !== 0 ? String(tv) : "");
         setPilotCrpValue(pilot_crp != null && pilot_crp !== 0 ? String(pilot_crp) : "");
         setDvCrpValue(dv_crp != null && dv_crp !== 0 ? String(dv_crp) : "");
         setExpirationValue(exp != null && exp !== 0 ? String(exp) : "");
+        setOrderValue(order != null && order !== 0 ? String(order) : "");
     }, [open, isLoadingData, processedDefaultValues, reset]);
 
     const handleFormSubmit = (data: PapeletaFormValues) => {
@@ -137,6 +142,7 @@ export function AddEditPapeletaForm({
         setPilotCrpValue("");
         setDvCrpValue("");
         setExpirationValue("");
+        setOrderValue("");
     };
 
     return (
@@ -351,6 +357,32 @@ export function AddEditPapeletaForm({
                                     <p className="text-sm text-destructive">{errors.papeleta_expiration.message}</p>
                                 )}
                             </div>
+
+                            {/* Orden - NO usar register, controlar manualmente */}
+                            <div className="space-y-1">
+                                <Label htmlFor="orden">Orden</Label>
+                                <Input
+                                    id="orden"
+                                    type="number"
+                                    value={orderValue}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setOrderValue(val);
+                                        if (val === "") {
+                                            setValue("papeleta_order", null);
+                                        } else {
+                                            const num = Number(val);
+                                            if (!isNaN(num)) {
+                                                setValue("papeleta_order", num);
+                                            }
+                                        }
+                                    }}
+                                    className={cn(errors.papeleta_order && "border-destructive")}
+                                />
+                                {errors.papeleta_order && (
+                                    <p className="text-sm text-destructive">{errors.papeleta_order.message}</p>
+                                )}
+                            </div>
                         </div>
 
                         <div className="mt-auto border-t bg-muted/50 px-6 py-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end shrink-0">
@@ -364,6 +396,7 @@ export function AddEditPapeletaForm({
                                     setTvValue("");
                                     setPilotCrpValue("");
                                     setExpirationValue("");
+                                    setOrderValue("");
                                 }}
                             >
                                 Cancelar

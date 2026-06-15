@@ -23,6 +23,8 @@ export const basePapeletaSchema = z.object({
     papeleta_dv_crp_value: z.number().int().positive("Debe ser positivo").nullable(),
 
     papeleta_expiration: z.number().int().positive("Debe ser positivo").nullable(),
+
+    papeleta_order: z.number().int().positive("Debe ser positivo").nullable(),
 });
 
 // Function to create the schema dynamically with the data from the server
@@ -97,6 +99,18 @@ export function createPapeletaSchema(
         ),
 
         papeleta_expiration: z.preprocess(
+            (val) => {
+                if (val === "" || val === null || val === undefined) return null;
+                const num = Number(val);
+                return isNaN(num) ? null : num;
+            },
+            z.union([
+                z.number().int().positive("Debe ser positivo"),
+                z.null()
+            ])
+        ),
+
+        papeleta_order: z.preprocess(
             (val) => {
                 if (val === "" || val === null || val === undefined) return null;
                 const num = Number(val);

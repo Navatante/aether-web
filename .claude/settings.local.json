@@ -103,7 +103,9 @@
       "Bash(git check-ignore *)",
       "Read(//home/jonl/**)",
       "Bash(git -C /home/jonl/.config/JetBrains/GoLand2026.1/projects/GoLandWorkspace/aether-web log --oneline -10 -- migrations/)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(make sqlc *)",
+      "Bash(PGPASSWORD=CHANGEME psql -h 127.0.0.1 -U aether_admin -d aether -P pager=off -c ' *)"
     ]
   }
 }

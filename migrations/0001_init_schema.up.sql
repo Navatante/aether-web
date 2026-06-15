@@ -265,6 +265,7 @@ CREATE TABLE operations.papeleta (
     papeleta_pilot_crp_value INTEGER,
     papeleta_dv_crp_value    INTEGER,
     papeleta_expiration      INTEGER,
+    papeleta_order           INTEGER,
     papeleta_escuadrilla_fk  INTEGER       NOT NULL,
     CONSTRAINT fk_papeleta_block       FOREIGN KEY (papeleta_block) REFERENCES operations.papeleta_block(papeleta_block_name),
     CONSTRAINT fk_papeleta_plan        FOREIGN KEY (papeleta_plan)  REFERENCES operations.papeleta_plan(papeleta_plan_name),

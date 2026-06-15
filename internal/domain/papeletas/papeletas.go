@@ -31,6 +31,7 @@ type Papeleta struct {
 	PapeletaPilotCrpValue *int32   `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32   `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32   `json:"papeleta_expiration"`
+	PapeletaOrder         *int32   `json:"papeleta_order"`
 }
 
 type ListResult struct {
@@ -48,6 +49,7 @@ type WriteReq struct {
 	PapeletaPilotCrpValue *int32   `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32   `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32   `json:"papeleta_expiration"`
+	PapeletaOrder         *int32   `json:"papeleta_order"`
 }
 
 // ===== Sentinel errors =====
@@ -88,6 +90,7 @@ func (s *Service) List(ctx context.Context, esc int32) (ListResult, error) {
 			PapeletaPilotCrpValue: r.PapeletaPilotCrpValue,
 			PapeletaDvCrpValue:    r.PapeletaDvCrpValue,
 			PapeletaExpiration:    r.PapeletaExpiration,
+			PapeletaOrder:         r.PapeletaOrder,
 		})
 	}
 	return ListResult{Items: items, TotalCount: total}, nil
@@ -107,6 +110,7 @@ func (s *Service) Create(ctx context.Context, esc int32, req WriteReq) (int32, e
 		PapeletaPilotCrpValue: req.PapeletaPilotCrpValue,
 		PapeletaDvCrpValue:    req.PapeletaDvCrpValue,
 		PapeletaExpiration:    req.PapeletaExpiration,
+		PapeletaOrder:         req.PapeletaOrder,
 		PapeletaEscuadrillaFk: esc,
 	})
 	if err != nil {
@@ -132,6 +136,7 @@ func (s *Service) Update(ctx context.Context, esc int32, id int32, req WriteReq)
 		PapeletaPilotCrpValue: req.PapeletaPilotCrpValue,
 		PapeletaDvCrpValue:    req.PapeletaDvCrpValue,
 		PapeletaExpiration:    req.PapeletaExpiration,
+		PapeletaOrder:         req.PapeletaOrder,
 		PapeletaSk:            id,
 		PapeletaEscuadrillaFk: esc,
 	})

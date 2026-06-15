@@ -38,25 +38,26 @@ type PapeletaItem struct {
 	PapeletaPilotCrpValue *int32  `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32  `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32  `json:"papeleta_expiration"`
+	PapeletaOrder         *int32  `json:"papeleta_order"`
 }
 
 type AdiestramientoResult struct {
-	Papeletas    []PapeletaItem        `json:"papeletas"`
-	CrpMedio     float64               `json:"crp_medio"`
-	AirflowMedio float64               `json:"airflow_medio"`
+	Papeletas    []PapeletaItem          `json:"papeletas"`
+	CrpMedio     float64                 `json:"crp_medio"`
+	AirflowMedio float64                 `json:"airflow_medio"`
 	Personas     []AdiestramientoPersona `json:"personas"`
 }
 
 type AdiestramientoPersona struct {
-	PersonSk            int32                       `json:"person_sk"`
-	PersonNk            *string                     `json:"person_nk"`
-	OrderPosition       int64                       `json:"order_position"`
-	FullName            string                      `json:"full_name"`
-	Crp                 int32                       `json:"crp"`
-	DiasSinVolar        int32                       `json:"dias_sin_volar"`
-	DiasSinVueloReal    int32                       `json:"dias_sin_vuelo_real"`
-	DiasSinSimulador    int32                       `json:"dias_sin_simulador"`
-	PapeletasRealizadas []AdiestramientoPapeleta    `json:"papeletas_realizadas"`
+	PersonSk            int32                    `json:"person_sk"`
+	PersonNk            *string                  `json:"person_nk"`
+	OrderPosition       int64                    `json:"order_position"`
+	FullName            string                   `json:"full_name"`
+	Crp                 int32                    `json:"crp"`
+	DiasSinVolar        int32                    `json:"dias_sin_volar"`
+	DiasSinVueloReal    int32                    `json:"dias_sin_vuelo_real"`
+	DiasSinSimulador    int32                    `json:"dias_sin_simulador"`
+	PapeletasRealizadas []AdiestramientoPapeleta `json:"papeletas_realizadas"`
 }
 
 type AdiestramientoPapeleta struct {
@@ -67,16 +68,16 @@ type AdiestramientoPapeleta struct {
 }
 
 type InstruccionResult struct {
-	Papeletas []PapeletaItem      `json:"papeletas"`
+	Papeletas []PapeletaItem       `json:"papeletas"`
 	Personas  []InstruccionPersona `json:"personas"`
 }
 
 type InstruccionPersona struct {
-	PersonSk            int32                  `json:"person_sk"`
-	PersonNk            *string                `json:"person_nk"`
-	FullName            string                 `json:"full_name"`
-	OrderPosition       int64                  `json:"order_position"`
-	PapeletasRealizadas []InstruccionPapeleta  `json:"papeletas_realizadas"`
+	PersonSk            int32                 `json:"person_sk"`
+	PersonNk            *string               `json:"person_nk"`
+	FullName            string                `json:"full_name"`
+	OrderPosition       int64                 `json:"order_position"`
+	PapeletasRealizadas []InstruccionPapeleta `json:"papeletas_realizadas"`
 }
 
 type InstruccionPapeleta struct {
@@ -172,6 +173,7 @@ func (s *Service) Adiestramiento(ctx context.Context, esc int32, roles, bloques 
 			PapeletaDescription: r.PapeletaDescription, PapeletaBlock: r.PapeletaBlock,
 			PapeletaPlan: r.PapeletaPlan, PapeletaPilotCrpValue: r.PapeletaPilotCrpValue,
 			PapeletaDvCrpValue: r.PapeletaDvCrpValue, PapeletaExpiration: r.PapeletaExpiration,
+			PapeletaOrder: r.PapeletaOrder,
 		})
 	}
 
@@ -241,6 +243,7 @@ func (s *Service) Instruccion(ctx context.Context, esc int32, roles, planes []st
 			PapeletaDescription: r.PapeletaDescription, PapeletaBlock: r.PapeletaBlock,
 			PapeletaPlan: r.PapeletaPlan, PapeletaPilotCrpValue: r.PapeletaPilotCrpValue,
 			PapeletaDvCrpValue: r.PapeletaDvCrpValue, PapeletaExpiration: r.PapeletaExpiration,
+			PapeletaOrder: r.PapeletaOrder,
 		})
 	}
 

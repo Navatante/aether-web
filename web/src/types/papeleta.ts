@@ -9,4 +9,5 @@ export interface Papeleta {
     papeleta_pilot_crp_value: number | null;
     papeleta_dv_crp_value: number | null;
     papeleta_expiration: number | null;
+    papeleta_order: number | null;
 }

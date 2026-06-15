@@ -34,6 +34,7 @@ interface Papeleta {
     papeleta_description: string;
     papeleta_block: string;
     papeleta_plan: string;
+    papeleta_order: number | null;
 }
 
 interface PapeletaRealizada {

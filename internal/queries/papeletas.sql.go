@@ -28,8 +28,8 @@ const insertPapeleta = `-- name: InsertPapeleta :one
 INSERT INTO operations.papeleta (
     papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
     papeleta_tv, papeleta_pilot_crp_value, papeleta_dv_crp_value,
-    papeleta_expiration, papeleta_escuadrilla_fk
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    papeleta_expiration, papeleta_order, papeleta_escuadrilla_fk
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING papeleta_sk
 `
 
@@ -42,6 +42,7 @@ type InsertPapeletaParams struct {
 	PapeletaPilotCrpValue *int32         `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32         `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32         `json:"papeleta_expiration"`
+	PapeletaOrder         *int32         `json:"papeleta_order"`
 	PapeletaEscuadrillaFk int32          `json:"papeleta_escuadrilla_fk"`
 }
 
@@ -55,6 +56,7 @@ func (q *Queries) InsertPapeleta(ctx context.Context, arg InsertPapeletaParams) 
 		arg.PapeletaPilotCrpValue,
 		arg.PapeletaDvCrpValue,
 		arg.PapeletaExpiration,
+		arg.PapeletaOrder,
 		arg.PapeletaEscuadrillaFk,
 	)
 	var papeleta_sk int32
@@ -67,10 +69,11 @@ const listPapeletas = `-- name: ListPapeletas :many
 SELECT
     papeleta_sk, papeleta_name, papeleta_description,
     papeleta_block, papeleta_plan, papeleta_tv,
-    papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+    papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration,
+    papeleta_order
 FROM operations.papeleta
 WHERE papeleta_escuadrilla_fk = $1
-ORDER BY papeleta_plan, papeleta_block, papeleta_name
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name
 `
 
 type ListPapeletasRow struct {
@@ -83,6 +86,7 @@ type ListPapeletasRow struct {
 	PapeletaPilotCrpValue *int32         `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32         `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32         `json:"papeleta_expiration"`
+	PapeletaOrder         *int32         `json:"papeleta_order"`
 }
 
 // ============================================================
@@ -115,6 +119,7 @@ func (q *Queries) ListPapeletas(ctx context.Context, papeletaEscuadrillaFk int32
 			&i.PapeletaPilotCrpValue,
 			&i.PapeletaDvCrpValue,
 			&i.PapeletaExpiration,
+			&i.PapeletaOrder,
 		); err != nil {
 			return nil, err
 		}
@@ -135,8 +140,9 @@ SET papeleta_name = $1,
     papeleta_tv = $5,
     papeleta_pilot_crp_value = $6,
     papeleta_dv_crp_value = $7,
-    papeleta_expiration = $8
-WHERE papeleta_sk = $9 AND papeleta_escuadrilla_fk = $10
+    papeleta_expiration = $8,
+    papeleta_order = $9
+WHERE papeleta_sk = $10 AND papeleta_escuadrilla_fk = $11
 `
 
 type UpdatePapeletaParams struct {
@@ -148,6 +154,7 @@ type UpdatePapeletaParams struct {
 	PapeletaPilotCrpValue *int32         `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32         `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32         `json:"papeleta_expiration"`
+	PapeletaOrder         *int32         `json:"papeleta_order"`
 	PapeletaSk            int32          `json:"papeleta_sk"`
 	PapeletaEscuadrillaFk int32          `json:"papeleta_escuadrilla_fk"`
 }
@@ -162,6 +169,7 @@ func (q *Queries) UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) 
 		arg.PapeletaPilotCrpValue,
 		arg.PapeletaDvCrpValue,
 		arg.PapeletaExpiration,
+		arg.PapeletaOrder,
 		arg.PapeletaSk,
 		arg.PapeletaEscuadrillaFk,
 	)

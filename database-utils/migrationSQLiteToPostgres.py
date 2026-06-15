@@ -379,7 +379,15 @@ TABLE_MAPPINGS = {
             "papeleta_pilot_crp_value": lambda x: int(x) if x else None,
             "papeleta_expiration": lambda x: int(x) if x else None,
         },
-        "defaults": {"papeleta_escuadrilla_fk": 14},
+        "defaults": {
+            "papeleta_escuadrilla_fk": 14,
+            # Orden de visualización dentro de cada plan (páginas de training).
+            # Reutilizamos papeleta_sk: es el orden de aparición de la fuente y,
+            # como el orden se aplica por plan, basta con que sea monótono ahí.
+            # Las papeletas que también están en 0004 verán su orden sobrescrito
+            # por el seed (ON CONFLICT DO UPDATE).
+            "papeleta_order": lambda row: row["papeleta_sk"],
+        },
         "identity_insert": True,
     },
 

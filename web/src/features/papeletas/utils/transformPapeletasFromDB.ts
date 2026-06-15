@@ -14,5 +14,6 @@ export const transformPapeletasFromDB = (raw: any[]): Papeleta[] => {
         papeleta_pilot_crp_value: safeNumber(p.papeleta_pilot_crp_value),
         papeleta_dv_crp_value: safeNumber(p.papeleta_dv_crp_value),
         papeleta_expiration: safeNumber(p.papeleta_expiration),
+        papeleta_order: typeof p.papeleta_order === "number" ? p.papeleta_order : null,
     }));
 };

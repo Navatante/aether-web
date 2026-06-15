@@ -16,12 +16,12 @@ const adiestramientoPapeletas = `-- name: AdiestramientoPapeletas :many
 
 
 SELECT papeleta_sk, papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
-       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration, papeleta_order
 FROM operations.papeleta
 WHERE papeleta_plan IN ('Adiestramiento Básico', 'Adiestramiento Avanzado')
   AND papeleta_block = ANY($1::text[])
   AND papeleta_escuadrilla_fk = $2
-ORDER BY papeleta_plan, papeleta_block, papeleta_name
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name
 `
 
 type AdiestramientoPapeletasParams struct {
@@ -38,6 +38,7 @@ type AdiestramientoPapeletasRow struct {
 	PapeletaPilotCrpValue *int32  `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32  `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32  `json:"papeleta_expiration"`
+	PapeletaOrder         *int32  `json:"papeleta_order"`
 }
 
 // ============================================================
@@ -67,6 +68,7 @@ func (q *Queries) AdiestramientoPapeletas(ctx context.Context, arg Adiestramient
 			&i.PapeletaPilotCrpValue,
 			&i.PapeletaDvCrpValue,
 			&i.PapeletaExpiration,
+			&i.PapeletaOrder,
 		); err != nil {
 			return nil, err
 		}
@@ -259,11 +261,11 @@ func (q *Queries) AdiestramientoPersonas(ctx context.Context, arg Adiestramiento
 const instruccionPapeletas = `-- name: InstruccionPapeletas :many
 
 SELECT papeleta_sk, papeleta_name, papeleta_description, papeleta_block, papeleta_plan,
-       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration
+       papeleta_pilot_crp_value, papeleta_dv_crp_value, papeleta_expiration, papeleta_order
 FROM operations.papeleta
 WHERE papeleta_plan = ANY($1::text[])
   AND papeleta_escuadrilla_fk = $2
-ORDER BY papeleta_plan, papeleta_block, papeleta_name
+ORDER BY papeleta_plan, papeleta_order NULLS LAST, papeleta_block, papeleta_name
 `
 
 type InstruccionPapeletasParams struct {
@@ -280,6 +282,7 @@ type InstruccionPapeletasRow struct {
 	PapeletaPilotCrpValue *int32  `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32  `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32  `json:"papeleta_expiration"`
+	PapeletaOrder         *int32  `json:"papeleta_order"`
 }
 
 // =============== instruccion ===============
@@ -301,6 +304,7 @@ func (q *Queries) InstruccionPapeletas(ctx context.Context, arg InstruccionPapel
 			&i.PapeletaPilotCrpValue,
 			&i.PapeletaDvCrpValue,
 			&i.PapeletaExpiration,
+			&i.PapeletaOrder,
 		); err != nil {
 			return nil, err
 		}

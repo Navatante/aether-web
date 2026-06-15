@@ -443,6 +443,7 @@ type OperationsPapeletum struct {
 	PapeletaPilotCrpValue *int32         `json:"papeleta_pilot_crp_value"`
 	PapeletaDvCrpValue    *int32         `json:"papeleta_dv_crp_value"`
 	PapeletaExpiration    *int32         `json:"papeleta_expiration"`
+	PapeletaOrder         *int32         `json:"papeleta_order"`
 	PapeletaEscuadrillaFk int32          `json:"papeleta_escuadrilla_fk"`
 }
 
