@@ -33,6 +33,7 @@ import {
     DiasDeComision,
     Disponibilidad,
     HorasVueloPilotos,
+    TomasAproximacionesPilotos,
     AdiestramientoPilotos,
     AdiestramientoDotaciones,
     InstruccionPilotos,
@@ -80,6 +81,7 @@ function AppContent() {
                     <Route path="/" element={<MainLayout />}>
                         <Route index element={<Dashboard />} />
                         <Route path="pilotos/horas-vuelo" element={<HorasVueloPilotos />} />
+                        <Route path="pilotos/tomas-aproximaciones" element={<TomasAproximacionesPilotos />} />
                         <Route path="pilotos/adiestramiento" element={<AdiestramientoPilotos />} />
                         <Route path="pilotos/instruccion" element={<InstruccionPilotos />} />
                         <Route path="dotaciones/adiestramiento" element={<AdiestramientoDotaciones />} />

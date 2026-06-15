@@ -86,6 +86,8 @@ export const queryKeys = {
         all: (escuadrillaId: number) => ['hours', escuadrillaId] as const,
         pilotos: (escuadrillaId: number, params: Record<string, unknown>) =>
             ['hours', 'pilotos', escuadrillaId, params] as const,
+        landings: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', 'landings', escuadrillaId, params] as const,
     },
 
     ratings: {

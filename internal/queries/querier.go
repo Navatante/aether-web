@@ -216,6 +216,22 @@ type Querier interface {
 	// Última papeleta (MAX flight_date) por (persona, session_fk) limitada a planes en $1.
 	InstruccionPapeletasRealizadas(ctx context.Context, arg InstruccionPapeletasRealizadasParams) ([]InstruccionPapeletasRealizadasRow, error)
 	InstruccionPersonas(ctx context.Context, arg InstruccionPersonasParams) ([]InstruccionPersonasRow, error)
+	// ============================================================
+	// Landings & Approaches (tomas y aproximaciones por piloto)
+	//
+	// Agrega operations.landing (tomas) y operations.approach (aproximaciones)
+	// por persona sobre un rango de fechas resuelto en Go (mismo parser que hours).
+	//
+	// Tomas (landing_place_fk / landing_period_fk):
+	//   place: 1 Tierra, 2 Monospot, 3 Multispot, 4 Carrier
+	//   period: 1 Día, 2 Noche convencional, 3 GVN
+	// Aproximaciones (app_type_fk):
+	//   1 Precisión, 2 No precisión (Instrumental); 3 Transition Down, 4 Search Pattern (SAR)
+	//
+	// RLS explícita: $3 = escuadrilla_fk. $4 = roles permitidos (array vacío = todos).
+	// El rango de fechas filtra por f.flight_date (la toma/aprox. hereda la fecha del vuelo).
+	// ============================================================
+	LandingsApproachesByPilot(ctx context.Context, arg LandingsApproachesByPilotParams) ([]LandingsApproachesByPilotRow, error)
 	// Personas asignadas a una comisión, ordenadas por la vista canónica.
 	ListComisionPeople(ctx context.Context, comisionFk int32) ([]ListComisionPeopleRow, error)
 	// Variante con campos separados (espejo de get_comision_people en Rust).

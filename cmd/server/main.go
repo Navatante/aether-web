@@ -28,6 +28,7 @@ import (
 	"github.com/14esc/aether-web/internal/domain/festivos"
 	"github.com/14esc/aether-web/internal/domain/flights"
 	"github.com/14esc/aether-web/internal/domain/hours"
+	"github.com/14esc/aether-web/internal/domain/landings"
 	"github.com/14esc/aether-web/internal/domain/lookups"
 	"github.com/14esc/aether-web/internal/domain/papeletas"
 	"github.com/14esc/aether-web/internal/domain/persons"
@@ -106,6 +107,7 @@ func run(logger *slog.Logger) error {
 	comisionesHandlers := comisiones.NewHandlers(comisiones.NewService(pool))
 	ratingsHandlers := ratings.NewHandlers(ratings.NewService(pool))
 	hoursHandlers := hours.NewHandlers(hours.NewService(pool))
+	landingsHandlers := landings.NewHandlers(landings.NewService(pool))
 	esfuerzoHandlers := esfuerzo.NewHandlers(esfuerzo.NewService(pool))
 	flightsHandlers := flights.NewHandlers(flights.NewService(pool))
 
@@ -124,6 +126,7 @@ func run(logger *slog.Logger) error {
 	comisionesHandlers.Register(api, authSvc)
 	ratingsHandlers.Register(api, authSvc)
 	hoursHandlers.Register(api, authSvc)
+	landingsHandlers.Register(api, authSvc)
 	esfuerzoHandlers.Register(api, authSvc)
 	flightsHandlers.Register(api, authSvc)
 
