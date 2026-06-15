@@ -128,16 +128,16 @@ func parseOptionalDate(s string) (pgtype.Date, error) {
 	return pgtype.Date{Time: t, Valid: true}, nil
 }
 
-func parseOptionalTimestamp(s string) (pgtype.Timestamp, error) {
+func parseOptionalTimestamp(s string) (pgtype.Timestamptz, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return pgtype.Timestamp{}, nil
+		return pgtype.Timestamptz{}, nil
 	}
 	t, err := time.Parse("2006-01-02", s)
 	if err != nil {
-		return pgtype.Timestamp{}, err
+		return pgtype.Timestamptz{}, err
 	}
-	return pgtype.Timestamp{Time: t, Valid: true}, nil
+	return pgtype.Timestamptz{Time: t, Valid: true}, nil
 }
 
 func numericToFloat(n pgtype.Numeric) float64 {

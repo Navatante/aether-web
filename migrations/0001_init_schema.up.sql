@@ -326,7 +326,7 @@ CREATE TABLE operations.previous_model_sim_hour (
 
 CREATE TABLE operations.ground_school (
     ground_school_sk              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    ground_school_datetime        TIMESTAMP NOT NULL,
+    ground_school_datetime        TIMESTAMPTZ NOT NULL,
     ground_school_person_fk       INTEGER   NOT NULL REFERENCES detall.person(person_sk),
     ground_school_papeleta_fk     INTEGER   NOT NULL REFERENCES operations.papeleta(papeleta_sk),
     ground_school_escuadrilla_fk  INTEGER   NOT NULL REFERENCES detall.escuadrilla(escuadrilla_sk)
@@ -360,7 +360,7 @@ CREATE TABLE detall.notcrew_qualification (
     notcrew_ratings_sk                    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     person_fk                             INTEGER NOT NULL REFERENCES detall.person(person_sk),
     notcrew_rating_fk                     INTEGER NOT NULL REFERENCES detall.notcrew_rating_type(notcrew_rating_sk),
-    date_qualified                        TIMESTAMP,
+    date_qualified                        TIMESTAMPTZ,
     notcrew_qualification_escuadrilla_fk  INTEGER NOT NULL REFERENCES detall.escuadrilla(escuadrilla_sk),
     CONSTRAINT uq_person_notcrew UNIQUE (person_fk, notcrew_rating_fk)
 );
@@ -382,12 +382,6 @@ CREATE TABLE detall.festivos (
     festivo_dia     DATE         NOT NULL,
     festivo_motivo  VARCHAR(200) NOT NULL,
     CONSTRAINT uq_festivo UNIQUE (festivo_dia, festivo_motivo)
-);
-
-CREATE TABLE detall.user_activity (
-    user_activity_sk    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    user_activity_date  DATE        NOT NULL,
-    user_activity_user  VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE flightsafety.medical_exam (
@@ -578,7 +572,7 @@ CREATE TABLE detall.audit_log (
     new_data     JSONB,
     user_id      VARCHAR(100),
     ip_address   VARCHAR(45),
-    changed_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    changed_at   TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ============================================================
@@ -730,3 +724,24 @@ CREATE INDEX ix_crew_qualification_escuadrilla
 
 CREATE INDEX ix_notcrew_qualification_escuadrilla
     ON detall.notcrew_qualification (notcrew_qualification_escuadrilla_fk);
+
+-- FKs por escuadrilla sin índice (filtrado RLS-por-código en cada query)
+CREATE INDEX ix_flight_escuadrilla   ON operations.flight   (flight_escuadrilla_fk);
+CREATE INDEX ix_papeleta_escuadrilla ON operations.papeleta (papeleta_escuadrilla_fk);
+CREATE INDEX ix_comision_escuadrilla ON detall.comision     (comision_escuadrilla_fk);
+CREATE INDEX ix_aircraft_escuadrilla ON operations.aircraft (aircraft_escuadrilla_fk);
+
+-- *_person_fk de fact tables cuyo UNIQUE empieza por flight_fk (PG no indexa FKs):
+-- sin esto, una consulta "todo lo de una persona" hace seq scan.
+CREATE INDEX ix_ift_hour_person         ON operations.ift_hour         (ift_hour_person_fk);
+CREATE INDEX ix_instructor_hour_person  ON operations.instructor_hour  (instructor_hour_person_fk);
+CREATE INDEX ix_gvntype_hour_person     ON operations.gvntype_hour     (gvntype_hour_person_fk);
+CREATE INDEX ix_formation_hour_person   ON operations.formation_hour   (formation_hour_person_fk);
+CREATE INDEX ix_wt_hour_person          ON operations.wt_hour          (wt_hour_person_fk);
+CREATE INDEX ix_approach_person         ON operations.approach         (app_person_fk);
+CREATE INDEX ix_landing_person          ON operations.landing          (landing_person_fk);
+CREATE INDEX ix_projectile_person       ON operations.projectile       (projectile_person_fk);
+
+-- FKs secundarias de fact tables cuyo UNIQUE empieza por flight_fk (sin person_fk).
+CREATE INDEX ix_cupo_hour_authority     ON operations.cupo_hour        (cupo_authority_fk);
+CREATE INDEX ix_capba_hour_capba        ON operations.capba_hour       (capba_capba_fk);

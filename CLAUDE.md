@@ -27,8 +27,8 @@ Cadena por capas: `queries/<dominio>.sql` → sqlc genera `internal/queries/` �
 - Un paquete por dominio en `internal/domain/<dominio>/`. Los grandes (flights, ratings, lookups, comisiones, dashboard) se dividen en `dto.go` (contrato JSON), `service.go` (negocio + sentinel errors) y `handlers.go` (parseo HTTP + `Register(g, authSvc)`); los pequeños lo reúnen todo en un único `<dominio>.go` (festivos, events…). Mismas piezas en ambos casos.
 - Las rutas se registran explícitamente desde `cmd/server/main.go`; si un dominio no se enchufa ahí, sus rutas no existen. No hay descubrimiento mágico.
 - Configuración solo vía `internal/config` (variables `AETHER_*`); no añadir `os.Getenv` en otros sitios. Sin `AETHER_DATABASE_URL` el proceso no arranca.
-- RLS por código: las queries de datos por escuadrilla filtran siempre por `*_escuadrilla_fk` usando el `EscuadrillaID` de la sesión.
-- El insert de vuelos es transaccional (~12 tablas hijas) y setea los GUCs `aether.user_id`/`aether.ip_address` para el trigger de auditoría `tr_audit_flight`.
+- RLS por código: las queries de datos por escuadrilla filtran siempre por `*_escuadrilla_fk` usando el `EscuadrillaID` de la sesión. Un test de guardia (`internal/queryguard/guard_test.go`, corre en `make test`) vigila esto: tras tocar `queries/*.sql`, toda sentencia nueva sobre datos por escuadrilla debe llevar el filtro o exentarse en `exemptBaseline` con su categoría; si no, CI falla.
+- El insert de vuelos es transaccional (~12 tablas hijas) y setea los GUCs `aether.user_id`/`aether.ip_address` para el trigger de auditoría `tr_audit_flight`. Mismo patrón en las escrituras de `persons` (envueltas en tx con esas GUCs vía `withAudit`) para el trigger `tr_audit_person`; este enmascara el hash de contraseña (guarda solo `person_password_hash_present`, nunca el hash). Ambos triggers escriben en `detall.audit_log`.
 
 ### Contrato de errores
 

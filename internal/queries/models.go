@@ -24,15 +24,15 @@ type DetallAbsenceReason struct {
 }
 
 type DetallAuditLog struct {
-	AuditID   int64            `json:"audit_id"`
-	TableName string           `json:"table_name"`
-	Operation string           `json:"operation"`
-	RecordID  string           `json:"record_id"`
-	OldData   []byte           `json:"old_data"`
-	NewData   []byte           `json:"new_data"`
-	UserID    *string          `json:"user_id"`
-	IpAddress *string          `json:"ip_address"`
-	ChangedAt pgtype.Timestamp `json:"changed_at"`
+	AuditID   int64              `json:"audit_id"`
+	TableName string             `json:"table_name"`
+	Operation string             `json:"operation"`
+	RecordID  string             `json:"record_id"`
+	OldData   []byte             `json:"old_data"`
+	NewData   []byte             `json:"new_data"`
+	UserID    *string            `json:"user_id"`
+	IpAddress *string            `json:"ip_address"`
+	ChangedAt pgtype.Timestamptz `json:"changed_at"`
 }
 
 type DetallComision struct {
@@ -85,11 +85,11 @@ type DetallLocalidad struct {
 }
 
 type DetallNotcrewQualification struct {
-	NotcrewRatingsSk                  int32            `json:"notcrew_ratings_sk"`
-	PersonFk                          int32            `json:"person_fk"`
-	NotcrewRatingFk                   int32            `json:"notcrew_rating_fk"`
-	DateQualified                     pgtype.Timestamp `json:"date_qualified"`
-	NotcrewQualificationEscuadrillaFk int32            `json:"notcrew_qualification_escuadrilla_fk"`
+	NotcrewRatingsSk                  int32              `json:"notcrew_ratings_sk"`
+	PersonFk                          int32              `json:"person_fk"`
+	NotcrewRatingFk                   int32              `json:"notcrew_rating_fk"`
+	DateQualified                     pgtype.Timestamptz `json:"date_qualified"`
+	NotcrewQualificationEscuadrillaFk int32              `json:"notcrew_qualification_escuadrilla_fk"`
 }
 
 type DetallNotcrewRatingType struct {
@@ -149,12 +149,6 @@ type DetallSession struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
 	LastSeenAt pgtype.Timestamptz `json:"last_seen_at"`
-}
-
-type DetallUserActivity struct {
-	UserActivitySk   int32       `json:"user_activity_sk"`
-	UserActivityDate pgtype.Date `json:"user_activity_date"`
-	UserActivityUser string      `json:"user_activity_user"`
 }
 
 type DetallVPersonOrdered struct {
@@ -366,11 +360,11 @@ type OperationsFuelType struct {
 }
 
 type OperationsGroundSchool struct {
-	GroundSchoolSk            int32            `json:"ground_school_sk"`
-	GroundSchoolDatetime      pgtype.Timestamp `json:"ground_school_datetime"`
-	GroundSchoolPersonFk      int32            `json:"ground_school_person_fk"`
-	GroundSchoolPapeletaFk    int32            `json:"ground_school_papeleta_fk"`
-	GroundSchoolEscuadrillaFk int32            `json:"ground_school_escuadrilla_fk"`
+	GroundSchoolSk            int32              `json:"ground_school_sk"`
+	GroundSchoolDatetime      pgtype.Timestamptz `json:"ground_school_datetime"`
+	GroundSchoolPersonFk      int32              `json:"ground_school_person_fk"`
+	GroundSchoolPapeletaFk    int32              `json:"ground_school_papeleta_fk"`
+	GroundSchoolEscuadrillaFk int32              `json:"ground_school_escuadrilla_fk"`
 }
 
 type OperationsGvntypeHour struct {

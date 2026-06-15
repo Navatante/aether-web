@@ -84,7 +84,6 @@ func (s *Service) AddNotCrewRating(ctx context.Context, esc int32, req AddNotCre
 	if req.PersonFk <= 0 || req.CrewRatingsFk <= 0 {
 		return 0, ErrInvalidInput
 	}
-	// notcrew_qualification.date_qualified es TIMESTAMP (quirk del schema original).
 	ts, err := parseOptionalTimestamp(req.DateQualified)
 	if err != nil {
 		return 0, ErrInvalidInput

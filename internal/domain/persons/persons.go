@@ -61,23 +61,23 @@ type ListResult struct {
 // Bug fix vs Rust: añadimos person_localidad (NOT NULL en BD; el DTO Rust
 // la omitía, lo que hacía que cualquier add_person fallara contra el esquema).
 type WriteReq struct {
-	PersonNk            *string `json:"person_nk"`
-	PersonUser          string  `json:"person_user"`
-	PersonRank          string  `json:"person_rank"`
-	PersonCuerpo        string  `json:"person_cuerpo"`
-	PersonEspecialidad  string  `json:"person_especialidad"`
-	PersonName          string  `json:"person_name"`
-	PersonLastName1     string  `json:"person_last_name_1"`
-	PersonLastName2     string  `json:"person_last_name_2"`
-	PersonPhone         string  `json:"person_phone"`
-	PersonDni           *string `json:"person_dni"`
-	PersonLocalidad     string  `json:"person_localidad"`
-	PersonDivision      string  `json:"person_division"`
-	PersonRol           string  `json:"person_rol"`
-	PersonAEmp          string  `json:"person_a_emp"`     // YYYY-MM-DD
-	PersonFEmb          string  `json:"person_f_emb"`     // YYYY-MM-DD
-	PersonBirthdate     string  `json:"person_birthdate"` // YYYY-MM-DD
-	PersonNumEscalafon  int32   `json:"person_num_escalafon"`
+	PersonNk           *string `json:"person_nk"`
+	PersonUser         string  `json:"person_user"`
+	PersonRank         string  `json:"person_rank"`
+	PersonCuerpo       string  `json:"person_cuerpo"`
+	PersonEspecialidad string  `json:"person_especialidad"`
+	PersonName         string  `json:"person_name"`
+	PersonLastName1    string  `json:"person_last_name_1"`
+	PersonLastName2    string  `json:"person_last_name_2"`
+	PersonPhone        string  `json:"person_phone"`
+	PersonDni          *string `json:"person_dni"`
+	PersonLocalidad    string  `json:"person_localidad"`
+	PersonDivision     string  `json:"person_division"`
+	PersonRol          string  `json:"person_rol"`
+	PersonAEmp         string  `json:"person_a_emp"`     // YYYY-MM-DD
+	PersonFEmb         string  `json:"person_f_emb"`     // YYYY-MM-DD
+	PersonBirthdate    string  `json:"person_birthdate"` // YYYY-MM-DD
+	PersonNumEscalafon int32   `json:"person_num_escalafon"`
 }
 
 type PersonSkNk struct {
@@ -135,6 +135,37 @@ type Service struct {
 
 func NewService(pool *pgxpool.Pool) *Service { return &Service{pool: pool, q: queries.New(pool)} }
 
+// setAuditGUCs fija aether.user_id/aether.ip_address LOCAL en la transacción
+// para que el trigger tr_audit_person registre quién hizo el cambio (mismo
+// patrón que flights.setAuditGUCs / tr_audit_flight).
+func setAuditGUCs(ctx context.Context, tx pgx.Tx, userID, ip string) error {
+	if _, err := tx.Exec(ctx, "SELECT set_config('aether.user_id', $1, true)", userID); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, "SELECT set_config('aether.ip_address', $1, true)", ip); err != nil {
+		return err
+	}
+	return nil
+}
+
+// withAudit ejecuta fn dentro de una transacción con las GUCs de auditoría
+// fijadas, de modo que tr_audit_person capture el actor. Las lecturas previas
+// (p. ej. anti-lockout) pueden quedar fuera; aquí solo va la escritura auditada.
+func (s *Service) withAudit(ctx context.Context, userID, ip string, fn func(q *queries.Queries) error) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if err := setAuditGUCs(ctx, tx, userID, ip); err != nil {
+		return err
+	}
+	if err := fn(queries.New(tx)); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 func (s *Service) List(ctx context.Context, esc int32) (ListResult, error) {
 	rows, err := s.q.ListPersons(ctx, esc)
 	if err != nil {
@@ -172,7 +203,7 @@ func (s *Service) List(ctx context.Context, esc int32) (ListResult, error) {
 	return ListResult{Items: out, TotalCount: total}, nil
 }
 
-func (s *Service) Create(ctx context.Context, esc int32, req WriteReq) (int32, error) {
+func (s *Service) Create(ctx context.Context, esc int32, userID, ip string, req WriteReq) (int32, error) {
 	if req.PersonUser == "" || req.PersonRank == "" || req.PersonName == "" {
 		return 0, ErrInvalidInput
 	}
@@ -188,25 +219,30 @@ func (s *Service) Create(ctx context.Context, esc int32, req WriteReq) (int32, e
 	if err != nil {
 		return 0, ErrInvalidInput
 	}
-	id, err := s.q.InsertPerson(ctx, queries.InsertPersonParams{
-		PersonNk:           req.PersonNk,
-		PersonUser:         req.PersonUser,
-		PersonRank:         req.PersonRank,
-		PersonCuerpo:       req.PersonCuerpo,
-		PersonEspecialidad: req.PersonEspecialidad,
-		PersonName:         req.PersonName,
-		PersonLastName1:    req.PersonLastName1,
-		PersonLastName2:    req.PersonLastName2,
-		PersonPhone:        req.PersonPhone,
-		PersonDni:          req.PersonDni,
-		PersonLocalidad:    req.PersonLocalidad,
-		PersonDivision:     req.PersonDivision,
-		PersonRol:          req.PersonRol,
-		PersonAEmp:         aEmp,
-		PersonFEmb:         fEmb,
-		PersonBirthdate:    birth,
-		PersonNumEscalafon: req.PersonNumEscalafon,
-		PersonEscuadrillaFk: esc,
+	var id int32
+	err = s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
+		var e error
+		id, e = q.InsertPerson(ctx, queries.InsertPersonParams{
+			PersonNk:            req.PersonNk,
+			PersonUser:          req.PersonUser,
+			PersonRank:          req.PersonRank,
+			PersonCuerpo:        req.PersonCuerpo,
+			PersonEspecialidad:  req.PersonEspecialidad,
+			PersonName:          req.PersonName,
+			PersonLastName1:     req.PersonLastName1,
+			PersonLastName2:     req.PersonLastName2,
+			PersonPhone:         req.PersonPhone,
+			PersonDni:           req.PersonDni,
+			PersonLocalidad:     req.PersonLocalidad,
+			PersonDivision:      req.PersonDivision,
+			PersonRol:           req.PersonRol,
+			PersonAEmp:          aEmp,
+			PersonFEmb:          fEmb,
+			PersonBirthdate:     birth,
+			PersonNumEscalafon:  req.PersonNumEscalafon,
+			PersonEscuadrillaFk: esc,
+		})
+		return e
 	})
 	if isUniqueViolation(err) {
 		return 0, ErrDuplicate
@@ -214,7 +250,7 @@ func (s *Service) Create(ctx context.Context, esc int32, req WriteReq) (int32, e
 	return id, err
 }
 
-func (s *Service) Update(ctx context.Context, esc int32, id int32, req WriteReq) error {
+func (s *Service) Update(ctx context.Context, esc int32, id int32, userID, ip string, req WriteReq) error {
 	if req.PersonUser == "" || req.PersonRank == "" || req.PersonName == "" {
 		return ErrInvalidInput
 	}
@@ -230,26 +266,31 @@ func (s *Service) Update(ctx context.Context, esc int32, id int32, req WriteReq)
 	if err != nil {
 		return ErrInvalidInput
 	}
-	n, err := s.q.UpdatePerson(ctx, queries.UpdatePersonParams{
-		PersonNk:           req.PersonNk,
-		PersonUser:         req.PersonUser,
-		PersonRank:         req.PersonRank,
-		PersonCuerpo:       req.PersonCuerpo,
-		PersonEspecialidad: req.PersonEspecialidad,
-		PersonName:         req.PersonName,
-		PersonLastName1:    req.PersonLastName1,
-		PersonLastName2:    req.PersonLastName2,
-		PersonPhone:        req.PersonPhone,
-		PersonDni:          req.PersonDni,
-		PersonLocalidad:    req.PersonLocalidad,
-		PersonDivision:     req.PersonDivision,
-		PersonRol:          req.PersonRol,
-		PersonAEmp:         aEmp,
-		PersonFEmb:         fEmb,
-		PersonBirthdate:    birth,
-		PersonNumEscalafon: req.PersonNumEscalafon,
-		PersonSk:           id,
-		PersonEscuadrillaFk: esc,
+	var n int64
+	err = s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
+		var e error
+		n, e = q.UpdatePerson(ctx, queries.UpdatePersonParams{
+			PersonNk:            req.PersonNk,
+			PersonUser:          req.PersonUser,
+			PersonRank:          req.PersonRank,
+			PersonCuerpo:        req.PersonCuerpo,
+			PersonEspecialidad:  req.PersonEspecialidad,
+			PersonName:          req.PersonName,
+			PersonLastName1:     req.PersonLastName1,
+			PersonLastName2:     req.PersonLastName2,
+			PersonPhone:         req.PersonPhone,
+			PersonDni:           req.PersonDni,
+			PersonLocalidad:     req.PersonLocalidad,
+			PersonDivision:      req.PersonDivision,
+			PersonRol:           req.PersonRol,
+			PersonAEmp:          aEmp,
+			PersonFEmb:          fEmb,
+			PersonBirthdate:     birth,
+			PersonNumEscalafon:  req.PersonNumEscalafon,
+			PersonSk:            id,
+			PersonEscuadrillaFk: esc,
+		})
+		return e
 	})
 	if isUniqueViolation(err) {
 		return ErrDuplicate
@@ -264,11 +305,16 @@ func (s *Service) Update(ctx context.Context, esc int32, id int32, req WriteReq)
 }
 
 // SetCurrentFlag implementa dardealta/dardebaja. desiredActive=true → alta, false → baja.
-func (s *Service) SetCurrentFlag(ctx context.Context, esc int32, id int32, desiredActive bool) error {
-	n, err := s.q.SetPersonCurrentFlag(ctx, queries.SetPersonCurrentFlagParams{
-		PersonCurrentFlag:   desiredActive,
-		PersonSk:            id,
-		PersonEscuadrillaFk: esc,
+func (s *Service) SetCurrentFlag(ctx context.Context, esc int32, id int32, userID, ip string, desiredActive bool) error {
+	var n int64
+	err := s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
+		var e error
+		n, e = q.SetPersonCurrentFlag(ctx, queries.SetPersonCurrentFlagParams{
+			PersonCurrentFlag:   desiredActive,
+			PersonSk:            id,
+			PersonEscuadrillaFk: esc,
+		})
+		return e
 	})
 	if err != nil {
 		return err
@@ -326,7 +372,7 @@ func (s *Service) ListForSuperuser(ctx context.Context, esc int32) ([]SuperuserP
 	return out, nil
 }
 
-func (s *Service) SetPassword(ctx context.Context, esc, id int32, password string) error {
+func (s *Service) SetPassword(ctx context.Context, esc, id int32, userID, ip, password string) error {
 	if password == "" {
 		return ErrEmptyPassword
 	}
@@ -334,10 +380,15 @@ func (s *Service) SetPassword(ctx context.Context, esc, id int32, password strin
 	if err != nil {
 		return err
 	}
-	n, err := s.q.SetPersonPasswordBySk(ctx, queries.SetPersonPasswordBySkParams{
-		PersonPasswordHash:  &hash,
-		PersonSk:            id,
-		PersonEscuadrillaFk: esc,
+	var n int64
+	err = s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
+		var e error
+		n, e = q.SetPersonPasswordBySk(ctx, queries.SetPersonPasswordBySkParams{
+			PersonPasswordHash:  &hash,
+			PersonSk:            id,
+			PersonEscuadrillaFk: esc,
+		})
+		return e
 	})
 	if err != nil {
 		return err
@@ -348,7 +399,7 @@ func (s *Service) SetPassword(ctx context.Context, esc, id int32, password strin
 	return nil
 }
 
-func (s *Service) SetPermissionLevel(ctx context.Context, esc, id int32, level string) error {
+func (s *Service) SetPermissionLevel(ctx context.Context, esc, id int32, userID, ip, level string) error {
 	if _, ok := validPermissionLevels[level]; !ok {
 		return ErrInvalidLevel
 	}
@@ -372,10 +423,15 @@ func (s *Service) SetPermissionLevel(ctx context.Context, esc, id int32, level s
 			return ErrLastSuperuser
 		}
 	}
-	n, err := s.q.SetPersonPermissionLevel(ctx, queries.SetPersonPermissionLevelParams{
-		PersonPermissionLevel: level,
-		PersonSk:              id,
-		PersonEscuadrillaFk:   esc,
+	var n int64
+	err = s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
+		var e error
+		n, e = q.SetPersonPermissionLevel(ctx, queries.SetPersonPermissionLevelParams{
+			PersonPermissionLevel: level,
+			PersonSk:              id,
+			PersonEscuadrillaFk:   esc,
+		})
+		return e
 	})
 	if err != nil {
 		return err
@@ -431,7 +487,7 @@ func (h *Handlers) Create(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	id, err := h.svc.Create(c.Request().Context(), int32(user.EscuadrillaID), req)
+	id, err := h.svc.Create(c.Request().Context(), int32(user.EscuadrillaID), user.Username, c.RealIP(), req)
 	switch {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -456,7 +512,7 @@ func (h *Handlers) Update(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	err := h.svc.Update(c.Request().Context(), int32(user.EscuadrillaID), id, req)
+	err := h.svc.Update(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP(), req)
 	switch {
 	case errors.Is(err, ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -482,7 +538,7 @@ func (h *Handlers) setFlag(c echo.Context, active bool) error {
 	if herr != nil {
 		return herr
 	}
-	err := h.svc.SetCurrentFlag(c.Request().Context(), int32(user.EscuadrillaID), id, active)
+	err := h.svc.SetCurrentFlag(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP(), active)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
@@ -544,7 +600,7 @@ func (h *Handlers) SuperuserSetPassword(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	err := h.svc.SetPassword(c.Request().Context(), int32(user.EscuadrillaID), id, req.Password)
+	err := h.svc.SetPassword(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP(), req.Password)
 	switch {
 	case errors.Is(err, ErrEmptyPassword):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -569,7 +625,7 @@ func (h *Handlers) SuperuserSetPermissionLevel(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	err := h.svc.SetPermissionLevel(c.Request().Context(), int32(user.EscuadrillaID), id, req.PermissionLevel)
+	err := h.svc.SetPermissionLevel(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP(), req.PermissionLevel)
 	switch {
 	case errors.Is(err, ErrInvalidLevel):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())

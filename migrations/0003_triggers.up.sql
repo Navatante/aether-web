@@ -162,3 +162,55 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER tr_audit_flight
     AFTER INSERT OR UPDATE OR DELETE ON operations.flight
     FOR EACH ROW EXECUTE FUNCTION operations.fn_tr_audit_flight();
+
+-- ============================================================
+-- tr_audit_person
+-- Registra INSERT/UPDATE/DELETE en detall.person como JSONB.
+-- Motivación: trazar cambios en datos personales (RGPD) y, sobre todo,
+-- en person_permission_level (escalado de privilegios) y credenciales.
+-- El hash de contraseña NUNCA se guarda en el log: se sustituye por un
+-- booleano person_password_hash_present (solo consta si había hash).
+-- user_id / ip se inyectan desde Go vía GUCs (igual que tr_audit_flight).
+-- ============================================================
+CREATE OR REPLACE FUNCTION detall.fn_tr_audit_person()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_user_id     TEXT := current_setting('aether.user_id',    true);
+    v_ip_address  TEXT := current_setting('aether.ip_address', true);
+    v_old         JSONB;
+    v_new         JSONB;
+BEGIN
+    IF v_user_id IS NULL OR v_user_id = '' THEN
+        v_user_id := SESSION_USER;
+    END IF;
+
+    -- Redacta el hash: lo elimina y deja solo si estaba presente.
+    IF (TG_OP IN ('UPDATE', 'DELETE')) THEN
+        v_old := (row_to_json(OLD)::JSONB - 'person_password_hash')
+                 || jsonb_build_object('person_password_hash_present', OLD.person_password_hash IS NOT NULL);
+    END IF;
+    IF (TG_OP IN ('INSERT', 'UPDATE')) THEN
+        v_new := (row_to_json(NEW)::JSONB - 'person_password_hash')
+                 || jsonb_build_object('person_password_hash_present', NEW.person_password_hash IS NOT NULL);
+    END IF;
+
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO detall.audit_log (table_name, operation, record_id, new_data, user_id, ip_address)
+        VALUES ('person', 'INSERT', NEW.person_sk::TEXT, v_new, v_user_id, v_ip_address);
+        RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO detall.audit_log (table_name, operation, record_id, old_data, new_data, user_id, ip_address)
+        VALUES ('person', 'UPDATE', NEW.person_sk::TEXT, v_old, v_new, v_user_id, v_ip_address);
+        RETURN NEW;
+    ELSIF (TG_OP = 'DELETE') THEN
+        INSERT INTO detall.audit_log (table_name, operation, record_id, old_data, user_id, ip_address)
+        VALUES ('person', 'DELETE', OLD.person_sk::TEXT, v_old, v_user_id, v_ip_address);
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_audit_person
+    AFTER INSERT OR UPDATE OR DELETE ON detall.person
+    FOR EACH ROW EXECUTE FUNCTION detall.fn_tr_audit_person();

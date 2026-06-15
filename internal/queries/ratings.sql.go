@@ -62,10 +62,10 @@ RETURNING notcrew_ratings_sk
 `
 
 type AddNotCrewRatingParams struct {
-	PersonFk                          int32            `json:"person_fk"`
-	NotcrewRatingFk                   int32            `json:"notcrew_rating_fk"`
-	DateQualified                     pgtype.Timestamp `json:"date_qualified"`
-	NotcrewQualificationEscuadrillaFk int32            `json:"notcrew_qualification_escuadrilla_fk"`
+	PersonFk                          int32              `json:"person_fk"`
+	NotcrewRatingFk                   int32              `json:"notcrew_rating_fk"`
+	DateQualified                     pgtype.Timestamptz `json:"date_qualified"`
+	NotcrewQualificationEscuadrillaFk int32              `json:"notcrew_qualification_escuadrilla_fk"`
 }
 
 // =============== CRUD notcrew_qualification ===============
