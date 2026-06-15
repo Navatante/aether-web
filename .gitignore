@@ -10,6 +10,10 @@ coverage.*
 !.env.example
 config.enc
 
+# Claude Code: la capa local por máquina (permisos/overrides personales) no se
+# versiona; la compartida del equipo sería .claude/settings.json.
+.claude/settings.local.json
+
 # OS / editor
 .DS_Store
 *.swp
