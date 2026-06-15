@@ -1,6 +1,5 @@
 import React, { useState, useTransition } from 'react';
-import { useApiPaginatedQuery } from "@/lib/apiQuery";
-import { http } from "@/lib/http";
+import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { transformFlightsFromDB } from "../utils/transformFlightsFromDB";
 import { cn } from "@/lib/utils";
@@ -16,7 +15,6 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 import { PermissionLevel, useUser } from "@/providers";
 import {
     ActionButton,
@@ -100,20 +98,27 @@ const Flights = () => {
     const currentPage = Math.floor(params.offset / itemsPerPage) + 1;
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
+    // Invalida todo el dominio de vuelos de la escuadrilla (cualquier lista, sin
+    // depender de los params). El error HTTP lo notifica el toast de useApiMutation.
+    const deleteFlight = useApiMutation<void, { flightId: number }>(
+        'DELETE', (v) => `/flights/${v.flightId}`,
+        {
+            invalidateKeys: [queryKeys.flights.all(escuadrillaId ?? 0)],
+            successMessage: "Vuelo eliminado con éxito.",
+        },
+    );
+
     const [, deleteAction, isDeleting] = React.useActionState<DeleteActionState, number>(
         async (_prev, flightId) => {
             try {
-                await http<void>('DELETE', `/flights/${flightId}`);
-
+                await deleteFlight.mutateAsync({ flightId });
                 if (selectedFlight?.id === flightId) setSelectedFlight(null);
-                await refetch();
                 setConfirmationText('');
                 setDeleteDialogOpen(false);
                 setFlightToDelete(null);
-                toast.success("Vuelo eliminado con éxito.");
                 return { status: 'success', deletedId: flightId };
             } catch (error) {
-                toast.error(error instanceof Error ? error.message : 'Error al eliminar');
+                // El error HTTP ya lo notifica el toast de useApiMutation.
                 return { status: 'error', error: error instanceof Error ? error.message : 'Error' };
             }
         },

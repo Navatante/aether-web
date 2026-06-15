@@ -10,7 +10,9 @@ import { useComisionTypes, useComisionLugares, type ComisionLugarLookup } from "
 import { format } from 'date-fns';
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { http } from "@/lib/http";
+import { useApiMutation } from "@/lib/apiQuery";
+import { queryKeys } from "@/lib/queryKeys";
+import { useEscuadrilla } from "@/providers";
 import { FormValues, formSchema } from "../components/forms/schema";
 
 // Datos para modo edición
@@ -55,8 +57,35 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
         data: lugarArray,
         loading: lugarLoading,
         error: lugarQueryError,
-        refetch: refetchLugares
     } = useComisionLugares();
+
+    const { id: escId } = useEscuadrilla();
+
+    // Mutaciones del lookup de lugares: invalidar su clave refresca el selector
+    // (y cualquier otro consumidor) sin refetch manual. Los errores HTTP los
+    // notifica el toast de useApiMutation.
+    const comisionLugaresKey = queryKeys.lookups.comisionLugares(escId ?? 0);
+    const insertLugarMutation = useApiMutation<{ comision_lugar_sk: number; comision_name: string }, { comision_name: string }>(
+        'POST', '/comision-lugares', { invalidateKeys: [comisionLugaresKey] },
+    );
+    const updateLugarMutation = useApiMutation<void, { id: number; name: string }>(
+        'PUT', (v) => `/comision-lugares/${v.id}`,
+        { invalidateKeys: [comisionLugaresKey], body: ({ id, ...rest }) => rest },
+    );
+    const deleteLugarMutation = useApiMutation<void, { id: number }>(
+        'DELETE', (v) => `/comision-lugares/${v.id}`, { invalidateKeys: [comisionLugaresKey] },
+    );
+
+    // Alta/edición de comisión. El POST devuelve { success, message } en el body.
+    // Invalidan todo el dominio de comisiones (lista y días) de la escuadrilla.
+    const comisionesKey = queryKeys.comisiones.all(escId ?? 0);
+    const createComisionMutation = useApiMutation<{ comision_id: number; success: boolean; message: string }, Record<string, unknown>>(
+        'POST', '/comisiones', { invalidateKeys: [comisionesKey] },
+    );
+    const updateComisionMutation = useApiMutation<void, Record<string, unknown>>(
+        'PUT', (v) => `/comisiones/${v.comision_sk}`,
+        { invalidateKeys: [comisionesKey], successMessage: 'Comisión actualizada correctamente', body: ({ comision_sk, ...rest }) => rest },
+    );
 
     // Configuración del formulario
     const {
@@ -127,22 +156,9 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
         setValue('generaEsfuerzo', value);
     };
 
-    // Función para insertar nuevo lugar (POST /comision-lugares)
-    const insertLugar = async (comision_name: string): Promise<{ comision_lugar_sk: number; comision_name: string }> => {
-        return await http<{ comision_lugar_sk: number; comision_name: string }>(
-            'POST', '/comision-lugares', { body: { comision_name } }
-        );
-    };
-
-    // Función para actualizar lugar (PUT /comision-lugares/:id)
-    const updateLugar = async (id: number, name: string): Promise<void> => {
-        await http<void>('PUT', `/comision-lugares/${id}`, { body: { name } });
-    };
-
-    // Función para eliminar lugar (DELETE /comision-lugares/:id)
-    const deleteLugar = async (id: number): Promise<void> => {
-        await http<void>('DELETE', `/comision-lugares/${id}`);
-    };
+    const insertLugar = (comision_name: string) => insertLugarMutation.mutateAsync({ comision_name });
+    const updateLugar = (id: number, name: string) => updateLugarMutation.mutateAsync({ id, name });
+    const deleteLugar = (id: number) => deleteLugarMutation.mutateAsync({ id });
 
     const closeAddLugarDialog = () => {
         setIsAddLugarOpen(false);
@@ -185,13 +201,12 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
         setInsertLoading(true);
         try {
             const result = await insertLugar(newLugarName.trim());
-            await refetchLugares();
             setValue('lugar', result.comision_lugar_sk.toString());
             closeAddLugarDialog();
             toast.success('Lugar agregado correctamente');
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error al agregar lugar: ${error}`);
-            setLugarError(error as string || 'Error al guardar el lugar. Por favor intente nuevamente.');
         } finally {
             setInsertLoading(false);
         }
@@ -216,12 +231,11 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
         setInsertLoading(true);
         try {
             await updateLugar(editingLugar.comision_lugar_sk, editingLugar.comision_name.trim());
-            await refetchLugares();
             closeEditLugarDialog();
             toast.success('Lugar actualizado correctamente');
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error al actualizar lugar: ${error}`);
-            setLugarError(error as string || 'Error al actualizar el lugar.');
         } finally {
             setInsertLoading(false);
         }
@@ -233,7 +247,6 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
         setDeleteLoading(true);
         try {
             await deleteLugar(lugarToDelete.comision_lugar_sk);
-            await refetchLugares();
 
             if (selectedLugar === lugarToDelete.comision_lugar_sk.toString()) {
                 setValue('lugar', '');
@@ -242,8 +255,8 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
             closeDeleteConfirmDialog();
             toast.success('Lugar eliminado correctamente');
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error al eliminar lugar: ${error}`);
-            toast.error(error as string || 'Error al eliminar el lugar. Puede que esté en uso.');
             closeDeleteConfirmDialog();
         } finally {
             setDeleteLoading(false);
@@ -256,19 +269,10 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
 
         try {
             if (isEditMode && editData) {
-                // PUT /comisiones/:id
-                await http<void>('PUT', `/comisiones/${editData.comision_sk}`, { body: data });
-                toast.success('Comisión actualizada correctamente');
+                await updateComisionMutation.mutateAsync({ ...data, comision_sk: editData.comision_sk });
             } else {
-                // POST /comisiones
-                const result = await http<{
-                    comision_id: number;
-                    success: boolean;
-                    message: string;
-                }>('POST', '/comisiones', { body: data });
-
+                const result = await createComisionMutation.mutateAsync({ ...data });
                 log.info(`Resultado de inserción: ${JSON.stringify(result)}`);
-
                 if (result.success) {
                     toast.success(result.message);
                 } else {
@@ -280,8 +284,8 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
             navigate('/comisiones');
             onClose();
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error al guardar la comisión: ${error}`);
-            toast.error(error as string || 'Error al guardar la comisión');
         }
     };
 

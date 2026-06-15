@@ -1,5 +1,4 @@
 // src/features/dashboard/pages/Dashboard.tsx
-import { useLogger } from '@/lib/logger'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -10,7 +9,6 @@ import {
     UserRoundCog, Laptop
 } from "lucide-react"
 import { useEscuadrilla, useUserData } from "@/providers"
-import { http } from "@/lib/http"
 import { useApiQuery } from "@/lib/apiQuery"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -30,7 +28,7 @@ import {
     BarChartData,
     HorasPorPeriodo
 } from "@/types/dashboard"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import GlassProgressBarBig from "@/shared/components/common/GlassProgressBarBig"
 import { GradientTitle, SegmentedDateRangeAether } from "@/shared/components/common"
 import { queryKeys } from "@/lib/queryKeys"
@@ -40,7 +38,6 @@ import DailyAverageCard from "../components/DailyAverageCard"
 
 // Componente principal del Dashboard
 export default function Dashboard() {
-    const log = useLogger('Dashboard');
     const { fullName, loading: userLoading, error: userError, escuadrillaId } = useUserData();
     const firstName = fullName?.split(' ')[0] || 'Usuario';
     const { name } = useEscuadrilla();
@@ -58,32 +55,28 @@ export default function Dashboard() {
     );
     const staticError = staticQueryError?.message ?? null;
 
-    // Estado para estadísticas dinámicas (params-driven, triggered by date range component)
-    const [dynamicData, setDynamicData] = useState<DashboardDynamicStats | null>(null);
-    const [dynamicLoading, setDynamicLoading] = useState(false);
-    const [dynamicError, setDynamicError] = useState<string | null>(null);
+    // Estadísticas dinámicas (params-driven) vía TanStack Query → POST
+    // /dashboard/dynamic-stats. El selector de rango solo fija los params; la
+    // query refetchea y cachea por combinación de params + escuadrilla. Se
+    // habilita cuando hay params y la escuadrilla ya está disponible (esto
+    // sustituye al antiguo `pendingParams` + fetch manual).
+    const [statsParams, setStatsParams] = useState<DashboardStatsParams | null>(null);
 
-    // Estado para parámetros pendientes (cuando escuadrillaId aún no está disponible)
-    const [pendingParams, setPendingParams] = useState<DashboardStatsParams | null>(null);
-
-    // Callback para fetch de estadísticas dinámicas → POST /dashboard/dynamic-stats
-    const fetchDynamicStats = async (params: DashboardStatsParams) => {
-        if (escuadrillaId === null) return null;
-
-        try {
-            setDynamicLoading(true);
-            setDynamicError(null);
-            const result = await http<DashboardDynamicStats>('POST', '/dashboard/dynamic-stats', { body: params });
-            setDynamicData(result);
-            return result;
-        } catch (err) {
-            log.error(`Error fetching dynamic stats: ${err}`);
-            setDynamicError(err instanceof Error ? err.message : 'Error desconocido');
-            return null;
-        } finally {
-            setDynamicLoading(false);
-        }
-    };
+    const {
+        data: dynamicStatsData,
+        isFetching: dynamicLoading,
+        error: dynamicQueryError,
+    } = useApiQuery<DashboardDynamicStats>(
+        'POST',
+        '/dashboard/dynamic-stats',
+        {
+            body: statsParams ?? undefined,
+            enabled: statsParams !== null && escuadrillaId !== null,
+        },
+        queryKeys.dashboard.dynamic(escuadrillaId ?? 0, (statsParams ?? {}) as Record<string, unknown>),
+    );
+    const dynamicData = dynamicStatsData ?? null;
+    const dynamicError = dynamicQueryError?.message ?? null;
 
     // Transformación de datos para gráficos
     const chartData = (() => {
@@ -137,23 +130,11 @@ export default function Dashboard() {
         return { chartAreaData, radarData, pieData, barData, periodPieData };
     })();
 
-    // Callback para cuando se cambia el rango de fechas
-    const handleDateRangeChange = async (params: DashboardStatsParams) => {
-        if (escuadrillaId === null) {
-            setPendingParams(params);
-            return;
-        }
-        setPendingParams(null);
-        await fetchDynamicStats(params);
+    // Solo fija los params; la query reacciona (y queda diferida hasta que
+    // escuadrillaId esté disponible vía `enabled`).
+    const handleDateRangeChange = (params: DashboardStatsParams) => {
+        setStatsParams(params);
     };
-
-    // Ejecutar parámetros pendientes cuando escuadrillaId esté disponible
-    useEffect(() => {
-        if (escuadrillaId !== null && pendingParams) {
-            fetchDynamicStats(pendingParams);
-            setPendingParams(null);
-        }
-    }, [escuadrillaId, pendingParams]);
 
     // Datos declarativos para las tarjetas de estadísticas
     const pilotDetails: DetailItem[] = (() => {

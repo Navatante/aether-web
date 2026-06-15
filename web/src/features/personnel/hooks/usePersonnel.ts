@@ -2,12 +2,11 @@
 // con el render (tabla, drawer de alta/edición, diálogo de baja/alta).
 
 import React, { useState, useTransition } from 'react';
-import { useApiPaginatedQuery } from "@/lib/apiQuery";
+import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { useConfirmationDialog } from "@/shared/hooks";
 import { transformPersonnelFromDB } from "../utils/transformPersonnelFromDB";
 import { Person } from "@/types/person";
-import { http } from "@/lib/http";
 import { useEscuadrilla, useUser } from "@/providers";
 import { toast } from "sonner";
 import { type PersonFormValues, CUERPOS } from "../components";
@@ -39,33 +38,43 @@ export function usePersonnel() {
         transform: transformPersonnelFromDB,
     });
 
+    // Invalida todo el dominio de personal de la escuadrilla (cualquier lista,
+    // sin depender de los params). Los errores HTTP los notifica el toast de useApiMutation.
+    const invalidateKeys = [queryKeys.personnel.all(escId ?? 0)];
+    const createPerson = useApiMutation<void, Record<string, unknown>>(
+        "POST", "/persons",
+        { invalidateKeys, successMessage: "Persona añadida correctamente" },
+    );
+    const updatePerson = useApiMutation<void, Record<string, unknown>>(
+        "PUT", (v) => `/persons/${v.person_sk}`,
+        { invalidateKeys, successMessage: "Persona editada correctamente", body: ({ person_sk, ...rest }) => rest },
+    );
+    const toggleActive = useApiMutation<void, { person_sk: number; action: "activate" | "deactivate" }>(
+        "POST", (v) => `/persons/${v.person_sk}/${v.action}`,
+        { invalidateKeys, body: () => undefined },
+    );
 
     const handlePersonSubmit = async (data: PersonFormValues) => {
+        const payload: Record<string, unknown> = {
+            ...data,
+            person_a_emp: data.person_a_emp ? data.person_a_emp.toISOString().split('T')[0] : null,
+            person_f_emb: data.person_f_emb ? data.person_f_emb.toISOString().split('T')[0] : null,
+            person_birthdate: data.person_birthdate ? data.person_birthdate.toISOString().split('T')[0] : null,
+            person_nk: data.person_nk?.trim() === "" ? null : data.person_nk,
+            person_dni: data.person_dni?.trim() === "" ? null : data.person_dni,
+        };
+
         try {
-            const payload = {
-                ...data,
-                person_a_emp: data.person_a_emp ? data.person_a_emp.toISOString().split('T')[0] : null,
-                person_f_emb: data.person_f_emb ? data.person_f_emb.toISOString().split('T')[0] : null,
-                person_birthdate: data.person_birthdate ? data.person_birthdate.toISOString().split('T')[0] : null,
-                person_nk: data.person_nk?.trim() === "" ? null : data.person_nk,
-                person_dni: data.person_dni?.trim() === "" ? null : data.person_dni,
-            };
-
             if (editingPerson) {
-                await http("PUT", `/persons/${editingPerson.person_sk}`, { body: payload });
-                toast.success("Persona editada correctamente");
+                await updatePerson.mutateAsync({ ...payload, person_sk: editingPerson.person_sk });
             } else {
-                await http("POST", "/persons", { body: payload });
-                toast.success("Persona añadida correctamente");
+                await createPerson.mutateAsync(payload);
             }
-
-            await refetch();
             setDrawerOpen(false);
             setEditingPerson(null);
             setSelectedPerson(null);
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : "Error al guardar";
-            toast.error(msg);
+        } catch {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
         }
     };
 
@@ -85,16 +94,14 @@ export function usePersonnel() {
     >(
         async (_prev, { personSk, makeActive }) => {
             try {
-                const action = makeActive ? "activate" : "deactivate";
-                await http("POST", `/persons/${personSk}/${action}`);
-                await refetch();
+                await toggleActive.mutateAsync({ person_sk: personSk, action: makeActive ? "activate" : "deactivate" });
                 closeDialog();
                 setSelectedPerson(null);
                 toast.success(makeActive ? "Personal dado de alta correctamente" : "Personal dado de baja correctamente");
                 return { status: 'success' };
             } catch (error) {
+                // El error HTTP ya lo notifica el toast de useApiMutation.
                 const msg = error instanceof Error ? error.message : "Error en la operación";
-                toast.error(msg);
                 return { status: 'error', error: msg };
             }
         },

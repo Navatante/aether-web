@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { useLogger } from '@/lib/logger';
-import { http } from '@/lib/http';
+import { useApiMutation } from '@/lib/apiQuery';
+import { queryKeys } from '@/lib/queryKeys';
+import { useEscuadrilla } from '@/providers';
 import { Button } from "@/components/ui/button";
 import { ActionButton } from "@/shared/components/common";
 import { Input } from "@/components/ui/input";
@@ -23,19 +25,26 @@ import { type DeleteTarget, EmptyState, ErrorBanner, LoadingState } from './shar
 type PlaceFormMode = 'list' | 'add';
 
 export function PlacesTab({
-    onRefresh,
     onDeleteRequest,
 }: {
-    onRefresh: () => Promise<unknown>;
     onDeleteRequest: (target: DeleteTarget) => void;
 }) {
     const log = useLogger('ManageFlightDataDialog.Places');
-    const { data: places, loading, error: fetchError, refetch } = useDepartureArrivalPlaces();
+    const { id: escId } = useEscuadrilla();
+    const { data: places, loading, error: fetchError } = useDepartureArrivalPlaces();
+
+    // POST /lookups/departure-arrival-places. Invalidar la clave del lookup
+    // refresca a la vez esta lista y el selector del formulario de vuelo (misma
+    // query), sin refetch manuales ni prop onRefresh.
+    const createPlace = useApiMutation<void, { code: string; name: string }>(
+        'POST',
+        '/lookups/departure-arrival-places',
+        { invalidateKeys: [queryKeys.lookups.departureArrivalPlaces(escId ?? 0)] },
+    );
 
     const [mode, setMode] = useState<PlaceFormMode>('list');
     const [code, setCode] = useState('');
     const [name, setName] = useState('');
-    const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const reset = () => { setMode('list'); setCode(''); setName(''); setError(null); };
@@ -44,23 +53,17 @@ export function PlacesTab({
         e.preventDefault();
         if (!code.trim()) { setError('El código es obligatorio'); return; }
         if (!name.trim()) { setError('El nombre es obligatorio'); return; }
-        setSaving(true); setError(null);
+        setError(null);
         try {
-            await http<void>('POST', '/lookups/departure-arrival-places', {
-                body: {
-                    code: code.trim().toUpperCase(),
-                    name: name.trim(),
-                },
+            await createPlace.mutateAsync({
+                code: code.trim().toUpperCase(),
+                name: name.trim(),
             });
-            await refetch();
-            await onRefresh();
             log.info(`Lugar '${name}' añadido`);
             reset();
         } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error añadiendo lugar: ${err}`);
-            setError(String(err));
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -130,9 +133,9 @@ export function PlacesTab({
                             onChange={(e) => setName(e.target.value)} maxLength={100} />
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="outline" onClick={reset} disabled={saving}>Cancelar</Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
+                        <Button type="button" variant="outline" onClick={reset} disabled={createPlace.isPending}>Cancelar</Button>
+                        <Button type="submit" disabled={createPlace.isPending}>
+                            {createPlace.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
                         </Button>
                     </DialogFooter>
                 </form>

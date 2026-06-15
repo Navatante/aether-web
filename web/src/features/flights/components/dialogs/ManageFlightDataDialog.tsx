@@ -23,13 +23,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { http } from "@/lib/http";
-import {
-    useDepartureArrivalPlaces,
-    useAircraftsManage,
-    useEventsManage,
-} from "@/shared/hooks";
-import { type DeleteTarget, type TabId, ErrorBanner } from './manage-flight-data/shared';
+import { useApiMutation } from "@/lib/apiQuery";
+import { queryKeys } from "@/lib/queryKeys";
+import { useEscuadrilla } from "@/providers";
+import { type DeleteTarget, type TabId } from './manage-flight-data/shared';
 import { PlacesTab } from './manage-flight-data/PlacesTab';
 import { AircraftsTab } from './manage-flight-data/AircraftsTab';
 import { EventsTab } from './manage-flight-data/EventsTab';
@@ -37,11 +34,6 @@ import { EventsTab } from './manage-flight-data/EventsTab';
 interface ManageFlightDataDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onRefresh: {
-        places: () => Promise<unknown>;
-        aircrafts: () => Promise<unknown>;
-        events: () => Promise<unknown>;
-    };
 }
 
 const TABS: { id: TabId; label: string }[] = [
@@ -50,50 +42,50 @@ const TABS: { id: TabId; label: string }[] = [
     { id: 'eventos', label: 'Eventos' },
 ];
 
-export default function ManageFlightDataDialog({ open, onOpenChange, onRefresh }: ManageFlightDataDialogProps): React.ReactElement {
+export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFlightDataDialogProps): React.ReactElement {
     const log = useLogger('ManageFlightDataDialog');
+    const { id: escId } = useEscuadrilla();
 
-    const { refetch: refetchPlaces } = useDepartureArrivalPlaces();
-    const { refetch: refetchAircrafts } = useAircraftsManage();
-    const { refetch: refetchEvents } = useEventsManage();
+    // DELETE de los tres tipos. invalidateKeys es estático, así que cubre las
+    // claves de los tres lookups (lista de gestión + selector del formulario de
+    // vuelo) de una vez; invalidar una clave sin observadores activos es un
+    // no-op, así que sobra-invalidar es inocuo y evita tres mutaciones aparte.
+    const deleteItem = useApiMutation<void, DeleteTarget>(
+        'DELETE',
+        (t) =>
+            t.type === 'lugares' ? `/lookups/departure-arrival-places/${t.sk}`
+            : t.type === 'aeronaves' ? `/lookups/aircrafts/${t.sk}`
+            : `/events/${t.sk}`,
+        {
+            invalidateKeys: [
+                queryKeys.lookups.departureArrivalPlaces(escId ?? 0),
+                queryKeys.lookups.aircrafts(escId ?? 0),
+                queryKeys.lookups.aircraftsManage(escId ?? 0),
+                queryKeys.lookups.eventsLookup(escId ?? 0),
+                queryKeys.lookups.eventsManage(escId ?? 0),
+            ],
+        },
+    );
 
     const [activeTab, setActiveTab] = useState<TabId>('lugares');
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-    const [deleting, setDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
 
     const handleClose = () => {
         setActiveTab('lugares');
         setDeleteTarget(null);
-        setDeleteError(null);
         onOpenChange(false);
     };
 
     const handleDeleteConfirm = async () => {
         if (!deleteTarget) return;
-        setDeleting(true);
         const target = deleteTarget;
         setDeleteTarget(null);
         try {
-            if (target.type === 'lugares') {
-                await http<void>('DELETE', `/lookups/departure-arrival-places/${target.sk}`);
-                await refetchPlaces();
-                await onRefresh.places();
-            } else if (target.type === 'aeronaves') {
-                await http<void>('DELETE', `/lookups/aircrafts/${target.sk}`);
-                await refetchAircrafts();
-                await onRefresh.aircrafts();
-            } else {
-                await http<void>('DELETE', `/events/${target.sk}`);
-                await refetchEvents();
-                await onRefresh.events();
-            }
+            await deleteItem.mutateAsync(target);
             log.info(`Eliminado: ${target.label}`);
         } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error eliminando ${target.type}: ${err}`);
-            setDeleteError(String(err));
-        } finally {
-            setDeleting(false);
         }
     };
 
@@ -139,27 +131,16 @@ export default function ManageFlightDataDialog({ open, onOpenChange, onRefresh }
                         ))}
                     </div>
 
-                    {deleteError && <ErrorBanner message={deleteError} />}
-
                     {/* Tab content */}
                     <div className="flex-1 overflow-hidden flex flex-col min-h-0 pt-2">
                         {activeTab === 'lugares' && (
-                            <PlacesTab
-                                onRefresh={onRefresh.places}
-                                onDeleteRequest={setDeleteTarget}
-                            />
+                            <PlacesTab onDeleteRequest={setDeleteTarget} />
                         )}
                         {activeTab === 'aeronaves' && (
-                            <AircraftsTab
-                                onRefresh={onRefresh.aircrafts}
-                                onDeleteRequest={setDeleteTarget}
-                            />
+                            <AircraftsTab onDeleteRequest={setDeleteTarget} />
                         )}
                         {activeTab === 'eventos' && (
-                            <EventsTab
-                                onRefresh={onRefresh.events}
-                                onDeleteRequest={setDeleteTarget}
-                            />
+                            <EventsTab onDeleteRequest={setDeleteTarget} />
                         )}
                     </div>
                 </DialogContent>
@@ -180,13 +161,13 @@ export default function ManageFlightDataDialog({ open, onOpenChange, onRefresh }
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel disabled={deleteItem.isPending}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDeleteConfirm}
-                            disabled={deleting}
+                            disabled={deleteItem.isPending}
                             className="bg-danger text-danger-foreground hover:bg-danger/90"
                         >
-                            {deleting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            {deleteItem.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             Eliminar
                         </AlertDialogAction>
                     </AlertDialogFooter>

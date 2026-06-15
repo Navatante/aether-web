@@ -3,7 +3,7 @@
 // Página de calificaciones de mantenimiento (refactorizada).
 // Usa full_name como key y permisos ADMINISTRATIVO.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLogger } from '@/lib/logger';
 import { PermissionLevel, useHasPermission, useUser } from '@/providers';
 import { useApiQuery, useApiMutation } from '@/lib/apiQuery';
@@ -56,23 +56,16 @@ function useMaintenanceRatings() {
     const data = rawData ?? null;
     const error = queryError?.message ?? null;
 
-    // Process data when it changes
-    const [certifications, setCertifications] = useState<CertificationData>({});
-    const [personFullNameMap, setPersonFullNameMap] = useState<Record<string, string>>({});
-    const [personSkMap, setPersonSkMap] = useState<Record<string, number>>({});
-    const [personnel, setPersonnel] = useState<string[]>([]);
-    const [ratings, setRatings] = useState<Rating[]>([]);
-
-    useEffect(() => {
-        if (data) {
-            const processed = processMaintenanceRatings(data);
-            setCertifications(processed.pilotCertifications); // Uses pilotCertifications for storage
-            setPersonFullNameMap(processed.personFullNameMap);
-            setPersonSkMap(processed.personSkMap);
-            setPersonnel(processed.pilots); // Uses pilots array for personnel
-            setRatings(processed.pilotRatings); // Converted ratings
-        }
-    }, [data]);
+    // Derivado directo del cache de la query (sin useState/useEffect): el estado
+    // de servidor tiene una sola fuente de verdad y el React Compiler memoiza
+    // este cálculo. Tras una mutación, invalidateKeys refetchea y esto recomputa.
+    // (processMaintenanceRatings reutiliza los campos pilot* para mantenedores.)
+    const processed = data ? processMaintenanceRatings(data) : null;
+    const certifications: CertificationData = processed?.pilotCertifications ?? {};
+    const personFullNameMap: Record<string, string> = processed?.personFullNameMap ?? {};
+    const personSkMap: Record<string, number> = processed?.personSkMap ?? {};
+    const personnel: string[] = processed?.pilots ?? [];
+    const ratings: Rating[] = processed?.pilotRatings ?? [];
 
     // UI State
     const [searchTerm, setSearchTerm] = useState('');
@@ -118,15 +111,7 @@ function useMaintenanceRatings() {
                 crew_ratings_fk: ratingId,
                 date_qualified: dateQualified,
             });
-
-            setCertifications(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: true, date_qualified: dateQualified },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error añadiendo certificación: ${err}`);
@@ -152,15 +137,7 @@ function useMaintenanceRatings() {
             if (!cal?.notCrew_ratings_sk) throw new Error('No se encontró notCrew_ratings_sk');
 
             await deleteMutation.mutateAsync({ notCrewRatingsSk: cal.notCrew_ratings_sk });
-
-            setCertifications(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: false },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error eliminando certificación: ${err}`);

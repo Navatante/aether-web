@@ -3,7 +3,7 @@
 // Página de calificaciones de modelo (refactorizada).
 // Usa utilidades compartidas de src/features/ratings y componentes internos.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLogger } from '@/lib/logger';
 import { Info, Lock } from 'lucide-react';
 import { PermissionLevel, useHasPermission, useUser } from '@/providers';
@@ -52,29 +52,18 @@ function useModelRatings() {
     const data = rawData ?? null;
     const error = queryError?.message ?? null;
 
-    // Process data when it changes
-    const [pilotCertifications, setPilotCertifications] = useState<CertificationData>({});
-    const [crewCertifications, setCrewCertifications] = useState<CertificationData>({});
-    const [personFullNameMap, setPersonFullNameMap] = useState<Record<string, string>>({});
-    const [personSkMap, setPersonSkMap] = useState<Record<string, number>>({});
-    const [pilots, setPilots] = useState<string[]>([]);
-    const [crew, setCrew] = useState<string[]>([]);
-    const [pilotRatings, setPilotRatings] = useState<Rating[]>([]);
-    const [crewRatings, setCrewRatings] = useState<Rating[]>([]);
-
-    useEffect(() => {
-        if (data) {
-            const processed = processModelRatings(data);
-            setPilotCertifications(processed.pilotCertifications);
-            setCrewCertifications(processed.crewCertifications || {});
-            setPersonFullNameMap(processed.personFullNameMap);
-            setPersonSkMap(processed.personSkMap);
-            setPilots(processed.pilots);
-            setCrew(processed.crew || []);
-            setPilotRatings(processed.pilotRatings);
-            setCrewRatings(processed.crewRatings || []);
-        }
-    }, [data]);
+    // Derivado directo del cache de la query (sin useState/useEffect): el estado
+    // de servidor tiene una sola fuente de verdad y el React Compiler memoiza
+    // este cálculo. Tras una mutación, invalidateKeys refetchea y esto recomputa.
+    const processed = data ? processModelRatings(data) : null;
+    const pilotCertifications: CertificationData = processed?.pilotCertifications ?? {};
+    const crewCertifications: CertificationData = processed?.crewCertifications ?? {};
+    const personFullNameMap: Record<string, string> = processed?.personFullNameMap ?? {};
+    const personSkMap: Record<string, number> = processed?.personSkMap ?? {};
+    const pilots: string[] = processed?.pilots ?? [];
+    const crew: string[] = processed?.crew ?? [];
+    const pilotRatings: Rating[] = processed?.pilotRatings ?? [];
+    const crewRatings: Rating[] = processed?.crewRatings ?? [];
 
     // UI State
     const [searchTerm, setSearchTerm] = useState('');
@@ -152,16 +141,7 @@ function useModelRatings() {
                 crew_ratings_fk: ratingId,
                 date_qualified: dateQualified,
             });
-
-            const setCerts = viewMode === 'pilots' ? setPilotCertifications : setCrewCertifications;
-            setCerts(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: true, date_qualified: dateQualified },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error añadiendo certificación: ${err}`);
@@ -190,16 +170,7 @@ function useModelRatings() {
             if (!cal?.crew_rating_sk) throw new Error('No se encontró crew_rating_sk');
 
             await deleteMutation.mutateAsync({ crewRatingSk: cal.crew_rating_sk });
-
-            const setCerts = isPilot ? setPilotCertifications : setCrewCertifications;
-            setCerts(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: false },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error eliminando certificación: ${err}`);

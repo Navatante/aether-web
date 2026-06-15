@@ -1,9 +1,8 @@
 import React, {useState, useTransition} from 'react';
-import {useApiPaginatedQuery} from "@/lib/apiQuery";
+import {useApiPaginatedQuery, useApiMutation} from "@/lib/apiQuery";
 import {queryKeys} from "@/lib/queryKeys";
 import {transformPapeletasFromDB} from "../utils/transformPapeletasFromDB";
 import {Papeleta} from "@/types/papeleta";
-import {http} from "@/lib/http";
 import {useEscuadrilla} from "@/providers";
 import {toast} from "sonner";
 import {ChevronDown, ChevronUp, Download, Edit, RefreshCw, TicketPlus} from "lucide-react";
@@ -47,25 +46,30 @@ const Papeletas = () => {
         transform: transformPapeletasFromDB,
     });
 
+    // Invalida todo el dominio de papeletas de la escuadrilla (cualquier lista).
+    // Los errores HTTP los notifica el toast de useApiMutation.
+    const invalidateKeys = [queryKeys.papeletas.all(escId ?? 0)];
+    const createPapeleta = useApiMutation<void, Record<string, unknown>>(
+        "POST", "/papeletas",
+        { invalidateKeys, successMessage: "Papeleta añadida correctamente" },
+    );
+    const updatePapeleta = useApiMutation<void, Record<string, unknown>>(
+        "PUT", (v) => `/papeletas/${v.papeleta_sk}`,
+        { invalidateKeys, successMessage: "Papeleta editada correctamente", body: ({ papeleta_sk, ...rest }) => rest },
+    );
+
     const handlePapeletaSubmit = async (data: PapeletaFormValues) => {
         try {
-            const payload = { ...data };
-
             if (editingPapeleta) {
-                await http("PUT", `/papeletas/${editingPapeleta.papeleta_sk}`, { body: payload });
-                toast.success("Papeleta editada correctamente");
+                await updatePapeleta.mutateAsync({ ...data, papeleta_sk: editingPapeleta.papeleta_sk });
             } else {
-                await http("POST", "/papeletas", { body: payload });
-                toast.success("Papeleta añadida correctamente");
+                await createPapeleta.mutateAsync({ ...data });
             }
-
-            await refetch();
             setDrawerOpen(false);
             setEditingPapeleta(null);
             setSelectedPapeleta(null);
-        } catch (error) {
-            const msg = error instanceof Error ? error.message : "Error al guardar";
-            toast.error(msg);
+        } catch {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
         }
     };
 

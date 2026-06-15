@@ -4,20 +4,23 @@
 // de GET /api/v1/health. No abre ni mantiene conexiones él mismo; el binario
 // Go gestiona el pool pgx.
 //
+// El polling, el refetch al enfocar/reconectar y el dedupe de peticiones en
+// vuelo los gestiona TanStack Query (refetchInterval + onlineManager); aquí solo
+// derivamos el estado de conexión del estado de la query.
+//
 // Estados:
 //   - 'connecting'   → primer fetch en curso
 //   - 'connected'    → health respondió {status:"ok"}
-//   - 'disconnected' → health respondió {status:"db_down"} o 5xx
+//   - 'disconnected' → health respondió {status:"db_down"}, 5xx, u offline
 //   - 'error'        → fallo de red / respuesta no parseable
 
 import React, {
     createContext,
-    useCallback,
     useContext,
     useEffect,
-    useRef,
     useState,
 } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { http, HttpError } from '@/lib/http';
 import { logger } from '@/lib/logger';
 import { DATABASE_CONFIG } from '@/database/config';
@@ -51,62 +54,53 @@ interface HealthResponse {
 }
 
 export function DatabaseProvider({ children }: DatabaseProviderProps) {
-    const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting');
-    const [error, setError] = useState<string | null>(null);
     const [reconnectAttempts, setReconnectAttempts] = useState(0);
-    const inFlightRef = useRef(false);
 
-    const poll = useCallback(async () => {
-        if (inFlightRef.current) return;
-        inFlightRef.current = true;
-        try {
-            const r = await http<HealthResponse>('GET', '/health');
-            if (r.status === 'ok') {
-                setConnectionStatus('connected');
-                setError(null);
-            } else {
-                setConnectionStatus('disconnected');
-                setError(`Backend reportó status: ${r.status}`);
-            }
-        } catch (err) {
-            const isServerErr = err instanceof HttpError && err.status >= 500;
-            setConnectionStatus(isServerErr ? 'disconnected' : 'error');
-            const msg = err instanceof Error ? err.message : String(err);
-            setError(msg);
-            if (DATABASE_CONFIG.monitoring.enableDebugLogs) {
-                logger.debug(`health poll fail: ${msg}`, 'DatabaseProvider');
-            }
-        } finally {
-            inFlightRef.current = false;
-        }
-    }, []);
+    const query = useQuery<HealthResponse>({
+        queryKey: ['health'],
+        queryFn: ({ signal }) => http<HealthResponse>('GET', '/health', { signal }),
+        refetchInterval: DATABASE_CONFIG.monitoring.checkInterval,
+        refetchIntervalInBackground: true,
+        refetchOnWindowFocus: true,   // override del default global: el health SÍ refresca al enfocar
+        refetchOnReconnect: true,
+        retry: false,                 // un poll fallido no se reintenta; el siguiente tick (5s) lo hace
+        staleTime: 0,
+    });
 
-    const reconnect = useCallback(async () => {
-        setReconnectAttempts((n) => n + 1);
-        await poll();
-    }, [poll]);
-
+    // Log de depuración en fallo (preserva el comportamiento previo).
     useEffect(() => {
-        poll();
-        const interval = setInterval(poll, DATABASE_CONFIG.monitoring.checkInterval);
-        const onFocus = () => poll();
-        const onOnline = () => poll();
-        const onOffline = () => {
-            setConnectionStatus('disconnected');
-            setError('Sin conexión a internet');
-        };
-        window.addEventListener('focus', onFocus);
-        window.addEventListener('online', onOnline);
-        window.addEventListener('offline', onOffline);
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('focus', onFocus);
-            window.removeEventListener('online', onOnline);
-            window.removeEventListener('offline', onOffline);
-        };
-    }, [poll]);
+        if (query.error && DATABASE_CONFIG.monitoring.enableDebugLogs) {
+            const msg = query.error instanceof Error ? query.error.message : String(query.error);
+            logger.debug(`health poll fail: ${msg}`, 'DatabaseProvider');
+        }
+    }, [query.error]);
+
+    // Estado de conexión derivado del estado de la query.
+    let connectionStatus: ConnectionStatus;
+    let error: string | null = null;
+    if (query.fetchStatus === 'paused') {
+        // onlineManager detectó que el navegador está offline.
+        connectionStatus = 'disconnected';
+        error = 'Sin conexión a internet';
+    } else if (query.isPending) {
+        connectionStatus = 'connecting';
+    } else if (query.error) {
+        const isServerErr = query.error instanceof HttpError && query.error.status >= 500;
+        connectionStatus = isServerErr ? 'disconnected' : 'error';
+        error = query.error.message;
+    } else if (query.data?.status === 'ok') {
+        connectionStatus = 'connected';
+    } else {
+        connectionStatus = 'disconnected';
+        error = `Backend reportó status: ${query.data?.status}`;
+    }
 
     const isConnected = connectionStatus === 'connected';
+
+    const reconnect = async () => {
+        setReconnectAttempts((n) => n + 1);
+        await query.refetch();
+    };
 
     return (
         <DatabaseContext.Provider

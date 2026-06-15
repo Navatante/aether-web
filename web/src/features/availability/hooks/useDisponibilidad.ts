@@ -2,9 +2,7 @@
 // solo con el render; aquí vive el calendario, filtros, festivos y diálogos.
 
 import { useEffect, useMemo, useState } from 'react';
-import { useLogger } from '@/lib/logger';
 import { PermissionLevel, useHasPermission, useEscuadrilla, useUser } from '@/providers';
-import { http } from '@/lib/http';
 import { useApiQuery } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
 import type { Absence, DialogMode, Person, PersonComision } from '../absences';
@@ -33,7 +31,6 @@ export const dayNames: string[] = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 export const displayRoles = ['Piloto', 'Dotación', 'Nadador', 'No tripulante'];
 
 export function useDisponibilidad() {
-    const log = useLogger('Disponibilidad');
     const currentDate = new Date();
     const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
     const [selectedMonth, setSelectedMonth] = useState<number>(currentDate.getMonth());
@@ -91,8 +88,17 @@ export function useDisponibilidad() {
         return map;
     }, [availabilityData]);
 
-    // Estado para festivos (uses invoke without RLS)
-    const [festivos, setFestivos] = useState<Festivo[]>([]);
+    // Festivos vía TanStack Query, con la MISMA clave que usa FestivosDialog en
+    // sus mutaciones: al crear/editar/borrar un festivo, el diálogo invalida esa
+    // clave y el calendario se refresca solo (antes era un fetch manual y había
+    // que re-sincronizarlo a mano al cerrar el diálogo / al refrescar).
+    const { data: festivosData, refetch: refetchFestivos } = useApiQuery<Festivo[]>(
+        'GET',
+        '/festivos',
+        undefined,
+        queryKeys.availability.festivos(escId ?? 0),
+    );
+    const festivos = festivosData ?? [];
 
     // Estados de UI para filtros
     const [searchTerm, setSearchTerm] = useState<string>('');
@@ -116,21 +122,6 @@ export function useDisponibilidad() {
     // Estado para el dialog de Festivos
     const [isFestivosDialogOpen, setIsFestivosDialogOpen] = useState<boolean>(false);
 
-
-    // Función para cargar festivos
-    const fetchFestivos = async () => {
-        try {
-            const result = await http<Festivo[]>('GET', '/festivos');
-            setFestivos(result || []);
-        } catch (err) {
-            log.error(`Error fetching festivos: ${err}`);
-        }
-    };
-
-    // Cargar festivos al montar
-    useEffect(() => {
-        fetchFestivos();
-    }, []);
 
     // Escuchar evento de refresh desde TopbarMenus
     useEffect(() => {
@@ -310,10 +301,9 @@ export function useDisponibilidad() {
     };
 
     const handleFestivosDialogClose = (open: boolean) => {
+        // Las mutaciones del diálogo invalidan la clave de festivos, así que el
+        // calendario ya se refresca solo; no hace falta recargar al cerrar.
         setIsFestivosDialogOpen(open);
-        if (!open) {
-            fetchFestivos();
-        }
     };
 
     // === OTRAS FUNCIONES ===
@@ -329,7 +319,7 @@ export function useDisponibilidad() {
 
     const handleRefresh = () => {
         refetchAvailability();
-        fetchFestivos();
+        refetchFestivos();
     };
 
     // Función helper para obtener las clases de estilo de un día (header)

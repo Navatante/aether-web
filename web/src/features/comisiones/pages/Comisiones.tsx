@@ -1,6 +1,5 @@
 import React, { useState, useTransition } from 'react';
-import { useApiPaginatedQuery } from "@/lib/apiQuery";
-import { http } from "@/lib/http";
+import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { ComisionData } from "@/types/comisions";
 import {
@@ -69,19 +68,30 @@ const Comisiones = () => {
     const currentPage = Math.floor(params.offset / itemsPerPage) + 1;
     const totalPages = Math.ceil(totalCount / itemsPerPage);
 
+    // Ambas DELETE invalidan todo el dominio de comisiones de la escuadrilla
+    // (lista y días, sin depender de los params de paginación). Los errores HTTP
+    // los notifica el toast de useApiMutation.
+    const invalidateKeys = [queryKeys.comisiones.all(escuadrillaId ?? 0)];
+    const deleteComision = useApiMutation<void, { comisionId: number }>(
+        'DELETE', (v) => `/comisiones/${v.comisionId}`,
+        { invalidateKeys, successMessage: "Comisión eliminada con éxito." },
+    );
+    const deletePersona = useApiMutation<void, { personComisionSk: number }>(
+        'DELETE', (v) => `/person-comisiones/${v.personComisionSk}`,
+        { invalidateKeys },
+    );
+
     const [, deleteAction, isDeleting] = React.useActionState<DeleteActionState, number>(
         async (_prev, comisionId) => {
             try {
-                await http<void>('DELETE', `/comisiones/${comisionId}`);
+                await deleteComision.mutateAsync({ comisionId });
                 if (selectedComision?.comision_sk === comisionId) setSelectedComision(null);
-                await refetch();
                 setConfirmationText('');
                 setDeleteDialogOpen(false);
                 setComisionToDelete(null);
-                toast.success("Comisión eliminada con éxito.");
                 return { status: 'success', deletedId: comisionId };
             } catch (error) {
-                toast.error(error instanceof Error ? error.message : 'Error al eliminar');
+                // El error HTTP ya lo notifica el toast de useApiMutation.
                 return { status: 'error', error: error instanceof Error ? error.message : 'Error' };
             }
         },
@@ -109,11 +119,10 @@ const Comisiones = () => {
     const handleDeletePersona = async (personComisionSk: number, personaNombre: string) => {
         setDeletingPersonId(personComisionSk);
         try {
-            await http<void>('DELETE', `/person-comisiones/${personComisionSk}`);
+            await deletePersona.mutateAsync({ personComisionSk });
             toast.success(`${personaNombre} eliminado/a de la comisión`);
-            await refetch();
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Error al eliminar persona');
+        } catch {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
         } finally {
             setDeletingPersonId(null);
         }

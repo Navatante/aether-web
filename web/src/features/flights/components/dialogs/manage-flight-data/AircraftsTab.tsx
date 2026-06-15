@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { useLogger } from '@/lib/logger';
-import { http } from '@/lib/http';
+import { useApiMutation } from '@/lib/apiQuery';
+import { queryKeys } from '@/lib/queryKeys';
+import { useEscuadrilla } from '@/providers';
 import { Button } from "@/components/ui/button";
 import { ActionButton, DetailsRow } from "@/shared/components/common";
 import { Input } from "@/components/ui/input";
@@ -24,14 +26,32 @@ import { type DeleteTarget, EmptyState, ErrorBanner, LoadingState } from './shar
 type AircraftFormMode = 'list' | 'add';
 
 export function AircraftsTab({
-    onRefresh,
     onDeleteRequest,
 }: {
-    onRefresh: () => Promise<unknown>;
     onDeleteRequest: (target: DeleteTarget) => void;
 }) {
     const log = useLogger('ManageFlightDataDialog.Aircrafts');
-    const { data: aircrafts, loading, error: fetchError, refetch } = useAircraftsManage();
+    const { id: escId } = useEscuadrilla();
+    const { data: aircrafts, loading, error: fetchError } = useAircraftsManage();
+
+    // Ambas mutaciones invalidan las dos queries de aeronaves: la de gestión
+    // (esta lista) y la del selector del formulario de vuelo.
+    const invalidateKeys = [
+        queryKeys.lookups.aircrafts(escId ?? 0),
+        queryKeys.lookups.aircraftsManage(escId ?? 0),
+    ];
+
+    const toggleFlag = useApiMutation<void, { aircraft_sk: number; current_flag: boolean }>(
+        'PATCH',
+        (v) => `/lookups/aircrafts/${v.aircraft_sk}`,
+        { invalidateKeys, body: ({ aircraft_sk, ...rest }) => rest },
+    );
+
+    const createAircraft = useApiMutation<void, {
+        registration: string; number: string; aircraft_type: string;
+        make: string; model: string; variant: string;
+        is_multi_engine: boolean; is_multi_pilot: boolean;
+    }>('POST', '/lookups/aircrafts', { invalidateKeys });
 
     const [mode, setMode] = useState<AircraftFormMode>('list');
     const [registration, setRegistration] = useState('');
@@ -42,10 +62,11 @@ export function AircraftsTab({
     const [variant, setVariant] = useState('');
     const [isMultiEngine, setIsMultiEngine] = useState(false);
     const [isMultiPilot, setIsMultiPilot] = useState(false);
-    const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [togglingSk, setTogglingSk] = useState<number | null>(null);
     const [expandedSk, setExpandedSk] = useState<number | null>(null);
+
+    // Fila con toggle en curso: derivado del estado de la mutación (sin useState).
+    const togglingSk = toggleFlag.isPending ? toggleFlag.variables?.aircraft_sk ?? null : null;
 
     const reset = () => {
         setMode('list'); setRegistration(''); setNumber(''); setAircraftType('');
@@ -54,20 +75,13 @@ export function AircraftsTab({
     };
 
     const handleToggleFlag = async (a: AircraftManageLookup, nextFlag: boolean) => {
-        setTogglingSk(a.aircraft_sk);
         setError(null);
         try {
-            await http<void>('PATCH', `/lookups/aircrafts/${a.aircraft_sk}`, {
-                body: { current_flag: nextFlag },
-            });
-            await refetch();
-            await onRefresh();
+            await toggleFlag.mutateAsync({ aircraft_sk: a.aircraft_sk, current_flag: nextFlag });
             log.info(`Aeronave '${a.aircraft_registration}' ${nextFlag ? 'activada' : 'desactivada'}`);
         } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error actualizando estado de aeronave: ${err}`);
-            setError(String(err));
-        } finally {
-            setTogglingSk(null);
         }
     };
 
@@ -80,29 +94,23 @@ export function AircraftsTab({
         if (!model.trim()) { setError('El modelo es obligatorio'); return; }
         if (!variant.trim()) { setError('La variante es obligatoria'); return; }
 
-        setSaving(true); setError(null);
+        setError(null);
         try {
-            await http<void>('POST', '/lookups/aircrafts', {
-                body: {
-                    registration: registration.trim().toUpperCase(),
-                    number: number.trim(),
-                    aircraft_type: aircraftType.trim(),
-                    make: make.trim(),
-                    model: model.trim(),
-                    variant: variant.trim(),
-                    is_multi_engine: isMultiEngine,
-                    is_multi_pilot: isMultiPilot,
-                },
+            await createAircraft.mutateAsync({
+                registration: registration.trim().toUpperCase(),
+                number: number.trim(),
+                aircraft_type: aircraftType.trim(),
+                make: make.trim(),
+                model: model.trim(),
+                variant: variant.trim(),
+                is_multi_engine: isMultiEngine,
+                is_multi_pilot: isMultiPilot,
             });
-            await refetch();
-            await onRefresh();
             log.info(`Aeronave '${registration}' añadida`);
             reset();
         } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error añadiendo aeronave: ${err}`);
-            setError(String(err));
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -255,9 +263,9 @@ export function AircraftsTab({
                     </div>
 
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="outline" onClick={reset} disabled={saving}>Cancelar</Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
+                        <Button type="button" variant="outline" onClick={reset} disabled={createAircraft.isPending}>Cancelar</Button>
+                        <Button type="submit" disabled={createAircraft.isPending}>
+                            {createAircraft.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
                         </Button>
                     </DialogFooter>
                 </form>

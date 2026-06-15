@@ -132,6 +132,14 @@ export function useApiPaginatedQuery<TData = unknown, TRaw = unknown>(opts: UseA
 export interface UseApiMutationOptions<TResult, TVars> {
     invalidateKeys?: QueryKey[];
     successMessage?: string;
+    /**
+     * Selecciona qué enviar como body (por defecto, las propias `vars`). Útil
+     * cuando `vars` incluye params de ruta que NO deben viajar en el body
+     * (p. ej. `vars = { id, ...campos }` con `path: (v) => /x/${v.id}`):
+     * `body: ({ id, ...rest }) => rest`. Evita filtrar el id al cuerpo JSON.
+     * Ignorado en GET/DELETE (nunca llevan body).
+     */
+    body?: (vars: TVars) => unknown;
     onSuccess?: (data: TResult, vars: TVars) => void;
     onError?: (error: Error) => void;
 }
@@ -163,7 +171,9 @@ export function useApiMutation<TResult = unknown, TVars = void>(
     const mutationOpts: UseMutationOptions<TResult, Error, TVars> = {
         mutationFn: async (vars: TVars) => {
             const resolved = typeof path === "function" ? path(vars) : path;
-            const body = method === "GET" || method === "DELETE" ? undefined : vars;
+            const body = method === "GET" || method === "DELETE"
+                ? undefined
+                : options?.body ? options.body(vars) : vars;
             return http<TResult>(method, resolved, { body });
         },
         onSuccess: (data, vars) => {

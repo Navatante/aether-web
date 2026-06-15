@@ -3,7 +3,7 @@
 // Página de calificaciones de mando y liderazgo (refactorizada).
 // Solo pilotos, sin toggle de vista.
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLogger } from '@/lib/logger';
 import { Info } from 'lucide-react';
 import { PermissionLevel, useHasPermission, useUser } from '@/providers';
@@ -51,23 +51,15 @@ function useLeadershipRatings() {
     const data = rawData ?? null;
     const error = queryError?.message ?? null;
 
-    // Process data when it changes
-    const [pilotCertifications, setPilotCertifications] = useState<CertificationData>({});
-    const [personFullNameMap, setPersonFullNameMap] = useState<Record<string, string>>({});
-    const [personSkMap, setPersonSkMap] = useState<Record<string, number>>({});
-    const [pilots, setPilots] = useState<string[]>([]);
-    const [ratings, setRatings] = useState<Rating[]>([]);
-
-    useEffect(() => {
-        if (data) {
-            const processed = processLeadershipRatings(data);
-            setPilotCertifications(processed.pilotCertifications);
-            setPersonFullNameMap(processed.personFullNameMap);
-            setPersonSkMap(processed.personSkMap);
-            setPilots(processed.pilots);
-            setRatings(processed.pilotRatings);
-        }
-    }, [data]);
+    // Derivado directo del cache de la query (sin useState/useEffect): el estado
+    // de servidor tiene una sola fuente de verdad y el React Compiler memoiza
+    // este cálculo. Tras una mutación, invalidateKeys refetchea y esto recomputa.
+    const processed = data ? processLeadershipRatings(data) : null;
+    const pilotCertifications: CertificationData = processed?.pilotCertifications ?? {};
+    const personFullNameMap: Record<string, string> = processed?.personFullNameMap ?? {};
+    const personSkMap: Record<string, number> = processed?.personSkMap ?? {};
+    const pilots: string[] = processed?.pilots ?? [];
+    const ratings: Rating[] = processed?.pilotRatings ?? [];
 
     // UI State
     const [searchTerm, setSearchTerm] = useState('');
@@ -113,15 +105,7 @@ function useLeadershipRatings() {
                 crew_ratings_fk: ratingId,
                 date_qualified: dateQualified,
             });
-
-            setPilotCertifications(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: true, date_qualified: dateQualified },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error añadiendo certificación: ${err}`);
@@ -147,15 +131,7 @@ function useLeadershipRatings() {
             if (!cal?.crew_rating_sk) throw new Error('No se encontró crew_rating_sk');
 
             await deleteMutation.mutateAsync({ crewRatingSk: cal.crew_rating_sk });
-
-            setPilotCertifications(prev => ({
-                ...prev,
-                [personKey]: {
-                    ...prev[personKey],
-                    [ratingId]: { certified: false },
-                },
-            }));
-
+            // El refresco lo hace invalidateKeys (refetch → recomputa el derivado).
             return true;
         } catch (err) {
             log.error(`Error eliminando certificación: ${err}`);

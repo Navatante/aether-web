@@ -16,7 +16,9 @@ import CupoCard from "./cards/CupoCard";
 import PasajeroCard from "./cards/PasajeroCard";
 import ValidationErrors from "./ValidationErrors";
 import { useNavigate } from "react-router-dom";
-import { http } from "@/lib/http";
+import { useApiMutation } from "@/lib/apiQuery";
+import { queryKeys } from "@/lib/queryKeys";
+import { useEscuadrilla } from "@/providers";
 import { DatePicker } from "@/shared/components/common/DatePicker";
 import { ActionButton } from "@/shared/components/common";
 import { useAircrafts, useDepartureArrivalPlaces, useEventsLookup } from "@/shared/hooks";
@@ -172,6 +174,15 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
         message: string;
     }
 
+    // El insert es transaccional y devuelve { success, message } en el body, así
+    // que el toast de éxito se decide según result.success (no con successMessage).
+    // El toast de error de useApiMutation cubre los fallos HTTP. Invalida el
+    // dominio de vuelos de la escuadrilla para refrescar la lista.
+    const { id: escId } = useEscuadrilla();
+    const createFlight = useApiMutation<FlightInsertResult, Record<string, unknown>>(
+        'POST', '/flights', { invalidateKeys: [queryKeys.flights.all(escId ?? 0)] },
+    );
+
     const onSubmit: SubmitHandler<FormData> = async (data) => {
         if (hoursValidationErrors.length > 0) {
             toast.error('Hay errores de validación de horas.');
@@ -186,7 +197,7 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
         const flightData = transformFormDataForSubmit(data);
 
         try {
-            const result = await http<FlightInsertResult>('POST', '/flights', { body: flightData });
+            const result = await createFlight.mutateAsync(flightData as Record<string, unknown>);
 
             if (result.success) {
                 toast.success(result.message);
@@ -196,9 +207,8 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
                 toast.error(result.message);
             }
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             logger.error(`Error al registrar el vuelo: ${error}`, 'RegisterFlightForm');
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            toast.error(`Error: ${errorMessage}`);
         }
     };
 
@@ -215,9 +225,9 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
     const addPasajeros = () => appendPasajeros(createDefaultPasajeros() as FormData['pasajeros'][number]);
 
     // Queries (lookups)
-    const { data: aircraftArray, loading: aircraftLoading, error: aircraftError, refetch: refetchAircrafts } = useAircrafts();
-    const { data: placesArray, loading: placesLoading, error: placesError, refetch: refetchPlaces } = useDepartureArrivalPlaces();
-    const { data: eventArray, loading: eventLoading, error: eventError, refetch: refetchEvents } = useEventsLookup();
+    const { data: aircraftArray, loading: aircraftLoading, error: aircraftError } = useAircrafts();
+    const { data: placesArray, loading: placesLoading, error: placesError } = useDepartureArrivalPlaces();
+    const { data: eventArray, loading: eventLoading, error: eventError } = useEventsLookup();
 
     // Options de selects
     const aircraftOptions = aircraftArray?.map(a => ({
@@ -570,11 +580,6 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
             <ManageFlightDataDialog
                 open={managePlacesOpen}
                 onOpenChange={setManagePlacesOpen}
-                onRefresh={{
-                    places: refetchPlaces,
-                    aircrafts: refetchAircrafts,
-                    events: refetchEvents,
-                }}
             />
         </ScrollArea>
     );

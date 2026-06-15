@@ -3,9 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { toast } from 'sonner';
 import { useLogger } from '@/lib/logger';
-import { http } from '@/lib/http';
+import { useApiMutation } from '@/lib/apiQuery';
 import { PermissionLevel, useHasPermission } from '@/providers';
 import { usePersonsLookup } from '@/shared/hooks';
 import {
@@ -76,6 +75,23 @@ export function useAbsenceDialog({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const hasAdministrativePermission = useHasPermission(PermissionLevel.ADMINISTRATIVO);
     const hasOperationalPermission = useHasPermission(PermissionLevel.OPERACIONAL);
+
+    // El refresco del calendario lo hace el padre vía onSuccess → refetchAvailability
+    // (la clave del calendario depende de mes/año, que viven en useDisponibilidad),
+    // así que aquí no se invalida. Los errores HTTP los notifica el toast del hook.
+    const createAbsence = useApiMutation<AbsenceInsertResult, AbsenceFormData>(
+        'POST', '/absences', { successMessage: 'Ausencia creada correctamente.' },
+    );
+    const updateAbsence = useApiMutation<void, { absence_sk: number; start_date: string; end_date: string; absence_reason: string; remark?: string }>(
+        'PUT', (v) => `/absences/${v.absence_sk}`,
+        { successMessage: 'Ausencia actualizada correctamente.', body: ({ absence_sk, ...rest }) => rest },
+    );
+    const deleteAbsenceMutation = useApiMutation<void, { absence_sk: number }>(
+        'DELETE', (v) => `/absences/${v.absence_sk}`, { successMessage: 'Ausencia eliminada correctamente.' },
+    );
+    const deleteComisionMutation = useApiMutation<void, { person_comision_sk: number }>(
+        'DELETE', (v) => `/person-comisiones/${v.person_comision_sk}`, { successMessage: 'Comision eliminada correctamente.' },
+    );
 
     // Personas: del prop si viene, si no del lookup.
     const { data: personsFromLookup, loading: lookupLoading } = usePersonsLookup();
@@ -179,18 +195,16 @@ export function useAbsenceDialog({
                 remark: formData.remark || undefined,
             };
 
-            const result = await http<AbsenceInsertResult>('POST', '/absences', { body: absenceData });
+            const result = await createAbsence.mutateAsync(absenceData);
 
             log.info(`Ausencia creada: ${JSON.stringify(result)}`);
-            toast.success('Ausencia creada correctamente.');
 
             await onCreateAbsence?.(formData);
             onSuccess?.();
             handleClose();
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error creating absence: ${error}`);
-            const errorMessage = typeof error === 'string' ? error : 'Error al crear la ausencia';
-            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -201,17 +215,15 @@ export function useAbsenceDialog({
 
         setIsSubmitting(true);
         try {
-            await http<void>('PUT', `/absences/${editAbsenceSk}`, {
-                body: {
-                    start_date: format(editStartDate, 'yyyy-MM-dd'),
-                    end_date: format(editEndDate, 'yyyy-MM-dd'),
-                    absence_reason: editReason,
-                    remark: editRemark || undefined,
-                },
+            await updateAbsence.mutateAsync({
+                absence_sk: editAbsenceSk,
+                start_date: format(editStartDate, 'yyyy-MM-dd'),
+                end_date: format(editEndDate, 'yyyy-MM-dd'),
+                absence_reason: editReason,
+                remark: editRemark || undefined,
             });
 
             log.info(`Ausencia actualizada: id ${editAbsenceSk}`);
-            toast.success('Ausencia actualizada correctamente.');
 
             if (selectedAbsence) {
                 await onUpdateAbsence?.({
@@ -225,9 +237,8 @@ export function useAbsenceDialog({
             onSuccess?.();
             handleClose();
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error updating absence: ${error}`);
-            const errorMessage = typeof error === 'string' ? error : 'Error al actualizar la ausencia';
-            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -238,10 +249,9 @@ export function useAbsenceDialog({
 
         setIsSubmitting(true);
         try {
-            await http<void>('DELETE', `/absences/${selectedAbsence.absence_sk}`);
+            await deleteAbsenceMutation.mutateAsync({ absence_sk: selectedAbsence.absence_sk });
 
             log.info(`Ausencia eliminada: id ${selectedAbsence.absence_sk}`);
-            toast.success('Ausencia eliminada correctamente.');
 
             await onDeleteAbsence?.(selectedAbsence.absence_sk);
             onSuccess?.();
@@ -258,10 +268,9 @@ export function useAbsenceDialog({
 
         setIsSubmitting(true);
         try {
-            await http<void>('DELETE', `/person-comisiones/${selectedComision.person_comision_sk}`);
+            await deleteComisionMutation.mutateAsync({ person_comision_sk: selectedComision.person_comision_sk });
 
             log.info(`Person comision eliminada: id ${selectedComision.person_comision_sk}`);
-            toast.success('Comision eliminada correctamente.');
 
             await onDeleteComision?.(selectedComision.person_comision_sk);
             onSuccess?.();

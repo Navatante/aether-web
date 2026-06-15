@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { useLogger } from '@/lib/logger';
-import { http } from '@/lib/http';
+import { useApiMutation } from '@/lib/apiQuery';
+import { queryKeys } from '@/lib/queryKeys';
+import { useEscuadrilla } from '@/providers';
 import { Button } from "@/components/ui/button";
 import { ActionButton } from "@/shared/components/common";
 import { Input } from "@/components/ui/input";
@@ -30,20 +32,31 @@ import { type DeleteTarget, EmptyState, ErrorBanner, LoadingState } from './shar
 type EventFormMode = 'list' | 'add';
 
 export function EventsTab({
-    onRefresh,
     onDeleteRequest,
 }: {
-    onRefresh: () => Promise<unknown>;
     onDeleteRequest: (target: DeleteTarget) => void;
 }) {
     const log = useLogger('ManageFlightDataDialog.Events');
-    const { data: events, loading, error: fetchError, refetch } = useEventsManage();
+    const { id: escId } = useEscuadrilla();
+    const { data: events, loading, error: fetchError } = useEventsManage();
     const { data: eventNames, loading: namesLoading } = useEventNamesLookup();
+
+    // POST /events. Invalida tanto la lista de gestión como el selector de
+    // eventos del formulario de vuelo (dos queries distintas) de una vez.
+    const createEvent = useApiMutation<void, { event_name: string; event_place: string }>(
+        'POST',
+        '/events',
+        {
+            invalidateKeys: [
+                queryKeys.lookups.eventsManage(escId ?? 0),
+                queryKeys.lookups.eventsLookup(escId ?? 0),
+            ],
+        },
+    );
 
     const [mode, setMode] = useState<EventFormMode>('list');
     const [eventName, setEventName] = useState('');
     const [eventPlace, setEventPlace] = useState('');
-    const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const reset = () => { setMode('list'); setEventName(''); setEventPlace(''); setError(null); };
@@ -52,23 +65,17 @@ export function EventsTab({
         e.preventDefault();
         if (!eventName) { setError('Selecciona un nombre de evento'); return; }
         if (!eventPlace.trim()) { setError('El lugar es obligatorio'); return; }
-        setSaving(true); setError(null);
+        setError(null);
         try {
-            await http<void>('POST', '/events', {
-                body: {
-                    event_name: eventName,
-                    event_place: eventPlace.trim(),
-                },
+            await createEvent.mutateAsync({
+                event_name: eventName,
+                event_place: eventPlace.trim(),
             });
-            await refetch();
-            await onRefresh();
             log.info(`Evento '${eventName}' en '${eventPlace}' añadido`);
             reset();
         } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error añadiendo evento: ${err}`);
-            setError(String(err));
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -146,9 +153,9 @@ export function EventsTab({
                             maxLength={100} autoFocus />
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button type="button" variant="outline" onClick={reset} disabled={saving}>Cancelar</Button>
-                        <Button type="submit" disabled={saving}>
-                            {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
+                        <Button type="button" variant="outline" onClick={reset} disabled={createEvent.isPending}>Cancelar</Button>
+                        <Button type="submit" disabled={createEvent.isPending}>
+                            {createEvent.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
                         </Button>
                     </DialogFooter>
                 </form>

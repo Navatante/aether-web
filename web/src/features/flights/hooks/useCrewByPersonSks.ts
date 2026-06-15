@@ -1,60 +1,33 @@
-import { useEffect, useState } from 'react';
 import { Crew } from "../components/forms/schema";
-import { http } from "@/lib/http";
-import { logger } from '@/lib/logger';
+import { useApiQuery } from "@/lib/apiQuery";
+import { queryKeys } from "@/lib/queryKeys";
+import { useEscuadrilla } from "@/providers";
 
 /**
- * Fetches crew members by their person_sk values via GET /persons/by-sks?sks=1,2,3.
- * Uses JSON.stringify as the effect dependency to stabilize the array reference.
+ * Trae las tripulaciones por su person_sk vía GET /persons/by-sks?sks=1,2,3.
+ *
+ * Lectura por TanStack Query (regla 5): la query se deshabilita cuando no hay
+ * sks seleccionados (`enabled`), se cachea por combinación de sks + escuadrilla
+ * y la cancelación al desmontar la gestiona react-query (signal), sin
+ * useState/useEffect ni flags manuales.
  */
 export function useCrewByPersonSks(selectedSks: number[]) {
-    const [crewArray, setCrewArray] = useState<Crew[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { id: escId } = useEscuadrilla();
+    const sksParam = selectedSks.join(',');
 
-    // Stabilize dependency: only re-run when actual values change
-    const sksKey = JSON.stringify(selectedSks);
+    const { data, isLoading, error } = useApiQuery<Crew[]>(
+        'GET',
+        '/persons/by-sks',
+        {
+            query: { sks: sksParam },
+            enabled: selectedSks.length > 0,
+        },
+        queryKeys.flights.crewBySks(escId ?? 0, sksParam),
+    );
 
-    useEffect(() => {
-        const sks: number[] = JSON.parse(sksKey);
-
-        if (sks.length === 0) {
-            setCrewArray([]);
-            setLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        setLoading(true);
-        setError(null);
-
-        (async () => {
-            try {
-                const result = await http<Crew[]>('GET', '/persons/by-sks', {
-                    query: { sks: sks.join(',') }
-                });
-
-                if (!cancelled) {
-                    setCrewArray(result);
-                }
-            } catch (err) {
-                if (cancelled) return;
-                if (err instanceof Error && err.name === 'AbortError') return;
-                logger.error(`Error fetching crew members: ${err}`, 'useCrewByPersonSks');
-                setError(err instanceof Error ? err.message : 'Error desconocido');
-                setCrewArray([]);
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [sksKey]);
-
-    return { crewArray, loading, error };
+    return {
+        crewArray: data ?? [],
+        loading: isLoading,
+        error: error?.message ?? null,
+    };
 }

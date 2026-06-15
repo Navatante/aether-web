@@ -29,11 +29,17 @@ Detalle operativo del frontend. Las 5 convenciones canónicas (componentes = sol
 | `useApiMutation<TData, TVars>` | POST/PUT/DELETE con `invalidateKeys` + toasts de éxito/error automáticos. |
 | `useLookupQuery` | Lookups con `staleTime: Infinity` (úsalo vía los hooks de `shared/hooks/useLookups.ts`). |
 
-Todas las claves de `queryKeys` incluyen `escuadrillaId` (aislamiento de caché coherente con la RLS del backend). Tras una mutación, invalida con el prefijo `queryKeys.<feature>.all(escId)`.
+**Forma de las claves** (`lib/queryKeys.ts`): siempre `[dominio, escuadrillaId, ...subruta, params?]`. El `escuadrillaId` va en la **posición 1** (justo tras el dominio) a propósito, para que `queryKeys.<feature>.all(escId)` = `[dominio, escId]` sea **prefijo real** de cualquier clave del dominio (`.list`, `.dias.list`, lookups concretos, …). Incluir el `escuadrillaId` aísla la caché de forma coherente con la RLS del backend. Tras una mutación, invalida con `queryKeys.<feature>.all(escId)`: refresca todas las vistas del dominio (todas las páginas/params) de una sola vez, sin tener que reproducir los params exactos de cada query. Invalida una clave más específica (`.list(escId, params)`, `ratings.model(escId)`, un lookup concreto…) solo si quieres acotar el refresco a esa vista.
 
 `useApiQuery`/`useApiPaginatedQuery` **anexan automáticamente** la identidad del fetch (`method`, `path`, `query`, `body`) al final de tu `queryKey`, así que la caché siempre refleja qué se pide aunque olvides un param (defensa en profundidad, no requisito de corrección). Sigue metiendo los params en tu clave igualmente: hace las claves legibles y mantiene la invalidación por prefijo. Como se anexa al final, tu `queryKey` sigue siendo prefijo y `invalidateQueries({ queryKey: queryKeys.<feature>.all(escId) })` casa igual.
 
 Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no añadas toasts duplicados en el componente.
+
+**Deriva del cache, no copies el estado de servidor a `useState`.** El antipatrón a evitar: `useApiQuery` → `useState` → `useEffect([data])` que sincroniza. Eso crea doble fuente de verdad, un render extra y una ventana stale. En su lugar, deriva con un **const plano** a partir del `data` de la query: `const processed = data ? transform(data) : EMPTY`. **No hace falta `useMemo`**: el proyecto tiene **React Compiler** activo (`babel-plugin-react-compiler` en `vite.config`), que memoiza el cálculo solo. Ref. correcta: `useSuperuser`, `ratings/**`. Para actualizar tras mutar, deja que `invalidateKeys` refetchee (la derivación recomputa sola); si necesitas optimismo, usa `queryClient.setQueryData` sobre el dato crudo, nunca un `useState` paralelo.
+
+**`useApiMutation` manda las `vars` como body.** Si tu `path` es dinámico (`(v) => /x/${v.id}`), el id viaja en `vars` y por defecto acabaría también en el body. Para evitarlo, usa el selector `body`: `{ body: ({ id, ...rest }) => rest }` (o `body: () => undefined` en endpoints de acción sin cuerpo). GET/DELETE nunca llevan body. El refresco de listas tras navegar no se hace solo: añade `invalidateKeys` (el `staleTime` global es 5 min, así que no basta con el refetch-on-mount).
+
+**Defaults globales** (`lib/queryClient.ts`, no los redefinas por query salvo casos como el polling de `/health`): `staleTime: 5min`, `refetchOnWindowFocus: false`, `placeholderData: keepPreviousData` (al cambiar la `queryKey` —paginación, rango, mes— mantiene los datos previos visibles en vez de parpadear; usa `isFetching` para el spinner), y `retry` que **no** reintenta 4xx (solo 5xx/red, una vez).
 
 ## Receta: añadir un lookup nuevo
 

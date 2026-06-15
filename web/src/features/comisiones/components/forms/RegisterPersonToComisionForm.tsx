@@ -14,7 +14,9 @@ import {
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { formatearFecha } from "@/lib/utils"
-import { http } from "@/lib/http";
+import { useApiMutation } from "@/lib/apiQuery";
+import { queryKeys } from "@/lib/queryKeys";
+import { useEscuadrilla } from "@/providers";
 
 interface RegisterPersonToComisionFormProps {
     onClose: () => void;
@@ -23,6 +25,7 @@ interface RegisterPersonToComisionFormProps {
 export default function RegisterPersonToComisionForm({ onClose }: RegisterPersonToComisionFormProps) {
     const log = useLogger('RegisterPersonToComisionForm');
     const navigate = useNavigate();
+    const { id: escId } = useEscuadrilla();
 
     const {
         data: comisionesArray,
@@ -86,15 +89,20 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
         return personArray?.find(person => person.person_sk.toString() === personSk);
     };
 
+    // POST /comisiones/:id/people. Devuelve { success, message } en el body, así
+    // que el toast de éxito se decide según result.success. El toast de error de
+    // useApiMutation cubre los fallos HTTP; la lista se refresca al navegar.
+    const registerPeople = useApiMutation<
+        { comision_id: number; success: boolean; message: string; personas_insertadas: number },
+        { comision: string; personas: string[] }
+    >('POST', (v) => `/comisiones/${v.comision}/people`, {
+        invalidateKeys: [queryKeys.comisiones.all(escId ?? 0)],
+        body: ({ comision, ...rest }) => rest,
+    });
+
     const onSubmit = async (data: PersonToComisionFormValues) => {
         try {
-            // POST /comisiones/:id/people con body { personas: [...] }
-            const result = await http<{
-                comision_id: number;
-                success: boolean;
-                message: string;
-                personas_insertadas: number;
-            }>('POST', `/comisiones/${data.comision}/people`, { body: { personas: data.personas } });
+            const result = await registerPeople.mutateAsync({ comision: data.comision, personas: data.personas });
 
             if (result.success) {
                 toast.success(result.message);
@@ -104,13 +112,8 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                 toast.error('Error al guardar las personas en la comisión');
             }
         } catch (error) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
             log.error(`Error al guardar al personal en la comisión: ${error}`);
-            const errorMessage = error instanceof Error
-                ? error.message
-                : typeof error === 'string'
-                    ? error
-                    : 'Error al registrar personal en comisión';
-            toast.error(errorMessage);
         }
     };
 
