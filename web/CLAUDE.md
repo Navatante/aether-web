@@ -31,6 +31,8 @@ Detalle operativo del frontend. Las 5 convenciones canónicas (componentes = sol
 
 Todas las claves de `queryKeys` incluyen `escuadrillaId` (aislamiento de caché coherente con la RLS del backend). Tras una mutación, invalida con el prefijo `queryKeys.<feature>.all(escId)`.
 
+`useApiQuery`/`useApiPaginatedQuery` **anexan automáticamente** la identidad del fetch (`method`, `path`, `query`, `body`) al final de tu `queryKey`, así que la caché siempre refleja qué se pide aunque olvides un param (defensa en profundidad, no requisito de corrección). Sigue metiendo los params en tu clave igualmente: hace las claves legibles y mantiene la invalidación por prefijo. Como se anexa al final, tu `queryKey` sigue siendo prefijo y `invalidateQueries({ queryKey: queryKeys.<feature>.all(escId) })` casa igual.
+
 Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no añadas toasts duplicados en el componente.
 
 ## Receta: añadir un lookup nuevo

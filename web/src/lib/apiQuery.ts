@@ -47,8 +47,12 @@ export function useApiQuery<T>(
     const { isAuthenticated, loading: userLoading } = useUser();
     const enabled = (options?.public || (!userLoading && isAuthenticated)) && (options?.enabled ?? true);
 
+    // La clave incluye la identidad del fetch (method/path/query/body) además de
+    // la queryKey del llamador: así la caché siempre refleja lo que se pide,
+    // aunque el llamador olvide algún param. Se anexa al final → la queryKey del
+    // llamador sigue siendo prefijo y la invalidación por prefijo sigue casando.
     return useQuery<T>({
-        queryKey: enabled ? queryKey : [...queryKey, "disabled"],
+        queryKey: [...queryKey, method, path, options?.query, options?.body, ...(enabled ? [] : ["disabled"])],
         queryFn: ({ signal }) => http<T>(method, path, {
             body: options?.body, query: options?.query, signal,
         }),
@@ -92,8 +96,13 @@ export function useApiPaginatedQuery<TData = unknown, TRaw = unknown>(opts: UseA
     const { isAuthenticated, loading: userLoading } = useUser();
     const queryEnabled = !userLoading && isAuthenticated && enabled;
 
+    // Identidad del fetch anexada a la queryKey del llamador (ver useApiQuery).
+    // `transform` se excluye a propósito: es un post-procesador puro (no cambia
+    // QUÉ se pide) y meter una función rompería la estabilidad de la clave (su
+    // identidad cambia en cada render → refetch infinito).
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     const q = useQuery<{ items: TData[]; totalCount: number }>({
-        queryKey: queryEnabled ? queryKey : [...queryKey, "disabled"],
+        queryKey: [...queryKey, method, path, query, body, ...(queryEnabled ? [] : ["disabled"])],
         queryFn: async ({ signal }) => {
             const res = await http<ApiListResult<TRaw>>(method, path, { query, body, signal });
             const raw = res.items ?? [];

@@ -1,7 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
+
+// ANALYZE=1 npm run build → genera dist/stats.html (treemap del bundle) y lo abre.
+const analyze = !!process.env.ANALYZE;
 
 // Aether-Web (post-Tauri):
 //   - El backend Go corre en localhost:8080 (configurable via VITE_API_PROXY).
@@ -16,6 +20,13 @@ export default defineConfig({
             babel: { plugins: ["babel-plugin-react-compiler"] },
         }),
         tailwindcss(),
+        analyze &&
+            visualizer({
+                filename: "dist/stats.html",
+                open: true,
+                gzipSize: true,
+                brotliSize: true,
+            }),
     ],
     resolve: {
         alias: {

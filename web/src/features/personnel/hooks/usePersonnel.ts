@@ -5,7 +5,7 @@ import React, { useState, useTransition } from 'react';
 import { useApiPaginatedQuery } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { useConfirmationDialog } from "@/shared/hooks";
-import { transformPersonnelFromDB } from "@/features";
+import { transformPersonnelFromDB } from "../utils/transformPersonnelFromDB";
 import { Person } from "@/types/person";
 import { http } from "@/lib/http";
 import { useEscuadrilla, useUser } from "@/providers";

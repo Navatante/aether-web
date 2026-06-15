@@ -13,6 +13,7 @@ import {
 } from "react-router-dom";
 import { ThemeProvider, UserProvider, DatabaseProvider, useUser } from "@/providers";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MainLayout } from "@/shared/components/layout";
@@ -22,29 +23,38 @@ import { Toaster, toast } from "sonner";
 import Login from "@/features/auth/Login";
 import "./App.css";
 
-// All features imported from barrel
+import { lazy } from "react";
+
+// Páginas eager, importadas por la API pública de cada feature (su index.ts).
+// No usar el barrel raíz @/features: su `export *` arrastraría el grafo de
+// todas las features (incl. las de gráficos → recharts) al bundle principal.
+import { Flights } from "@/features/flights";
+import { Personnel } from "@/features/personnel";
+import { Papeletas } from "@/features/papeletas";
+import { Comisiones, DiasDeComision } from "@/features/comisiones";
+import { Disponibilidad } from "@/features/availability";
 import {
-    Dashboard,
-    Effort,
-    Flights,
-    Personnel,
-    Papeletas,
-    Comisiones,
-    DiasDeComision,
-    Disponibilidad,
-    HorasVueloPilotos,
-    TomasAproximacionesPilotos,
     AdiestramientoPilotos,
-    ProyectilesDotaciones,
     AdiestramientoDotaciones,
     InstruccionPilotos,
     InstruccionDotaciones,
+} from "@/features/training";
+import {
     ModelRatings,
     OperationalRatings,
     GeneralTacticalRatings,
     LeadershipRatings,
     MaintenanceRatings,
-} from "@/features";
+} from "@/features/ratings";
+
+// Páginas con gráficos (recharts): lazy para aislar recharts en su propio chunk
+// y mantenerlo fuera del bundle principal. Import directo del archivo (no del
+// barrel @/features, que arrastraría todo el grafo y anularía el split).
+const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
+const Effort = lazy(() => import("@/features/effort/pages/Effort"));
+const HorasVueloPilotos = lazy(() => import("@/features/hours/pages/HorasVueloPilotos"));
+const TomasAproximacionesPilotos = lazy(() => import("@/features/hours/pages/TomasAproximacionesPilotos"));
+const ProyectilesDotaciones = lazy(() => import("@/features/hours/pages/ProyectilesDotaciones"));
 
 function FullPageLoader() {
     return (
@@ -127,6 +137,9 @@ export default function App() {
                     <DatabaseProvider>
                         <TooltipProvider>
                             <AppContent />
+                            {import.meta.env.DEV && (
+                                <ReactQueryDevtools initialIsOpen={false} />
+                            )}
                             <Toaster
                                 position="top-center"
                                 expand={true}

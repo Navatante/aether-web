@@ -1,14 +1,14 @@
 import React, {useState, useTransition} from 'react';
 import {useApiPaginatedQuery} from "@/lib/apiQuery";
 import {queryKeys} from "@/lib/queryKeys";
-import {transformPapeletasFromDB} from "@/features";
+import {transformPapeletasFromDB} from "../utils/transformPapeletasFromDB";
 import {Papeleta} from "@/types/papeleta";
 import {http} from "@/lib/http";
 import {useEscuadrilla} from "@/providers";
 import {toast} from "sonner";
 import {ChevronDown, ChevronUp, Download, Edit, RefreshCw, TicketPlus} from "lucide-react";
 import {PermissionLevel, useUser} from "@/providers";
-import { AddEditPapeletaForm, type PapeletaFormValues } from "@/features";
+import { AddEditPapeletaForm, type PapeletaFormValues } from "../components";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {
     ActionButton,
