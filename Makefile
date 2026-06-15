@@ -1,4 +1,4 @@
-.PHONY: run dev pg-up build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild test fmt vet dist clean theme-guard
+.PHONY: run dev pg-up build build-prod build-bootstrap-prod web-build tidy sqlc migrate-up migrate-down load-sqlite reload-sqlite db-reset dev-rebuild link-private test fmt vet dist clean theme-guard
 
 BIN := ./bin/aether-web
 BOOTSTRAP_BIN := ./bin/aether-bootstrap
@@ -25,6 +25,10 @@ DEV_LEVEL     ?= Superusuario
 # Sobrescribibles: make dev DEV_DB_PASSWORD=tu_password
 DEV_DB_PASSWORD  ?= CHANGEME
 DEV_DATABASE_URL ?= postgres://$(PG_SUPERUSER):$(DEV_DB_PASSWORD)@127.0.0.1:5432/$(PG_TARGET_DB)?sslmode=disable
+
+# Ruta al repo privado aether-data (archivos sensibles RGPD). Distinta en cada
+# máquina, por eso es sobrescribible: make link-private AETHER_DATA=/otra/ruta/aether-data
+AETHER_DATA ?= $(HOME)/aether-data
 
 # ---------- Desarrollo local ----------
 
@@ -100,6 +104,19 @@ load-sqlite:
 # aquí no hay migrate down/up. Para un reset total del esquema usa `make dev-rebuild`.
 reload-sqlite:
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)" --truncate
+
+# (Re)crea los symlinks a los archivos sensibles (RGPD) del repo privado aether-data.
+# Estos symlinks están gitignored: NO viajan por git, hay que crearlos en cada máquina.
+# Idempotente (-f) y repara enlaces colgados (-n evita seguir un symlink-a-dir existente).
+# En otra máquina con aether-data en otra ruta:
+#   make link-private AETHER_DATA=/ruta/a/aether-data
+link-private:
+	@[ -d "$(AETHER_DATA)" ] || { echo "ERROR: no existe AETHER_DATA=$(AETHER_DATA). Clona el repo privado o pasa la ruta: make link-private AETHER_DATA=/ruta/aether-data"; exit 1; }
+	ln -sfn $(AETHER_DATA)/Aether.db                                   database-utils/Aether.db
+	ln -sfn $(AETHER_DATA)/person_users.json                           database-utils/person_users.json
+	ln -sfn $(AETHER_DATA)/migrations/0002_seed_lookups.up.sql         migrations/0002_seed_lookups.up.sql
+	ln -sfn $(AETHER_DATA)/migrations/0004_seed_productive_data.up.sql migrations/0004_seed_productive_data.up.sql
+	@echo "==> Symlinks privados (re)creados desde $(AETHER_DATA)."
 
 # DROP + CREATE de la BD destino. Mantiene el contenedor PostgreSQL en marcha.
 # Útil para empezar de cero sin esperar 5-10s a que el contenedor arranque.

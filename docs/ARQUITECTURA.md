@@ -1124,13 +1124,13 @@ En lugar de duplicar archivos, los sensibles **viven en `~/aether-data/`** y `ae
 git clone https://github.com/Navatante/aether-web
 git clone https://github.com/Navatante/aether-data ~/aether-data
 
-# 2) Symlinkar los archivos sensibles desde aether-data → aether-web
+# 2) Symlinkar los archivos sensibles desde aether-data → aether-web.
+#    make link-private los crea todos (gitignored; no viajan por git, hay que
+#    crearlos en cada máquina). Idempotente: re-ejecútalo para reparar enlaces colgados.
+#    Si el repo privado no está en ~/aether-data, pasa la ruta:
+#    make link-private AETHER_DATA=/ruta/a/aether-data
 cd aether-web
-ln -sf ~/aether-data/Aether.db                                         database-utils/Aether.db
-ln -sf ~/aether-data/person_users.json                                 database-utils/person_users.json
-# Los seeds son solo-up (no hay .down): dev hace drop+create y prod solo aplica `up`.
-ln -sf ~/aether-data/migrations/0002_seed_lookups.up.sql               migrations/0002_seed_lookups.up.sql
-ln -sf ~/aether-data/migrations/0004_seed_productive_data.up.sql       migrations/0004_seed_productive_data.up.sql
+make link-private
 
 # 3) Lanzar el ciclo completo
 make dev-rebuild PG_SUPERUSER=<tu_user> DEV_USER=<tu_user> DEV_PASSWORD=<tu_pass>
