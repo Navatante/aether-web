@@ -28,7 +28,6 @@ type Querier interface {
 	// =============== Mutaciones ===============
 	// code se normaliza a uppercase en Go.
 	AddDepartureArrivalPlace(ctx context.Context, arg AddDepartureArrivalPlaceParams) error
-	AddEvent(ctx context.Context, arg AddEventParams) error
 	// =============== CRUD notcrew_qualification ===============
 	AddNotCrewRating(ctx context.Context, arg AddNotCrewRatingParams) (int32, error)
 	// ============================================================

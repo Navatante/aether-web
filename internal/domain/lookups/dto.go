@@ -118,8 +118,3 @@ type AddAircraftReq struct {
 type UpdateAircraftCurrentFlagReq struct {
 	CurrentFlag bool `json:"current_flag"`
 }
-
-type AddEventReq struct {
-	EventName  string `json:"event_name"`
-	EventPlace string `json:"event_place"`
-}

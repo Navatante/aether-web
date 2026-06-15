@@ -341,31 +341,6 @@ func (s *Service) UpdateAircraftCurrentFlag(ctx context.Context, esc int32, id i
 	return persisted, nil
 }
 
-func (s *Service) AddEvent(ctx context.Context, req AddEventReq) error {
-	name := strings.TrimSpace(req.EventName)
-	place := strings.TrimSpace(req.EventPlace)
-	if name == "" || place == "" {
-		return ErrInvalidInput
-	}
-	if err := s.q.UpsertEventName(ctx, name); err != nil {
-		return err
-	}
-	err := s.q.AddEvent(ctx, queries.AddEventParams{EventName: name, EventPlace: place})
-	return mapUniqueErr(err, "uq_event_name_place")
-}
-
-func (s *Service) DeleteEvent(ctx context.Context, id int32) error {
-	n, err := s.q.DeleteEvent(ctx, id)
-	if err != nil {
-		return mapFKErr(err)
-	}
-	if n == 0 {
-		return ErrNotFound
-	}
-	return nil
-}
-
-
 // ============================================================================
 // Helpers
 // ============================================================================

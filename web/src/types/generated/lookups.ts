@@ -103,7 +103,3 @@ export interface AddAircraftReq {
 export interface UpdateAircraftCurrentFlagReq {
   current_flag: boolean;
 }
-export interface AddEventReq {
-  event_name: string;
-  event_place: string;
-}

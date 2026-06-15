@@ -171,27 +171,6 @@ func (h *Handlers) UpdateAircraftCurrentFlag(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]bool{"aircraft_current_flag": persisted})
 }
 
-func (h *Handlers) AddEvent(c echo.Context) error {
-	var req AddEventReq
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
-	}
-	return mapErrToHTTP(h.svc.AddEvent(c.Request().Context(), req),
-		map[error]int{ErrUniqueName: http.StatusConflict, ErrInvalidInput: http.StatusBadRequest},
-		http.StatusCreated)
-}
-
-func (h *Handlers) DeleteEvent(c echo.Context) error {
-	id, err := parseID(c)
-	if err != nil {
-		return err
-	}
-	return mapErrToHTTP(h.svc.DeleteEvent(c.Request().Context(), id),
-		map[error]int{ErrNotFound: http.StatusNotFound, ErrInUse: http.StatusConflict},
-		http.StatusNoContent)
-}
-
-
 // ============================================================================
 // Util
 // ============================================================================

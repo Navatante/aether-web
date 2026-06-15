@@ -62,20 +62,6 @@ func (q *Queries) AddDepartureArrivalPlace(ctx context.Context, arg AddDeparture
 	return err
 }
 
-const addEvent = `-- name: AddEvent :exec
-INSERT INTO operations.event (event_name, event_place) VALUES ($1, $2)
-`
-
-type AddEventParams struct {
-	EventName  string `json:"event_name"`
-	EventPlace string `json:"event_place"`
-}
-
-func (q *Queries) AddEvent(ctx context.Context, arg AddEventParams) error {
-	_, err := q.db.Exec(ctx, addEvent, arg.EventName, arg.EventPlace)
-	return err
-}
-
 const deleteAircraft = `-- name: DeleteAircraft :execrows
 DELETE FROM operations.aircraft
 WHERE aircraft_sk = $1 AND aircraft_escuadrilla_fk = $2

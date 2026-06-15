@@ -178,8 +178,5 @@ INSERT INTO operations.event_name (event_name_value)
 VALUES ($1)
 ON CONFLICT (event_name_value) DO NOTHING;
 
--- name: AddEvent :exec
-INSERT INTO operations.event (event_name, event_place) VALUES ($1, $2);
-
 -- name: DeleteEvent :execrows
 DELETE FROM operations.event WHERE event_sk = $1;
