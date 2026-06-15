@@ -21,11 +21,24 @@ export function blockBadgeClass(block: string): string {
     return 'bg-block-default text-block-default-foreground';
 }
 
+// Rango explícito de planes de adiestramiento: Básico va siempre antes que Avanzado
+// (la ordenación alfabética los pondría al revés). -1 = sin rango específico (resto
+// de planes, p. ej. los de instrucción, que se ordenan alfabéticamente como hasta ahora).
+function planRank(plan: string): number {
+    const p = plan.toLowerCase();
+    if (p.includes('básico') || p.includes('basico')) return 0;
+    if (p.includes('avanzado')) return 1;
+    return -1;
+}
+
 // Ordena papeletas por plan y, dentro de cada plan, por papeleta_order
 // (las que no tienen orden van al final) y, a igualdad, por nombre.
 export function byPlanThenName<
     T extends { papeleta_plan: string; papeleta_name: string; papeleta_order?: number | null }
 >(a: T, b: T): number {
+    const ra = planRank(a.papeleta_plan);
+    const rb = planRank(b.papeleta_plan);
+    if (ra !== -1 && rb !== -1 && ra !== rb) return ra - rb;
     const planCmp = a.papeleta_plan.localeCompare(b.papeleta_plan);
     if (planCmp !== 0) return planCmp;
     const ao = a.papeleta_order ?? Number.POSITIVE_INFINITY;
