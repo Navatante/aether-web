@@ -100,7 +100,10 @@
       "Bash(make theme-guard *)",
       "Bash(git config *)",
       "Bash(make dev-rebuild *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Read(//home/jonl/**)",
+      "Bash(git -C /home/jonl/.config/JetBrains/GoLand2026.1/projects/GoLandWorkspace/aether-web log --oneline -10 -- migrations/)",
+      "Bash(git commit *)"
     ]
   }
 }
