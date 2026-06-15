@@ -105,7 +105,15 @@
       "Bash(git -C /home/jonl/.config/JetBrains/GoLand2026.1/projects/GoLandWorkspace/aether-web log --oneline -10 -- migrations/)",
       "Bash(git commit *)",
       "Bash(make sqlc *)",
-      "Bash(PGPASSWORD=CHANGEME psql -h 127.0.0.1 -U aether_admin -d aether -P pager=off -c ' *)"
+      "Bash(PGPASSWORD=CHANGEME psql -h 127.0.0.1 -U aether_admin -d aether -P pager=off -c ' *)",
+      "Bash(cat vite.config.ts)",
+      "Bash(cat vite.config.js)",
+      "Bash(npm i *)",
+      "Bash(node *)",
+      "Bash(ANALYZE=1 npm run build)",
+      "Bash(echo \"exit=$?\")",
+      "Read(//tmp/**)",
+      "Bash(go version *)"
     ]
   }
 }
