@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 
-export type TabId = 'lugares' | 'aeronaves' | 'eventos' | 'capba';
+export type TabId = 'lugares' | 'aeronaves' | 'eventos';
 
 export interface DeleteTarget {
     type: TabId;

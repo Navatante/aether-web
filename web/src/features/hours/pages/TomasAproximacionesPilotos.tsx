@@ -1,6 +1,6 @@
 import PilotCountChart, { type CountSeries } from "../components/charts/PilotCountChart";
 import { useTomasAproximaciones } from "../hooks/useTomasAproximaciones";
-import { GradientTitle, SegmentedDateRangeAether, formatDateDisplay } from "@/shared/components/common";
+import { GradientTitle, SegmentedDateRangeAether } from "@/shared/components/common";
 import { StatsChartCard } from "@/shared/components/charts";
 
 // Los 6 gráficos: tomas por lugar (3 periodos cada uno) + aproximaciones (2 tipos cada uno).

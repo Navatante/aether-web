@@ -2,7 +2,7 @@ import { useState } from 'react'
 import ViewModeToggleNH90Totals from "../components/ViewModeToggleNH90Totals";
 import NH90HoursChart from "../components/NH90HoursChart";
 import { useHorasVuelo } from "../hooks/useHorasVuelo";
-import { GradientTitle, SegmentedDateRangeAether, formatDateDisplay } from "@/shared/components/common";
+import { GradientTitle, SegmentedDateRangeAether } from "@/shared/components/common";
 import { StatsChartCard } from "@/shared/components/charts";
 
 export default function HorasVueloPilotos() {

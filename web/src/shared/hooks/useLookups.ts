@@ -57,20 +57,6 @@ export interface CapbaLookup {
     capba_name: string;
 }
 
-export interface CapbaCatalogLookup {
-    capba_id: number;
-    capba_name: string;
-    capba_group_name: string;
-}
-
-export interface EscuadrillaCapbaLookup {
-    escuadrilla_capba_sk: number;
-    capba_id: number;
-    capba_name: string;
-    capba_group_name: string;
-    escuadrilla_capba_capacidad_operativa: number;
-}
-
 export interface CrewLookup {
     person_sk: number;
     person_nk: string;
@@ -186,16 +172,6 @@ export function useAuthorities() {
 /** Obtiene lista de capacidades básicas de la escuadrilla para selector */
 export function useCapbas() {
     return useLookup<CapbaLookup>('capbas', queryKeys.lookups.capbas);
-}
-
-/** Catálogo global de capacidades básicas (para asignar a la escuadrilla) */
-export function useCapbaCatalog() {
-    return useLookup<CapbaCatalogLookup>('capba-catalog', queryKeys.lookups.capbaCatalog);
-}
-
-/** Capbas asignadas a la escuadrilla, con capacidad operativa (vista de gestión) */
-export function useEscuadrillaCapbas() {
-    return useLookup<EscuadrillaCapbaLookup>('escuadrilla-capbas', queryKeys.lookups.escuadrillaCapbas);
 }
 
 /** Obtiene lista de pilotos para selector */

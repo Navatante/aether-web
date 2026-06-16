@@ -30,7 +30,6 @@ import { type DeleteTarget, type TabId } from './manage-flight-data/shared';
 import { PlacesTab } from './manage-flight-data/PlacesTab';
 import { AircraftsTab } from './manage-flight-data/AircraftsTab';
 import { EventsTab } from './manage-flight-data/EventsTab';
-import { CapbasTab } from './manage-flight-data/CapbasTab';
 
 interface ManageFlightDataDialogProps {
     open: boolean;
@@ -41,7 +40,6 @@ const TABS: { id: TabId; label: string }[] = [
     { id: 'lugares', label: 'Lugares' },
     { id: 'aeronaves', label: 'Aeronaves' },
     { id: 'eventos', label: 'Eventos' },
-    { id: 'capba', label: 'CAPBAS' },
 ];
 
 export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFlightDataDialogProps): React.ReactElement {
@@ -57,7 +55,6 @@ export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFli
         (t) =>
             t.type === 'lugares' ? `/lookups/departure-arrival-places/${t.sk}`
             : t.type === 'aeronaves' ? `/lookups/aircrafts/${t.sk}`
-            : t.type === 'capba' ? `/lookups/escuadrilla-capbas/${t.sk}`
             : `/events/${t.sk}`,
         {
             invalidateKeys: [
@@ -66,8 +63,6 @@ export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFli
                 queryKeys.lookups.aircraftsManage(escId ?? 0),
                 queryKeys.lookups.eventsLookup(escId ?? 0),
                 queryKeys.lookups.eventsManage(escId ?? 0),
-                queryKeys.lookups.escuadrillaCapbas(escId ?? 0),
-                queryKeys.lookups.capbas(escId ?? 0),
             ],
         },
     );
@@ -98,7 +93,6 @@ export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFli
         lugares: 'Gestiona los lugares disponibles para los selectores de salida y llegada.',
         aeronaves: 'Gestiona las aeronaves disponibles para el registro de vuelos.',
         eventos: 'Gestiona los eventos disponibles para el registro de vuelos.',
-        capba: 'Asigna capacidades básicas a tu escuadrilla y su capacidad operativa.',
     };
 
     return (
@@ -108,9 +102,7 @@ export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFli
                     overlayClassName="bg-black/5! supports-backdrop-filter:backdrop-blur-sm!"
                     className={cn(
                         "max-h-[85vh] overflow-hidden flex flex-col shadow-2xl ring-2 ring-foreground/20 transition-[max-width] duration-200",
-                        // La pestaña Capba necesita más ancho: los nombres del catálogo
-                        // son largos y deben caber sin scroll horizontal.
-                        activeTab === 'capba' ? "sm:max-w-[920px]" : "sm:max-w-[600px]"
+                        "sm:max-w-[600px]"
                     )}
                 >
                     <DialogHeader>
@@ -152,9 +144,6 @@ export default function ManageFlightDataDialog({ open, onOpenChange }: ManageFli
                         )}
                         {activeTab === 'eventos' && (
                             <EventsTab onDeleteRequest={setDeleteTarget} />
-                        )}
-                        {activeTab === 'capba' && (
-                            <CapbasTab onDeleteRequest={setDeleteTarget} />
                         )}
                     </div>
                 </DialogContent>

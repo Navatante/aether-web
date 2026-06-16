@@ -1,6 +1,6 @@
 import PilotCountChart, { type CountSeries } from "../components/charts/PilotCountChart";
 import { useProyectiles } from "../hooks/useProyectiles";
-import { GradientTitle, SegmentedDateRangeAether, formatDateDisplay } from "@/shared/components/common";
+import { GradientTitle, SegmentedDateRangeAether } from "@/shared/components/common";
 import { StatsChartCard } from "@/shared/components/charts";
 
 // Un único gráfico con dos líneas: M3M (7.62) y MAG58 (12.7).
