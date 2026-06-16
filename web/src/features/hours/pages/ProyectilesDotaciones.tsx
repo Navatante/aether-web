@@ -12,11 +12,6 @@ const SERIES: CountSeries[] = [
 export default function ProyectilesDotaciones() {
     const { loading, errorMsg, data, startDate, endDate, handleDateRangeChange } = useProyectiles();
 
-    const description =
-        startDate && endDate
-            ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
-            : "Selecciona un rango de fechas";
-
     return (
         <div className="h-full overflow-y-auto p-6 pb-8">
             {/* Header */}
@@ -35,7 +30,6 @@ export default function ProyectilesDotaciones() {
 
                 <StatsChartCard
                     title="Proyectiles disparados"
-                    description={description}
                     isLoading={loading}
                     error={errorMsg}
                     isEmpty={data.length === 0}
