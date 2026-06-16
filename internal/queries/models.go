@@ -43,6 +43,8 @@ type DetallComision struct {
 	ComisionLugarFk       int32       `json:"comision_lugar_fk"`
 	ComisionEscuadrillaFk int32       `json:"comision_escuadrilla_fk"`
 	ComisionEsfuerzo      bool        `json:"comision_esfuerzo"`
+	ComisionDepartureTime pgtype.Time `json:"comision_departure_time"`
+	ComisionArrivalTime   pgtype.Time `json:"comision_arrival_time"`
 }
 
 type DetallComisionLugar struct {

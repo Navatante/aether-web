@@ -99,6 +99,12 @@ type Querier interface {
 	// comisión "con esfuerzo" en los últimos 730 días (con clipping de
 	// comisiones que parcialmente se solapan con el rango).
 	//
+	// Ajuste del último día (llegada): el día de llegada NO genera esfuerzo
+	// cuando es laborable (L-V y no festivo) y se llega antes de las 14:00.
+	// Solo aplica a comisiones multi-día cuyo último día cae dentro de la
+	// ventana (si está recortado por la derecha, el día de llegada queda
+	// fuera y no hay nada que restar). La salida es informativa.
+	//
 	// RLS explícita: $2 = escuadrilla_fk.
 	// $1 = fecha_fin (Go la calcula con today si viene vacía).
 	// ============================================================

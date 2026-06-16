@@ -85,6 +85,10 @@ func (s *Service) Create(ctx context.Context, esc int32, data ComisionFormData) 
 	if err != nil {
 		return InsertResult{}, err
 	}
+	salida, llegada, err := parseHoras(data.HoraSalida, data.HoraLlegada)
+	if err != nil {
+		return InsertResult{}, err
+	}
 	typeFk, err := s.resolveType(ctx, data.Tipo)
 	if err != nil {
 		return InsertResult{}, err
@@ -100,6 +104,8 @@ func (s *Service) Create(ctx context.Context, esc int32, data ComisionFormData) 
 		ComisionLugarFk:       lugarFk,
 		ComisionEscuadrillaFk: esc,
 		ComisionEsfuerzo:      data.GeneratesEffort,
+		ComisionDepartureTime: salida,
+		ComisionArrivalTime:   llegada,
 	})
 	if err != nil {
 		return InsertResult{}, err
@@ -113,6 +119,10 @@ func (s *Service) Create(ctx context.Context, esc int32, data ComisionFormData) 
 
 func (s *Service) Update(ctx context.Context, esc int32, id int32, data ComisionFormData) error {
 	start, end, err := parseRange(data.StartDate, data.EndDate)
+	if err != nil {
+		return err
+	}
+	salida, llegada, err := parseHoras(data.HoraSalida, data.HoraLlegada)
 	if err != nil {
 		return err
 	}
@@ -130,6 +140,8 @@ func (s *Service) Update(ctx context.Context, esc int32, id int32, data Comision
 		ComisionTypeFk:        typeFk,
 		ComisionLugarFk:       lugarFk,
 		ComisionEsfuerzo:      data.GeneratesEffort,
+		ComisionDepartureTime: salida,
+		ComisionArrivalTime:   llegada,
 		ComisionSk:            id,
 		ComisionEscuadrillaFk: esc,
 	})
@@ -205,6 +217,8 @@ func (s *Service) List(ctx context.Context, esc int32, p QueryParams) (ComisionQ
 			Lugar:         r.Lugar,
 			Tipo:          r.Tipo,
 			Esfuerzo:      r.Esfuerzo,
+			HoraSalida:    formatHora(r.HoraSalida),
+			HoraLlegada:   formatHora(r.HoraLlegada),
 			Participantes: participantes,
 		})
 	}
@@ -530,6 +544,38 @@ func parseRange(start, end string) (pgtype.Date, pgtype.Date, error) {
 		return pgtype.Date{}, pgtype.Date{}, ErrInvalidInput
 	}
 	return pgtype.Date{Time: s, Valid: true}, pgtype.Date{Time: e, Valid: true}, nil
+}
+
+// parseHoras convierte "HH:MM" (hora local wall-clock) a pgtype.Time
+// (microsegundos desde medianoche). Ambas son obligatorias.
+func parseHoras(salida, llegada string) (pgtype.Time, pgtype.Time, error) {
+	s, err := parseHora(salida)
+	if err != nil {
+		return pgtype.Time{}, pgtype.Time{}, err
+	}
+	l, err := parseHora(llegada)
+	if err != nil {
+		return pgtype.Time{}, pgtype.Time{}, err
+	}
+	return s, l, nil
+}
+
+func parseHora(hhmm string) (pgtype.Time, error) {
+	t, err := time.Parse("15:04", hhmm)
+	if err != nil {
+		return pgtype.Time{}, ErrInvalidInput
+	}
+	micros := int64(t.Hour()*3600+t.Minute()*60) * 1_000_000
+	return pgtype.Time{Microseconds: micros, Valid: true}, nil
+}
+
+// formatHora convierte pgtype.Time de vuelta a "HH:MM".
+func formatHora(t pgtype.Time) string {
+	if !t.Valid {
+		return ""
+	}
+	totalMin := t.Microseconds / 1_000_000 / 60
+	return fmt.Sprintf("%02d:%02d", totalMin/60, totalMin%60)
 }
 
 func parseOptionalDates(from, to string) (pgtype.Date, pgtype.Date, error) {

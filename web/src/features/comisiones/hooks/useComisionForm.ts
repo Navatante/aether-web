@@ -24,6 +24,8 @@ export interface ComisionEditData {
     lugar: string;
     tipo: string;
     esfuerzo: boolean;
+    hora_salida: string;
+    hora_llegada: string;
 }
 
 export function useComisionForm({ onClose, editData }: { onClose: () => void; editData?: ComisionEditData | null }) {
@@ -102,7 +104,9 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
             fechaFin: '',
             tipo: '',
             lugar: '',
-            generaEsfuerzo: true
+            generaEsfuerzo: true,
+            horaSalida: '08:00',
+            horaLlegada: '14:00'
         }
     });
 
@@ -126,7 +130,9 @@ export function useComisionForm({ onClose, editData }: { onClose: () => void; ed
                 fechaFin: editData.fecha_fin,
                 tipo: tipoFound ? tipoFound.comision_type_sk.toString() : '',
                 lugar: lugarFound ? lugarFound.comision_lugar_sk.toString() : '',
-                generaEsfuerzo: editData.esfuerzo
+                generaEsfuerzo: editData.esfuerzo,
+                horaSalida: editData.hora_salida,
+                horaLlegada: editData.hora_llegada
             });
         }
     }, [isEditMode, editData, tipoArray, lugarArray, tipoLoading, lugarLoading, reset]);

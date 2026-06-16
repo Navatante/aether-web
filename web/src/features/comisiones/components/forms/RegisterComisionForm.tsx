@@ -147,6 +147,54 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                     </div>
                 </div>
 
+                {/* Horas de salida y llegada */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Hora Salida */}
+                    <div className="space-y-2">
+                        <Label htmlFor="horaSalida" className="text-foreground">Hora salida (1er día)</Label>
+                        <Controller
+                            name="horaSalida"
+                            control={control}
+                            render={({ field }) => (
+                                <Input
+                                    {...field}
+                                    id="horaSalida"
+                                    type="time"
+                                    className={cn("h-10", errors.horaSalida && "border-danger")}
+                                />
+                            )}
+                        />
+                        {errors.horaSalida && (
+                            <p className="text-sm text-danger">{errors.horaSalida.message}</p>
+                        )}
+                    </div>
+
+                    {/* Hora Llegada */}
+                    <div className="space-y-2">
+                        <Label htmlFor="horaLlegada" className="text-foreground">Hora llegada (último día)</Label>
+                        <Controller
+                            name="horaLlegada"
+                            control={control}
+                            render={({ field }) => (
+                                <Input
+                                    {...field}
+                                    id="horaLlegada"
+                                    type="time"
+                                    className={cn("h-10", errors.horaLlegada && "border-danger")}
+                                />
+                            )}
+                        />
+                        {errors.horaLlegada && (
+                            <p className="text-sm text-danger">{errors.horaLlegada.message}</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Nota: la llegada en día laborable antes de las 14:00 no genera esfuerzo el último día. */}
+                <p className="text-xs text-muted-foreground -mt-2">
+                    Si la llegada es en día laborable (L-V, no festivo) y antes de las 14:00, ese último día no genera esfuerzo.
+                </p>
+
                 {/* Select Tipo */}
                 <div className="space-y-2">
                     <Label htmlFor="tipo" className="text-foreground">Tipo</Label>

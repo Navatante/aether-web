@@ -12,6 +12,8 @@ type ComisionFormData struct {
 	Tipo            string `json:"tipo"`        // nombre o id
 	Lugar           string `json:"lugar"`       // nombre o id
 	GeneratesEffort bool   `json:"generaEsfuerzo"`
+	HoraSalida      string `json:"horaSalida"`  // HH:MM (1er día, informativa)
+	HoraLlegada     string `json:"horaLlegada"` // HH:MM (último día, ajusta esfuerzo)
 }
 
 type InsertResult struct {
@@ -29,6 +31,8 @@ type ComisionListItem struct {
 	Lugar         string                 `json:"lugar"`
 	Tipo          string                 `json:"tipo"`
 	Esfuerzo      bool                   `json:"esfuerzo"`
+	HoraSalida    string                 `json:"hora_salida"`  // HH:MM
+	HoraLlegada   string                 `json:"hora_llegada"` // HH:MM
 	Participantes []ComisionParticipante `json:"personas_participantes"`
 }
 

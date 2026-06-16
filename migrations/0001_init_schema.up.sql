@@ -350,6 +350,12 @@ CREATE TABLE detall.comision (
     comision_lugar_fk        INTEGER NOT NULL REFERENCES detall.comision_lugar(comision_lugar_sk),
     comision_escuadrilla_fk  INTEGER NOT NULL REFERENCES detall.escuadrilla(escuadrilla_sk),
     comision_esfuerzo        BOOLEAN NOT NULL,
+    -- Horas locales (wall-clock) de salida (1er día) y llegada (último día).
+    -- La llegada ajusta el esfuerzo del último día (ver queries/esfuerzo.sql);
+    -- la salida es informativa. DEFAULT mantiene vivos los inserts del seed y
+    -- los valores conservan el cómputo previo (llegada >= 14:00 => el día cuenta).
+    comision_departure_time  TIME NOT NULL DEFAULT '08:00',
+    comision_arrival_time    TIME NOT NULL DEFAULT '14:00',
     CONSTRAINT chk_fechas_validas CHECK (comision_end_date >= comision_start_date),
     CONSTRAINT uq_comision UNIQUE (
         comision_start_date, comision_end_date, comision_type_fk, comision_lugar_fk, comision_esfuerzo
