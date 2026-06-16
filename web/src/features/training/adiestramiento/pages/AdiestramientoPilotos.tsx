@@ -29,6 +29,7 @@ import { useApiQuery } from "@/lib/apiQuery";
 import { useEscuadrilla } from "@/providers";
 import { queryKeys } from "@/lib/queryKeys";
 import { BlockBadge, PlanDividerRow, byPlanThenName } from "@/features/training/blocks";
+import {cn} from "@/lib/utils.ts";
 
 // Types
 interface Papeleta {
@@ -70,9 +71,25 @@ interface PapeletasPersonasData {
 
 type StatusFilter = 'Todos los estados' | 'Vigente' | 'Alerta' | 'Expirado';
 
+// Periodo de vuelo (operations.period): filtra las celdas por papeleta_crew_count_period_fk.
+// 0 = todos; 1 = Día, 2 = Noche convencional (NC), 3 = GVN.
+type PeriodFilter = 0 | 1 | 2 | 3;
+
+const PERIOD_OPTIONS: { value: PeriodFilter; label: string; activeClass: string }[] = [
+    { value: 0, label: 'All', activeClass: 'bg-primary text-primary-foreground' },
+    { value: 1, label: 'Día', activeClass: 'bg-info text-info-foreground' },
+    { value: 2, label: 'NC', activeClass: 'bg-danger text-danger-foreground' },
+    { value: 3, label: 'GVN', activeClass: 'bg-success text-success-foreground' },
+];
+
 export default function AdiestramientoPilotos() {
-    const adiestramientoArgs = { roles: 'Piloto', bloques: 'Práctico Piloto,Simulador,Vuelo' };
     const { id: escId } = useEscuadrilla();
+    const [periodFilter, setPeriodFilter] = useState<PeriodFilter>(0);
+    const adiestramientoArgs = {
+        roles: 'Piloto',
+        bloques: 'Práctico Piloto,Simulador,Vuelo',
+        periodo: String(periodFilter),
+    };
     const { data, isLoading, error: queryError, refetch } = useApiQuery<PapeletasPersonasData>(
         'GET',
         '/training/adiestramiento',
@@ -135,6 +152,19 @@ export default function AdiestramientoPilotos() {
         if (!data) return [];
 
         let result = (data.papeletas ?? []).filter(papeleta => {
+            // Filtro por periodo según prefijo del nombre:
+            //   Día → oculta 'G-' y 'N-'; NC → oculta 'G-'; GVN → oculta 'N-'.
+            const name = papeleta.papeleta_name;
+            if (periodFilter === 1 && (name.startsWith('G-') || name.startsWith('N-'))) {
+                return false;
+            }
+            if (periodFilter === 2 && name.startsWith('G-')) {
+                return false;
+            }
+            if (periodFilter === 3 && name.startsWith('N-')) {
+                return false;
+            }
+
             // Filtro de búsqueda (nombre y descripción)
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
@@ -358,7 +388,28 @@ export default function AdiestramientoPilotos() {
                             <StickyTableHeader>
                             <tr>
                                 <th className={`text-left font-semibold text-table-header-foreground p-4 whitespace-nowrap ${STICKY_CORNER}`}>
-                                    {/* Puedes dejar vacío o poner un título si quieres */}
+                                    {/* Toggle de periodo: filtra las celdas por papeleta_crew_count_period_fk */}
+                                    <div className="flex flex-col items-start gap-1.5">
+                                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                            Periodo
+                                        </span>
+                                        <div className="inline-flex gap-0.5 p-0.5 rounded-lg bg-muted/60 border border-input shadow-sm">
+                                            {PERIOD_OPTIONS.map(opt => (
+                                                <button
+                                                    key={opt.value}
+                                                    type="button"
+                                                    onClick={() => setPeriodFilter(opt.value)}
+                                                    className={cn(
+                                                        "min-w-[2.75rem] rounded-md px-2.5 py-1 text-xs font-semibold transition-all",
+                                                        periodFilter === opt.value
+                                                            ? cn(opt.activeClass, "shadow-sm")
+                                                            : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                                                    )}>
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </th>
                                 {visiblePersonas.map(persona => (
                                     <th key={persona.person_sk} className="text-center p-4 min-w-[80px]">

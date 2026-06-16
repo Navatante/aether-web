@@ -80,6 +80,8 @@ ORDER BY t.order_position;
 -- name: AdiestramientoPapeletasRealizadas :many
 -- Última papeleta por (persona, session): días transcurridos, restantes, estado.
 -- Filtramos por personas con rol en $1 y escuadrilla = $2.
+-- period_fk = 0 ⇒ todos los periodos; 1/2/3 ⇒ solo papeletas voladas en ese periodo
+-- (Día / Noche convencional / GVN), recalculando la "más reciente" dentro del periodo.
 WITH papeletas_recientes AS (
     SELECT
         pcc.papeleta_crew_count_person_fk  AS person_fk,
@@ -91,6 +93,7 @@ WITH papeletas_recientes AS (
         ) AS rn
     FROM operations.papeleta_crew_count pcc
     JOIN operations.flight ff ON ff.flight_sk = pcc.papeleta_crew_count_flight_fk
+    WHERE (sqlc.arg(period_fk)::int = 0 OR pcc.papeleta_crew_count_period_fk = sqlc.arg(period_fk)::int)
 )
 SELECT
     pr.person_fk AS person_sk,

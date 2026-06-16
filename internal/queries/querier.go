@@ -44,6 +44,8 @@ type Querier interface {
 	AdiestramientoPapeletas(ctx context.Context, arg AdiestramientoPapeletasParams) ([]AdiestramientoPapeletasRow, error)
 	// Última papeleta por (persona, session): días transcurridos, restantes, estado.
 	// Filtramos por personas con rol en $1 y escuadrilla = $2.
+	// period_fk = 0 ⇒ todos los periodos; 1/2/3 ⇒ solo papeletas voladas en ese periodo
+	// (Día / Noche convencional / GVN), recalculando la "más reciente" dentro del periodo.
 	AdiestramientoPapeletasRealizadas(ctx context.Context, arg AdiestramientoPapeletasRealizadasParams) ([]AdiestramientoPapeletasRealizadasRow, error)
 	// Por persona (filtrada por rol/escuadrilla): full_name, CRP, días sin volar/real/simulador.
 	AdiestramientoPersonas(ctx context.Context, arg AdiestramientoPersonasParams) ([]AdiestramientoPersonasRow, error)

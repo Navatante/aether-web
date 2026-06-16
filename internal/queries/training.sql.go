@@ -92,6 +92,7 @@ WITH papeletas_recientes AS (
         ) AS rn
     FROM operations.papeleta_crew_count pcc
     JOIN operations.flight ff ON ff.flight_sk = pcc.papeleta_crew_count_flight_fk
+    WHERE ($3::int = 0 OR pcc.papeleta_crew_count_period_fk = $3::int)
 )
 SELECT
     pr.person_fk AS person_sk,
@@ -116,6 +117,7 @@ WHERE pr.rn = 1
 type AdiestramientoPapeletasRealizadasParams struct {
 	Column1             []string `json:"column_1"`
 	PersonEscuadrillaFk int32    `json:"person_escuadrilla_fk"`
+	PeriodFk            int32    `json:"period_fk"`
 }
 
 type AdiestramientoPapeletasRealizadasRow struct {
@@ -128,8 +130,10 @@ type AdiestramientoPapeletasRealizadasRow struct {
 
 // Última papeleta por (persona, session): días transcurridos, restantes, estado.
 // Filtramos por personas con rol en $1 y escuadrilla = $2.
+// period_fk = 0 ⇒ todos los periodos; 1/2/3 ⇒ solo papeletas voladas en ese periodo
+// (Día / Noche convencional / GVN), recalculando la "más reciente" dentro del periodo.
 func (q *Queries) AdiestramientoPapeletasRealizadas(ctx context.Context, arg AdiestramientoPapeletasRealizadasParams) ([]AdiestramientoPapeletasRealizadasRow, error) {
-	rows, err := q.db.Query(ctx, adiestramientoPapeletasRealizadas, arg.Column1, arg.PersonEscuadrillaFk)
+	rows, err := q.db.Query(ctx, adiestramientoPapeletasRealizadas, arg.Column1, arg.PersonEscuadrillaFk, arg.PeriodFk)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,7 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -94,7 +95,7 @@ type Service struct {
 
 func NewService(pool *pgxpool.Pool) *Service { return &Service{pool: pool, q: queries.New(pool)} }
 
-func (s *Service) Adiestramiento(ctx context.Context, esc int32, roles, bloques []string) (AdiestramientoResult, error) {
+func (s *Service) Adiestramiento(ctx context.Context, esc int32, roles, bloques []string, periodFk int32) (AdiestramientoResult, error) {
 	if len(roles) == 0 {
 		roles = defaultRolesPiloto
 	}
@@ -119,6 +120,7 @@ func (s *Service) Adiestramiento(ctx context.Context, esc int32, roles, bloques 
 	realizadasRows, err := s.q.AdiestramientoPapeletasRealizadas(ctx, queries.AdiestramientoPapeletasRealizadasParams{
 		Column1:             roles,
 		PersonEscuadrillaFk: esc,
+		PeriodFk:            periodFk,
 	})
 	if err != nil {
 		return AdiestramientoResult{}, err
@@ -285,7 +287,9 @@ func (h *Handlers) Adiestramiento(c echo.Context) error {
 	}
 	roles := splitCSV(c.QueryParam("roles"))
 	bloques := splitCSV(c.QueryParam("bloques"))
-	res, err := h.svc.Adiestramiento(c.Request().Context(), int32(user.EscuadrillaID), roles, bloques)
+	// periodo: 0/ausente = todos; 1 = Día, 2 = Noche convencional, 3 = GVN.
+	periodo, _ := strconv.Atoi(c.QueryParam("periodo"))
+	res, err := h.svc.Adiestramiento(c.Request().Context(), int32(user.EscuadrillaID), roles, bloques, int32(periodo))
 	if err != nil {
 		return err
 	}
