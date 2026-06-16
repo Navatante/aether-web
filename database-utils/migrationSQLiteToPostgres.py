@@ -54,6 +54,26 @@ def unix_to_date(unix_time, default_date="1900-01-01"):
         return datetime.strptime(default_date, "%Y-%m-%d").date()
 
 
+def unix_to_time(unix_time, default=None):
+    """Extrae la hora-del-día (UTC) embebida en el timestamp Unix.
+
+    SQLite guarda fecha y hora juntas en `flight_datetime`; la fecha va a
+    `flight_date` (DATE) y la hora a `flight_departure_time` (TIME). Se
+    almacena en UTC, coherente con la fecha (`unix_to_date` también usa UTC)
+    y con el front, que toma `hora`, le añade 'Z' y la convierte a Madrid.
+    """
+    if default is None:
+        default = DEFAULT_TIME
+    if unix_time is None or unix_time == "" or unix_time == 0:
+        return default
+    try:
+        if isinstance(unix_time, str):
+            unix_time = int(unix_time)
+        return datetime.fromtimestamp(unix_time, tz=timezone.utc).time()
+    except (ValueError, TypeError):
+        return default
+
+
 def string_to_date(date_string, default_date="1900-01-01"):
     if date_string is None or date_string == "":
         return datetime.strptime(default_date, "%Y-%m-%d").date()
@@ -433,9 +453,10 @@ TABLE_MAPPINGS = {
         },
         "defaults": {
             "flight_departure_place": DEFAULT_DEPARTURE_ARRIVAL_PLACE_SK,
-            "flight_departure_time": DEFAULT_TIME,
+            # Recupera la hora real embebida en flight_datetime (UTC).
+            "flight_departure_time": lambda row: unix_to_time(row.get("flight_datetime")),
             "flight_arrival_place": DEFAULT_DEPARTURE_ARRIVAL_PLACE_SK,
-            "flight_arrival_time": DEFAULT_TIME,
+            "flight_arrival_time": DEFAULT_TIME,  # SQLite no guarda hora de llegada → 00:00
             "flight_escuadrilla_fk": 14,
         },
         "identity_insert": True,
