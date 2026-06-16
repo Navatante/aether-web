@@ -58,11 +58,6 @@ export default function TomasAproximacionesPilotos() {
     const { loading, errorMsg, data, startDate, endDate, handleDateRangeChange } =
         useTomasAproximaciones({ personRol: "Piloto" });
 
-    const description =
-        startDate && endDate
-            ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
-            : "Selecciona un rango de fechas";
-
     return (
         <div className="h-full overflow-y-auto p-6 pb-8">
             {/* Header */}
@@ -84,7 +79,6 @@ export default function TomasAproximacionesPilotos() {
                         <StatsChartCard
                             key={chart.title}
                             title={chart.title}
-                            description={description}
                             isLoading={loading}
                             error={errorMsg}
                             isEmpty={data.length === 0}

@@ -44,13 +44,6 @@ export default function HorasVueloPilotos() {
 
                 <StatsChartCard
                     title={viewMode === 'totals' ? 'Horas de vuelo totales' : 'Horas de vuelo NH-90'}
-                    description={
-                        viewMode === 'totals'
-                            ? 'Histórico completo · incluye horas con otras aeronaves'
-                            : startDate && endDate
-                                ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
-                                : 'Selecciona un rango de fechas'
-                    }
                     isLoading={loading}
                     error={errorMsg}
                     isEmpty={chartData.length === 0}
