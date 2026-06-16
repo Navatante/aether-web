@@ -65,6 +65,8 @@ export interface DynamicStats {
   horasPorAutoridad: HorasAutoridad[];
   horasPorEventoLugar: HorasEventoLugar[];
   horasPorPeriodo: HorasPeriodo;
+  pasajeros: Pasajero[];
+  horasPorCapba: HorasCapba[];
 }
 export interface ResumenGeneral {
   totalHoras: number /* float64 */;
@@ -89,6 +91,14 @@ export interface HorasAutoridad {
 export interface HorasEventoLugar {
   evento: string;
   lugares: { [key: string]: number /* float64 */};
+}
+export interface Pasajero {
+  tipo: string;
+  cantidad: number /* int */;
+}
+export interface HorasCapba {
+  capba: string;
+  horas: number /* float64 */;
 }
 export interface HorasPeriodo {
   dia_real: number /* float64 */;

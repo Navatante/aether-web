@@ -256,3 +256,33 @@ WHERE f.flight_person_cta_fk = ph.person_hour_person_fk
   AND f.flight_date >= $1
   AND f.flight_date <  $2
   AND f.flight_escuadrilla_fk = $3;
+
+
+-- name: GetDynamicPasajeros :many
+SELECT
+    pt.passenger_type_name        AS tipo,
+    SUM(p.passenger_qty)::int     AS cantidad
+FROM operations.passenger p
+JOIN operations.passenger_type pt ON pt.passenger_type_sk = p.passenger_type_fk
+JOIN operations.flight f          ON f.flight_sk = p.passenger_flight_fk
+WHERE f.flight_date >= $1
+  AND f.flight_date <  $2
+  AND f.flight_escuadrilla_fk = $3
+GROUP BY pt.passenger_type_name
+HAVING SUM(p.passenger_qty) > 0
+ORDER BY SUM(p.passenger_qty) DESC;
+
+
+-- name: GetDynamicHorasCapba :many
+SELECT
+    c.capba_name                              AS capba,
+    ROUND(SUM(ch.capba_hour_qty), 1)::numeric AS horas
+FROM operations.capba_hour ch
+JOIN operations.capba c  ON c.capba_id = ch.capba_capba_fk
+JOIN operations.flight f ON f.flight_sk = ch.capba_flight_fk
+WHERE f.flight_date >= $1
+  AND f.flight_date <  $2
+  AND f.flight_escuadrilla_fk = $3
+GROUP BY c.capba_name
+HAVING SUM(ch.capba_hour_qty) > 0
+ORDER BY SUM(ch.capba_hour_qty) DESC;

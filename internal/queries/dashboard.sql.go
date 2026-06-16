@@ -60,6 +60,52 @@ func (q *Queries) GetDynamicHorasAutoridad(ctx context.Context, arg GetDynamicHo
 	return items, nil
 }
 
+const getDynamicHorasCapba = `-- name: GetDynamicHorasCapba :many
+SELECT
+    c.capba_name                              AS capba,
+    ROUND(SUM(ch.capba_hour_qty), 1)::numeric AS horas
+FROM operations.capba_hour ch
+JOIN operations.capba c  ON c.capba_id = ch.capba_capba_fk
+JOIN operations.flight f ON f.flight_sk = ch.capba_flight_fk
+WHERE f.flight_date >= $1
+  AND f.flight_date <  $2
+  AND f.flight_escuadrilla_fk = $3
+GROUP BY c.capba_name
+HAVING SUM(ch.capba_hour_qty) > 0
+ORDER BY SUM(ch.capba_hour_qty) DESC
+`
+
+type GetDynamicHorasCapbaParams struct {
+	FlightDate          pgtype.Date `json:"flight_date"`
+	FlightDate_2        pgtype.Date `json:"flight_date_2"`
+	FlightEscuadrillaFk int32       `json:"flight_escuadrilla_fk"`
+}
+
+type GetDynamicHorasCapbaRow struct {
+	Capba string         `json:"capba"`
+	Horas pgtype.Numeric `json:"horas"`
+}
+
+func (q *Queries) GetDynamicHorasCapba(ctx context.Context, arg GetDynamicHorasCapbaParams) ([]GetDynamicHorasCapbaRow, error) {
+	rows, err := q.db.Query(ctx, getDynamicHorasCapba, arg.FlightDate, arg.FlightDate_2, arg.FlightEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDynamicHorasCapbaRow
+	for rows.Next() {
+		var i GetDynamicHorasCapbaRow
+		if err := rows.Scan(&i.Capba, &i.Horas); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDynamicHorasEventoLugar = `-- name: GetDynamicHorasEventoLugar :many
 SELECT
     e.event_name                                AS evento,
@@ -253,6 +299,52 @@ func (q *Queries) GetDynamicHorasVuelo(ctx context.Context, arg GetDynamicHorasV
 	for rows.Next() {
 		var i GetDynamicHorasVueloRow
 		if err := rows.Scan(&i.Date, &i.RealHours, &i.Simulador); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDynamicPasajeros = `-- name: GetDynamicPasajeros :many
+SELECT
+    pt.passenger_type_name        AS tipo,
+    SUM(p.passenger_qty)::int     AS cantidad
+FROM operations.passenger p
+JOIN operations.passenger_type pt ON pt.passenger_type_sk = p.passenger_type_fk
+JOIN operations.flight f          ON f.flight_sk = p.passenger_flight_fk
+WHERE f.flight_date >= $1
+  AND f.flight_date <  $2
+  AND f.flight_escuadrilla_fk = $3
+GROUP BY pt.passenger_type_name
+HAVING SUM(p.passenger_qty) > 0
+ORDER BY SUM(p.passenger_qty) DESC
+`
+
+type GetDynamicPasajerosParams struct {
+	FlightDate          pgtype.Date `json:"flight_date"`
+	FlightDate_2        pgtype.Date `json:"flight_date_2"`
+	FlightEscuadrillaFk int32       `json:"flight_escuadrilla_fk"`
+}
+
+type GetDynamicPasajerosRow struct {
+	Tipo     string `json:"tipo"`
+	Cantidad int32  `json:"cantidad"`
+}
+
+func (q *Queries) GetDynamicPasajeros(ctx context.Context, arg GetDynamicPasajerosParams) ([]GetDynamicPasajerosRow, error) {
+	rows, err := q.db.Query(ctx, getDynamicPasajeros, arg.FlightDate, arg.FlightDate_2, arg.FlightEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetDynamicPasajerosRow
+	for rows.Next() {
+		var i GetDynamicPasajerosRow
+		if err := rows.Scan(&i.Tipo, &i.Cantidad); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

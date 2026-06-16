@@ -17,6 +17,8 @@ export type {
     HorasAutoridad as HorasPorAutoridad,
     HorasEventoLugar as HorasPorEventoLugar,
     HorasPeriodo as HorasPorPeriodo,
+    Pasajero,
+    HorasCapba as HorasPorCapba,
 } from './generated/dashboard';
 
 // ======================================

@@ -17,6 +17,8 @@ import {
     HourByPeriodBarChart,
     HourByHelicopterBarChart,
     HourByAuthorityBarChart,
+    PassengerByTypeBarChart,
+    HourByCapbaBarChart,
 } from "@/features/dashboard/components/charts"
 import {
     DashboardStaticStats,
@@ -26,7 +28,9 @@ import {
     HelicoperData,
     HorasPorAutoridad,
     BarChartData,
-    HorasPorPeriodo
+    HorasPorPeriodo,
+    Pasajero,
+    HorasPorCapba,
 } from "@/types/dashboard"
 import { useState } from "react"
 import GlassProgressBarBig from "@/shared/components/common/GlassProgressBarBig"
@@ -87,6 +91,8 @@ export default function Dashboard() {
                 pieData: [] as HorasPorAutoridad[],
                 barData: [] as BarChartData[],
                 periodPieData: null as HorasPorPeriodo | null,
+                pasajerosData: [] as Pasajero[],
+                capbaData: [] as HorasPorCapba[],
             };
         }
 
@@ -127,7 +133,17 @@ export default function Dashboard() {
             }
             : null;
 
-        return { chartAreaData, radarData, pieData, barData, periodPieData };
+        const pasajerosData: Pasajero[] = dynamicData.pasajeros?.map(item => ({
+            tipo: item.tipo,
+            cantidad: item.cantidad
+        })) || [];
+
+        const capbaData: HorasPorCapba[] = dynamicData.horasPorCapba?.map(item => ({
+            capba: item.capba,
+            horas: item.horas
+        })) || [];
+
+        return { chartAreaData, radarData, pieData, barData, periodPieData, pasajerosData, capbaData };
     })();
 
     // Solo fija los params; la query reacciona (y queda diferida hasta que
@@ -376,8 +392,10 @@ export default function Dashboard() {
                     <div className="grid gap-4 md:grid-cols-2">
                         <HourByEventBarChartMixed data={chartData.barData} />
                         <HourByHelicopterBarChart data={chartData.radarData} />
-                        <HourByPeriodBarChart data={chartData.periodPieData} />
                         <HourByAuthorityBarChart data={chartData.pieData} />
+                        <HourByCapbaBarChart data={chartData.capbaData} />
+                        <HourByPeriodBarChart data={chartData.periodPieData} />
+                        <PassengerByTypeBarChart data={chartData.pasajerosData} />
                     </div>
                 </>
             )}

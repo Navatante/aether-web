@@ -142,11 +142,13 @@ type Querier interface {
 	GetComisionDates(ctx context.Context, arg GetComisionDatesParams) (GetComisionDatesRow, error)
 	GetCrewMembersBySk(ctx context.Context, arg GetCrewMembersBySkParams) ([]GetCrewMembersBySkRow, error)
 	GetDynamicHorasAutoridad(ctx context.Context, arg GetDynamicHorasAutoridadParams) ([]GetDynamicHorasAutoridadRow, error)
+	GetDynamicHorasCapba(ctx context.Context, arg GetDynamicHorasCapbaParams) ([]GetDynamicHorasCapbaRow, error)
 	// Devuelve filas planas (evento, lugar, horas); Go agrupa por evento → map[lugar]horas.
 	GetDynamicHorasEventoLugar(ctx context.Context, arg GetDynamicHorasEventoLugarParams) ([]GetDynamicHorasEventoLugarRow, error)
 	GetDynamicHorasHelicoptero(ctx context.Context, arg GetDynamicHorasHelicopteroParams) ([]GetDynamicHorasHelicopteroRow, error)
 	GetDynamicHorasPeriodo(ctx context.Context, arg GetDynamicHorasPeriodoParams) (GetDynamicHorasPeriodoRow, error)
 	GetDynamicHorasVuelo(ctx context.Context, arg GetDynamicHorasVueloParams) ([]GetDynamicHorasVueloRow, error)
+	GetDynamicPasajeros(ctx context.Context, arg GetDynamicPasajerosParams) ([]GetDynamicPasajerosRow, error)
 	// =============== DYNAMIC STATS ===============
 	GetDynamicTotals(ctx context.Context, arg GetDynamicTotalsParams) (GetDynamicTotalsRow, error)
 	// ============================================================

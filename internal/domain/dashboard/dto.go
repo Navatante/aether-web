@@ -76,6 +76,8 @@ type DynamicStats struct {
 	HorasPorAutoridad   []HorasAutoridad   `json:"horasPorAutoridad"`
 	HorasPorEventoLugar []HorasEventoLugar `json:"horasPorEventoLugar"`
 	HorasPorPeriodo     HorasPeriodo       `json:"horasPorPeriodo"`
+	Pasajeros           []Pasajero         `json:"pasajeros"`
+	HorasPorCapba       []HorasCapba       `json:"horasPorCapba"`
 }
 
 type ResumenGeneral struct {
@@ -105,6 +107,16 @@ type HorasAutoridad struct {
 type HorasEventoLugar struct {
 	Evento  string             `json:"evento"`
 	Lugares map[string]float64 `json:"lugares"`
+}
+
+type Pasajero struct {
+	Tipo     string `json:"tipo"`
+	Cantidad int    `json:"cantidad"`
+}
+
+type HorasCapba struct {
+	Capba string  `json:"capba"`
+	Horas float64 `json:"horas"`
 }
 
 type HorasPeriodo struct {

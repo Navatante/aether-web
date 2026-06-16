@@ -129,6 +129,20 @@ func (s *Service) DynamicStats(ctx context.Context, escuadrillaID int, rng DateR
 		return nil, fmt.Errorf("horas_periodo: %w", err)
 	}
 
+	paxRows, err := s.q.GetDynamicPasajeros(ctx, queries.GetDynamicPasajerosParams{
+		FlightDate: fromDate, FlightDate_2: toExclusive, FlightEscuadrillaFk: esc,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("pasajeros: %w", err)
+	}
+
+	capbaRows, err := s.q.GetDynamicHorasCapba(ctx, queries.GetDynamicHorasCapbaParams{
+		FlightDate: fromDate, FlightDate_2: toExclusive, FlightEscuadrillaFk: esc,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("horas_capba: %w", err)
+	}
+
 	// Map por evento agregando lugares.
 	eventos := make([]HorasEventoLugar, 0)
 	idxByEvento := make(map[string]int)
@@ -166,6 +180,18 @@ func (s *Service) DynamicStats(ctx context.Context, escuadrillaID int, rng DateR
 		})
 	}
 
+	// Pasajeros
+	paxOut := make([]Pasajero, 0, len(paxRows))
+	for _, r := range paxRows {
+		paxOut = append(paxOut, Pasajero{Tipo: r.Tipo, Cantidad: int(r.Cantidad)})
+	}
+
+	// Capacidades básicas
+	capbaOut := make([]HorasCapba, 0, len(capbaRows))
+	for _, r := range capbaRows {
+		capbaOut = append(capbaOut, HorasCapba{Capba: r.Capba, Horas: numericToFloat(r.Horas)})
+	}
+
 	return &DynamicStats{
 		FechaInicio: rng.From.Format("2006-01-02"),
 		FechaFin:    rng.To.Format("2006-01-02"),
@@ -191,6 +217,8 @@ func (s *Service) DynamicStats(ctx context.Context, escuadrillaID int, rng DateR
 			AnvisSimulado:         numericToFloat(per.AnvisSimulado),
 			IITSimulado:           numericToFloat(per.IitSimulado),
 		},
+		Pasajeros:     paxOut,
+		HorasPorCapba: capbaOut,
 	}, nil
 }
 
