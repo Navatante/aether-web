@@ -28,6 +28,8 @@ type Querier interface {
 	// =============== Mutaciones ===============
 	// code se normaliza a uppercase en Go.
 	AddDepartureArrivalPlace(ctx context.Context, arg AddDepartureArrivalPlaceParams) error
+	// Asigna una capba del catálogo global a la escuadrilla con su capacidad operativa.
+	AddEscuadrillaCapba(ctx context.Context, arg AddEscuadrillaCapbaParams) error
 	// =============== CRUD notcrew_qualification ===============
 	AddNotCrewRating(ctx context.Context, arg AddNotCrewRatingParams) (int32, error)
 	// ============================================================
@@ -74,6 +76,8 @@ type Querier interface {
 	DeleteComisionLugar(ctx context.Context, comisionLugarSk int32) (int64, error)
 	DeleteCrewRating(ctx context.Context, arg DeleteCrewRatingParams) (int64, error)
 	DeleteDepartureArrivalPlace(ctx context.Context, departureArrivalPlaceSk int32) (int64, error)
+	// Desasigna una capba de la escuadrilla.
+	DeleteEscuadrillaCapba(ctx context.Context, arg DeleteEscuadrillaCapbaParams) (int64, error)
 	DeleteEvent(ctx context.Context, eventSk int32) (int64, error)
 	DeleteFestivo(ctx context.Context, festivoSk int32) (int64, error)
 	// =============== DELETE (cascade en BD elimina hijos) ===============
@@ -104,6 +108,7 @@ type Querier interface {
 	FestivoExistsOnDate(ctx context.Context, festivoDia pgtype.Date) (bool, error)
 	FestivoExistsOnDateOtherSk(ctx context.Context, arg FestivoExistsOnDateOtherSkParams) (bool, error)
 	FlightApproaches(ctx context.Context, dollar_1 []int32) ([]FlightApproachesRow, error)
+	FlightCapbas(ctx context.Context, dollar_1 []int32) ([]FlightCapbasRow, error)
 	// =============== BULK FETCHES por flight_sk[] (para componer JSON) ===============
 	// Personas que tienen al menos 1 person_hour para los vuelos dados.
 	FlightCrew(ctx context.Context, dollar_1 []int32) ([]FlightCrewRow, error)
@@ -173,6 +178,7 @@ type Querier interface {
 	GetStaticPilotsStats(ctx context.Context, personEscuadrillaFk int32) (GetStaticPilotsStatsRow, error)
 	InsertAbsence(ctx context.Context, arg InsertAbsenceParams) (int32, error)
 	InsertApproach(ctx context.Context, arg InsertApproachParams) error
+	InsertCapbaHour(ctx context.Context, arg InsertCapbaHourParams) error
 	// =============== Comisión CRUD ===============
 	InsertComision(ctx context.Context, arg InsertComisionParams) (int32, error)
 	InsertComisionLugar(ctx context.Context, comisionName string) (DetallComisionLugar, error)
@@ -295,11 +301,21 @@ type Querier interface {
 	// get_aircrafts_manage: vista completa para gestión.
 	LookupAircraftsManage(ctx context.Context, aircraftEscuadrillaFk int32) ([]LookupAircraftsManageRow, error)
 	LookupAuthorities(ctx context.Context) ([]LookupAuthoritiesRow, error)
+	// Catálogo global de capacidades básicas (capba + grupo). Datos doctrinales
+	// compartidos por todas las escuadrillas: sin escuadrilla_fk. Sirve para elegir
+	// qué capba asignar a la escuadrilla en la gestión.
+	LookupCapbaCatalog(ctx context.Context) ([]LookupCapbaCatalogRow, error)
+	// Capacidades básicas asignadas a la escuadrilla (vía operations.escuadrilla_capba).
+	// RLS explícita: $1 = escuadrilla_id; solo capacidades de la escuadrilla activa.
+	LookupCapbas(ctx context.Context, escuadrillaCapbaEscuadrillaFk int32) ([]LookupCapbasRow, error)
 	LookupComisionLugares(ctx context.Context) ([]DetallComisionLugar, error)
 	LookupComisionTypes(ctx context.Context) ([]DetallComisionType, error)
 	// get_crew_lookup: dotación (no pilotos, no no-tripulantes).
 	LookupCrew(ctx context.Context, personEscuadrillaFk int32) ([]LookupCrewRow, error)
 	LookupDepartureArrivalPlaces(ctx context.Context) ([]OperationsDepartureArrivalPlace, error)
+	// Capbas asignadas a la escuadrilla con su grupo y capacidad operativa (vista de gestión).
+	// RLS explícita: $1 = escuadrilla_id.
+	LookupEscuadrillaCapbas(ctx context.Context, escuadrillaCapbaEscuadrillaFk int32) ([]LookupEscuadrillaCapbasRow, error)
 	// =============== Reads: catálogos plano (Vec<String>) ===============
 	LookupEventNames(ctx context.Context) ([]string, error)
 	// get_events_lookup: "nombre - lugar" concatenado.
@@ -411,6 +427,8 @@ type Querier interface {
 	UpdateAircraftCurrentFlag(ctx context.Context, arg UpdateAircraftCurrentFlagParams) (bool, error)
 	UpdateComision(ctx context.Context, arg UpdateComisionParams) (int64, error)
 	UpdateComisionLugar(ctx context.Context, arg UpdateComisionLugarParams) (int64, error)
+	// Actualiza la capacidad operativa de una asignación de la escuadrilla.
+	UpdateEscuadrillaCapba(ctx context.Context, arg UpdateEscuadrillaCapbaParams) (int64, error)
 	UpdateEvent(ctx context.Context, arg UpdateEventParams) (int64, error)
 	UpdateFestivo(ctx context.Context, arg UpdateFestivoParams) (int64, error)
 	UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) (int64, error)

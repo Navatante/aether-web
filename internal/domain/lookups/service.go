@@ -28,12 +28,14 @@ func NewService(pool *pgxpool.Pool) *Service {
 // ===== Sentinel errors para mapearlos a HTTP en handlers =====
 
 var (
-	ErrNotFound      = errors.New("lookups: not found")
-	ErrUniqueCode    = errors.New("lookups: code already exists")
-	ErrUniqueName    = errors.New("lookups: name already exists")
-	ErrInUse         = errors.New("lookups: referenced by other records")
-	ErrInvalidInput  = errors.New("lookups: invalid input")
-	ErrUnknownName   = errors.New("lookups: unknown lookup name")
+	ErrNotFound     = errors.New("lookups: not found")
+	ErrUniqueCode   = errors.New("lookups: code already exists")
+	ErrUniqueName   = errors.New("lookups: name already exists")
+	ErrInUse        = errors.New("lookups: referenced by other records")
+	ErrInvalidInput = errors.New("lookups: invalid input")
+	ErrUnknownName  = errors.New("lookups: unknown lookup name")
+	// Mensaje en claro: se muestra tal cual en el toast del frontend.
+	ErrCapbaAlreadyAssigned = errors.New("La capacidad básica ya está asignada a la escuadrilla")
 )
 
 // ============================================================================
@@ -118,6 +120,46 @@ func (s *Service) Authorities(ctx context.Context) ([]Authority, error) {
 	out := make([]Authority, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, Authority{AuthoritySk: r.AuthoritySk, AuthorityName: r.AuthorityName})
+	}
+	return out, nil
+}
+
+func (s *Service) Capbas(ctx context.Context, esc int32) ([]Capba, error) {
+	rows, err := s.q.LookupCapbas(ctx, esc)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Capba, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, Capba{CapbaID: r.CapbaID, CapbaName: r.CapbaName})
+	}
+	return out, nil
+}
+
+func (s *Service) CapbaCatalog(ctx context.Context) ([]CapbaCatalogItem, error) {
+	rows, err := s.q.LookupCapbaCatalog(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CapbaCatalogItem, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, CapbaCatalogItem{CapbaID: r.CapbaID, CapbaName: r.CapbaName, CapbaGroupName: r.CapbaGroupName})
+	}
+	return out, nil
+}
+
+func (s *Service) EscuadrillaCapbas(ctx context.Context, esc int32) ([]EscuadrillaCapba, error) {
+	rows, err := s.q.LookupEscuadrillaCapbas(ctx, esc)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]EscuadrillaCapba, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, EscuadrillaCapba{
+			EscuadrillaCapbaSk: r.EscuadrillaCapbaSk, CapbaID: r.CapbaID,
+			CapbaName: r.CapbaName, CapbaGroupName: r.CapbaGroupName,
+			CapacidadOperativa: r.EscuadrillaCapbaCapacidadOperativa,
+		})
 	}
 	return out, nil
 }
@@ -267,7 +309,6 @@ func (s *Service) PersonRoles(ctx context.Context) ([]string, error) {
 	return s.q.LookupPersonRoles(ctx)
 }
 
-
 // ============================================================================
 // MUTATIONS
 // ============================================================================
@@ -339,6 +380,58 @@ func (s *Service) UpdateAircraftCurrentFlag(ctx context.Context, esc int32, id i
 		return false, err
 	}
 	return persisted, nil
+}
+
+func (s *Service) AddEscuadrillaCapba(ctx context.Context, esc int32, req AddEscuadrillaCapbaReq) error {
+	if req.CapbaID <= 0 || req.CapacidadOperativa < 0 {
+		return ErrInvalidInput
+	}
+	err := s.q.AddEscuadrillaCapba(ctx, queries.AddEscuadrillaCapbaParams{
+		EscuadrillaCapbaEscuadrillaFk:      esc,
+		EscuadrillaCapbaCapbaFk:            req.CapbaID,
+		EscuadrillaCapbaCapacidadOperativa: req.CapacidadOperativa,
+	})
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "23505": // unique_violation: ya asignada a la escuadrilla
+			return ErrCapbaAlreadyAssigned
+		case "23503": // foreign_key_violation: capba_id inexistente en el catálogo
+			return ErrInvalidInput
+		}
+	}
+	return err
+}
+
+func (s *Service) UpdateEscuadrillaCapba(ctx context.Context, esc int32, id int32, req UpdateEscuadrillaCapbaReq) error {
+	if req.CapacidadOperativa < 0 {
+		return ErrInvalidInput
+	}
+	n, err := s.q.UpdateEscuadrillaCapba(ctx, queries.UpdateEscuadrillaCapbaParams{
+		EscuadrillaCapbaCapacidadOperativa: req.CapacidadOperativa,
+		EscuadrillaCapbaSk:                 id,
+		EscuadrillaCapbaEscuadrillaFk:      esc,
+	})
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Service) DeleteEscuadrillaCapba(ctx context.Context, esc int32, id int32) error {
+	n, err := s.q.DeleteEscuadrillaCapba(ctx, queries.DeleteEscuadrillaCapbaParams{
+		EscuadrillaCapbaSk: id, EscuadrillaCapbaEscuadrillaFk: esc,
+	})
+	if err != nil {
+		return mapFKErr(err)
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // ============================================================================

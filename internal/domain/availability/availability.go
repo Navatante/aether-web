@@ -23,9 +23,9 @@ import (
 // ===== DTOs =====
 
 type AvailabilityResult struct {
-	Persons         []PersonItem       `json:"persons"`
-	Absences        []AbsenceItem      `json:"absenses"` // sic: typo del SP original
-	PersonComisions []ComisionItem     `json:"person_comisions"`
+	Persons         []PersonItem   `json:"persons"`
+	Absences        []AbsenceItem  `json:"absenses"` // sic: typo del SP original
+	PersonComisions []ComisionItem `json:"person_comisions"`
 }
 
 type PersonItem struct {
@@ -46,18 +46,18 @@ type AbsenceItem struct {
 }
 
 type ComisionItem struct {
-	PersonComisionSk   int32  `json:"person_comision_sk"`
-	PersonFk           int32  `json:"person_fk"`
-	ComisionStartDate  string `json:"comision_start_date"`
-	ComisionEndDate    string `json:"comision_end_date"`
-	ComisionDias       int32  `json:"comision_dias"`
-	ComisionLugar      string `json:"comision_lugar"`
+	PersonComisionSk  int32  `json:"person_comision_sk"`
+	PersonFk          int32  `json:"person_fk"`
+	ComisionStartDate string `json:"comision_start_date"`
+	ComisionEndDate   string `json:"comision_end_date"`
+	ComisionDias      int32  `json:"comision_dias"`
+	ComisionLugar     string `json:"comision_lugar"`
 }
 
 // AbsenceWriteReq espeja AbsenceFormData / AbsenceUpdateData del Rust.
 type AbsenceWriteReq struct {
 	PersonFk      int32   `json:"person_fk"`
-	StartDate     string  `json:"start_date"`     // YYYY-MM-DD
+	StartDate     string  `json:"start_date"` // YYYY-MM-DD
 	EndDate       string  `json:"end_date"`
 	AbsenceReason string  `json:"absence_reason"` // nombre o ID
 	Remark        *string `json:"remark"`
@@ -72,9 +72,9 @@ type AbsenceInsertResult struct {
 // ===== Sentinel errors =====
 
 var (
-	ErrNotFound        = errors.New("availability: not found")
-	ErrInvalidInput    = errors.New("availability: invalid input")
-	ErrUnknownReason   = errors.New("availability: unknown absence_reason")
+	ErrNotFound      = errors.New("availability: not found")
+	ErrInvalidInput  = errors.New("availability: invalid input")
+	ErrUnknownReason = errors.New("availability: unknown absence_reason")
 )
 
 // ===== Service =====

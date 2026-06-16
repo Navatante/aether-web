@@ -42,7 +42,7 @@ export interface HoursValidationError {
 }
 
 export interface DuplicateValidationError {
-    type: 'pilots' | 'dvs' | 'cupos';
+    type: 'pilots' | 'dvs' | 'cupos' | 'capbas';
     message: string;
     duplicates: number[];
 }
@@ -54,6 +54,7 @@ export function useFlightValidation(
     pilots: FormData['pilots'],
     dvs: FormData['dvs'],
     cupos: FormData['cupos'],
+    capbas: FormData['capbas'],
 ) {
     const [hoursValidationErrors, setHoursValidationErrors] = useState<HoursValidationError[]>([]);
     const [duplicateErrors, setDuplicateErrors] = useState<DuplicateValidationError[]>([]);
@@ -95,8 +96,19 @@ export function useFlightValidation(
             }
         }
 
+        if (capbas && capbas.length > 0) {
+            const duplicateCapbas = findDuplicates(capbas, 'capba');
+            if (duplicateCapbas.length > 0) {
+                errors.push({
+                    type: 'capbas',
+                    message: 'Hay capacidades básicas duplicadas',
+                    duplicates: duplicateCapbas
+                });
+            }
+        }
+
         setDuplicateErrors(errors);
-    }, [pilots, dvs, cupos]);
+    }, [pilots, dvs, cupos, capbas]);
 
     // Hours validation
     useEffect(() => {

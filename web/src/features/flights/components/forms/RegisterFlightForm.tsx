@@ -1,5 +1,5 @@
 import { useForm, useFieldArray, Controller, useWatch, SubmitHandler } from 'react-hook-form';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Save, Settings2 } from 'lucide-react';
 import PilotCard from './cards/PilotCard';
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,7 @@ import Select from "react-select"
 import DvCard from "./cards/DvCard";
 import PapeletaCard from "./cards/PapeletaCard";
 import CupoCard from "./cards/CupoCard";
+import CapbaCard from "./cards/CapbaCard";
 import PasajeroCard from "./cards/PasajeroCard";
 import ValidationErrors from "./ValidationErrors";
 import { useNavigate } from "react-router-dom";
@@ -87,6 +88,11 @@ const createDefaultCupos = () => ({
     horas: '',
 });
 
+const createDefaultCapba = () => ({
+    capba: undefined as number | undefined,
+    horas: '',
+});
+
 const createDefaultPasajeros = () => ({
     tipo: undefined as number | undefined,
     cantidad: '',
@@ -100,6 +106,33 @@ function formatTimeInput(raw: string): string {
     return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
 
+const timeRegexHHMM = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
+
+/** Lugar de salida/llegada por defecto al abrir el formulario (CÁDIZ/Rota). */
+const DEFAULT_PLACE_NAME = 'CADIZ/Rota';
+
+/** Normaliza para comparar nombres ignorando acentos y mayúsculas. */
+function normalizePlaceName(name: string): string {
+    return name.trim().normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
+/**
+ * Suma `totalHours` (horas decimales, p. ej. "1.5" = 1 h 30 min) a una hora
+ * "HH:MM" y devuelve la hora de llegada "HH:MM" (envuelve a 24 h). Devuelve ''
+ * si la salida o las horas no son válidas todavía.
+ */
+function computeArrivalTime(departureTime: string, totalHours: string): string {
+    if (!timeRegexHHMM.test(departureTime)) return '';
+    const hours = parseFloat(totalHours);
+    if (!Number.isFinite(hours) || hours <= 0) return '';
+    const [h, m] = departureTime.split(':').map(Number);
+    const total = h * 60 + m + Math.round(hours * 60);
+    const wrapped = ((total % 1440) + 1440) % 1440;
+    const hh = String(Math.floor(wrapped / 60)).padStart(2, '0');
+    const mm = String(wrapped % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+}
+
 interface RegisterFlightFormProps {
     onClose: () => void;
 }
@@ -108,7 +141,7 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
     const navigate = useNavigate();
     const [managePlacesOpen, setManagePlacesOpen] = useState(false);
 
-    const { control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const { control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             general: {
@@ -130,18 +163,21 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
             dvs: [],
             papeletas: [],
             cupos: [createDefaultCupos()] as FormData['cupos'],
+            capbas: [],
             pasajeros: [],
         }
     });
 
     // Single watches (no duplicates)
     const totalHours = useWatch({ control, name: 'general.totalHours' });
+    const departureTime = useWatch({ control, name: 'general.departureTime' });
     const pilots = useWatch({ control, name: 'pilots' });
     const dvs = useWatch({ control, name: 'dvs' });
     const cupos = useWatch({ control, name: 'cupos' });
+    const capbas = useWatch({ control, name: 'capbas' });
 
     // Validation (extracted to hook)
-    const { hoursValidationErrors, duplicateErrors } = useFlightValidation(totalHours, pilots, dvs, cupos);
+    const { hoursValidationErrors, duplicateErrors } = useFlightValidation(totalHours, pilots, dvs, cupos, capbas);
 
     const { fields: pilotsFields, append: appendPilot, remove: removePilot } = useFieldArray({
         control,
@@ -161,6 +197,11 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
     const { fields: cuposFields, append: appendCupos, remove: removeCupos } = useFieldArray({
         control,
         name: "cupos"
+    });
+
+    const { fields: capbasFields, append: appendCapba, remove: removeCapba } = useFieldArray({
+        control,
+        name: "capbas"
     });
 
     const { fields: pasajerosFields, append: appendPasajeros, remove: removePasajeros } = useFieldArray({
@@ -222,12 +263,34 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
     const addDv = () => appendDv(createDefaultDv() as FormData['dvs'][number]);
     const addPapeletas = () => appendPapeleta(createDefaultPapeleta());
     const addCupos = () => appendCupos(createDefaultCupos() as FormData['cupos'][number]);
+    const addCapba = () => appendCapba(createDefaultCapba() as FormData['capbas'][number]);
     const addPasajeros = () => appendPasajeros(createDefaultPasajeros() as FormData['pasajeros'][number]);
 
     // Queries (lookups)
     const { data: aircraftArray, loading: aircraftLoading, error: aircraftError } = useAircrafts();
     const { data: placesArray, loading: placesLoading, error: placesError } = useDepartureArrivalPlaces();
     const { data: eventArray, loading: eventLoading, error: eventError } = useEventsLookup();
+
+    // Preselecciona CADIZ/Rota en salida y llegada una vez cargados los lugares.
+    // Solo se aplica una vez (ref), para no pisar la elección posterior del usuario.
+    const defaultPlaceApplied = useRef(false);
+    useEffect(() => {
+        if (defaultPlaceApplied.current || !placesArray) return;
+        const defaultPlace = placesArray.find(
+            p => normalizePlaceName(p.departure_arrival_place_name) === normalizePlaceName(DEFAULT_PLACE_NAME)
+        );
+        if (!defaultPlace) return;
+        setValue('general.departurePlace', defaultPlace.departure_arrival_place_sk);
+        setValue('general.arrivalPlace', defaultPlace.departure_arrival_place_sk);
+        defaultPlaceApplied.current = true;
+    }, [placesArray, setValue]);
+
+    // La hora de llegada se deriva de la salida + horas totales (campo de solo lectura).
+    useEffect(() => {
+        setValue('general.arrivalTime', computeArrivalTime(departureTime, totalHours), {
+            shouldValidate: true,
+        });
+    }, [departureTime, totalHours, setValue]);
 
     // Options de selects
     const aircraftOptions = aircraftArray?.map(a => ({
@@ -370,26 +433,24 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
                             />
                         </div>
 
-                        {/* Arrival Time */}
+                        {/* Arrival Time (derivado de salida + horas totales, solo lectura) */}
                         <div className="w-20">
                             <Controller
                                 name="general.arrivalTime"
                                 control={control}
-                                render={({ field, fieldState }) => (
+                                render={({ field }) => (
                                     <Input
                                         value={field.value}
-                                        onChange={(e) => field.onChange(formatTimeInput(e.target.value))}
-                                        onBlur={field.onBlur}
                                         name={field.name}
                                         ref={field.ref}
                                         type="text"
-                                        inputMode="numeric"
+                                        readOnly
+                                        tabIndex={-1}
                                         placeholder="HH:MM"
-                                        maxLength={5}
+                                        title="Se calcula automáticamente con la hora de salida y las horas totales"
                                         className={cn(
-                                            "text-center transition-colors duration-200",
-                                            fieldState.error && "border-destructive focus:border-destructive",
-                                            field.value && !fieldState.error && "input-filled"
+                                            "text-center transition-colors duration-200 cursor-not-allowed",
+                                            field.value && "input-filled"
                                         )}
                                     />
                                 )}
@@ -495,7 +556,7 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
                     </ScrollArea>
                 </div>
 
-                <div className="grid grid-cols-3 items-center gap-6">
+                <div className="grid grid-cols-2 items-center gap-6">
                     {/* Papeletas */}
                     <div className="space-y-4">
                         <SectionHeader title="Papeletas" onAdd={addPapeletas} />
@@ -529,6 +590,25 @@ export default function RegisterFlightForm({ onClose }: RegisterFlightFormProps)
                                         errors={errors}
                                         onRemove={removeCupos}
                                         canRemove={cuposFields.length > 1 && index !== 0}
+                                    />
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </div>
+
+                    {/* Capba (capacidades básicas) */}
+                    <div className="space-y-4">
+                        <SectionHeader title="CAPBAS" onAdd={addCapba} />
+                        <ScrollArea className="h-[195px] w-full rounded-md border bg-background">
+                            <div className="p-4 space-y-6">
+                                {capbasFields.map((field, index) => (
+                                    <CapbaCard
+                                        key={field.id}
+                                        index={index}
+                                        control={control}
+                                        errors={errors}
+                                        onRemove={removeCapba}
+                                        canRemove={true}
                                     />
                                 ))}
                             </div>

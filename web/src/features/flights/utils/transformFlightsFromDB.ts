@@ -55,6 +55,7 @@ export const transformFlightsFromDB = (raw: FlightItem[]): FlightData[] => {
                 dotaciones: (f.detalles?.tripulacion?.dotaciones || []).map(transformCrewMember),
             },
             cuposAutoridad: f.detalles?.cuposAutoridad || [],
+            capacidadesBasicas: f.detalles?.capacidadesBasicas || [],
             pasajeros: f.detalles?.pasajeros || [],
         },
     }));

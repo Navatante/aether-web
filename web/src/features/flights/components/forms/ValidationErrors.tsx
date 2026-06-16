@@ -44,6 +44,7 @@ const FIELD_NAME_MAP: Record<string, string> = {
     'crew': 'Tripulación',
     'papeleta': 'Papeleta',
     'autoridad': 'Autoridad',
+    'capba': 'Capacidad básica',
     'horas': 'Horas',
     'tipo': 'Tipo',
     'cantidad': 'Cantidad',
@@ -93,7 +94,8 @@ function ValidationErrors({ errors, hoursValidationErrors, duplicateErrors }: Va
                 {duplicateErrors.map((error, idx) => {
                     const entityName = error.type === 'pilots' ? 'Pilotos' :
                         error.type === 'dvs' ? 'Dotaciones' :
-                            'Cupos (Autoridades)';
+                            error.type === 'capbas' ? 'Capacidades básicas' :
+                                'Cupos (Autoridades)';
                     return (
                         <div key={`duplicate-${idx}`}>
                             <p className="text-sm text-destructive">
@@ -141,6 +143,13 @@ function ValidationErrors({ errors, hoursValidationErrors, duplicateErrors }: Va
                     if (!cupoError) return null;
                     return extractErrorMessages(cupoError, `Cupo ${index + 1}`).map((msg, idx) => (
                         <p key={`cupo-${index}-${idx}`} className="text-sm text-destructive">- {msg}</p>
+                    ));
+                })}
+
+                {errors.capbas && Array.isArray(errors.capbas) && errors.capbas.map((capbaError, index) => {
+                    if (!capbaError) return null;
+                    return extractErrorMessages(capbaError, `Capba ${index + 1}`).map((msg, idx) => (
+                        <p key={`capba-${index}-${idx}`} className="text-sm text-destructive">- {msg}</p>
                     ));
                 })}
 

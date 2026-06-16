@@ -47,6 +47,38 @@ SELECT authority_sk, authority_name
 FROM operations.authority
 ORDER BY authority_name;
 
+-- name: LookupCapbas :many
+-- Capacidades básicas asignadas a la escuadrilla (vía operations.escuadrilla_capba).
+-- RLS explícita: $1 = escuadrilla_id; solo capacidades de la escuadrilla activa.
+SELECT c.capba_id, c.capba_name
+FROM operations.capba c
+JOIN operations.escuadrilla_capba ec ON ec.escuadrilla_capba_capba_fk = c.capba_id
+WHERE ec.escuadrilla_capba_escuadrilla_fk = $1
+ORDER BY c.capba_id;
+
+-- name: LookupCapbaCatalog :many
+-- Catálogo global de capacidades básicas (capba + grupo). Datos doctrinales
+-- compartidos por todas las escuadrillas: sin escuadrilla_fk. Sirve para elegir
+-- qué capba asignar a la escuadrilla en la gestión.
+SELECT c.capba_id, c.capba_name, g.capba_group_name
+FROM operations.capba c
+JOIN operations.capba_group g ON g.capba_group_code = c.capba_group_code_fk
+ORDER BY c.capba_id;
+
+-- name: LookupEscuadrillaCapbas :many
+-- Capbas asignadas a la escuadrilla con su grupo y capacidad operativa (vista de gestión).
+-- RLS explícita: $1 = escuadrilla_id.
+SELECT ec.escuadrilla_capba_sk,
+       c.capba_id,
+       c.capba_name,
+       g.capba_group_name,
+       ec.escuadrilla_capba_capacidad_operativa
+FROM operations.escuadrilla_capba ec
+JOIN operations.capba c ON c.capba_id = ec.escuadrilla_capba_capba_fk
+JOIN operations.capba_group g ON g.capba_group_code = c.capba_group_code_fk
+WHERE ec.escuadrilla_capba_escuadrilla_fk = $1
+ORDER BY c.capba_id;
+
 -- name: LookupPilots :many
 -- get_pilots_lookup: pilotos ordenados por la vista canónica.
 SELECT person_sk, person_nk
@@ -180,3 +212,20 @@ ON CONFLICT (event_name_value) DO NOTHING;
 
 -- name: DeleteEvent :execrows
 DELETE FROM operations.event WHERE event_sk = $1;
+
+-- name: AddEscuadrillaCapba :exec
+-- Asigna una capba del catálogo global a la escuadrilla con su capacidad operativa.
+INSERT INTO operations.escuadrilla_capba (
+    escuadrilla_capba_escuadrilla_fk, escuadrilla_capba_capba_fk, escuadrilla_capba_capacidad_operativa
+) VALUES ($1, $2, $3);
+
+-- name: UpdateEscuadrillaCapba :execrows
+-- Actualiza la capacidad operativa de una asignación de la escuadrilla.
+UPDATE operations.escuadrilla_capba
+SET escuadrilla_capba_capacidad_operativa = $1
+WHERE escuadrilla_capba_sk = $2 AND escuadrilla_capba_escuadrilla_fk = $3;
+
+-- name: DeleteEscuadrillaCapba :execrows
+-- Desasigna una capba de la escuadrilla.
+DELETE FROM operations.escuadrilla_capba
+WHERE escuadrilla_capba_sk = $1 AND escuadrilla_capba_escuadrilla_fk = $2;

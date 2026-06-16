@@ -9,16 +9,16 @@ type Aircraft struct {
 }
 
 type AircraftManage struct {
-	AircraftSk             int32  `json:"aircraft_sk"`
-	AircraftRegistration   string `json:"aircraft_registration"`
-	AircraftNumber         string `json:"aircraft_number"`
-	AircraftCurrentFlag    bool   `json:"aircraft_current_flag"`
-	AircraftType           string `json:"aircraft_type"`
-	AircraftMake           string `json:"aircraft_make"`
-	AircraftModel          string `json:"aircraft_model"`
-	AircraftVariant        string `json:"aircraft_variant"`
-	AircraftIsMultiEngine  bool   `json:"aircraft_is_multi_engine"`
-	AircraftIsMultiPilot   bool   `json:"aircraft_is_multi_pilot"`
+	AircraftSk            int32  `json:"aircraft_sk"`
+	AircraftRegistration  string `json:"aircraft_registration"`
+	AircraftNumber        string `json:"aircraft_number"`
+	AircraftCurrentFlag   bool   `json:"aircraft_current_flag"`
+	AircraftType          string `json:"aircraft_type"`
+	AircraftMake          string `json:"aircraft_make"`
+	AircraftModel         string `json:"aircraft_model"`
+	AircraftVariant       string `json:"aircraft_variant"`
+	AircraftIsMultiEngine bool   `json:"aircraft_is_multi_engine"`
+	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
 }
 
 type DepartureArrivalPlace struct {
@@ -41,6 +41,27 @@ type Event struct {
 type Authority struct {
 	AuthoritySk   int32  `json:"authority_sk"`
 	AuthorityName string `json:"authority_name"`
+}
+
+type Capba struct {
+	CapbaID   int32  `json:"capba_id"`
+	CapbaName string `json:"capba_name"`
+}
+
+// CapbaCatalogItem es una capba del catálogo global (para elegir al asignar).
+type CapbaCatalogItem struct {
+	CapbaID        int32  `json:"capba_id"`
+	CapbaName      string `json:"capba_name"`
+	CapbaGroupName string `json:"capba_group_name"`
+}
+
+// EscuadrillaCapba es una capba asignada a la escuadrilla (vista de gestión).
+type EscuadrillaCapba struct {
+	EscuadrillaCapbaSk int32  `json:"escuadrilla_capba_sk"`
+	CapbaID            int32  `json:"capba_id"`
+	CapbaName          string `json:"capba_name"`
+	CapbaGroupName     string `json:"capba_group_name"`
+	CapacidadOperativa int32  `json:"escuadrilla_capba_capacidad_operativa"`
 }
 
 type Crew struct {
@@ -70,7 +91,9 @@ type ComisionLugar struct {
 }
 
 // RecentComision es el contrato esperado por src/shared/hooks/useLookups.ts:
-//   { comision_sk, lugar|null, tipo|null, fechaInicio|null, fechaFin|null, esfuerzo|null }
+//
+//	{ comision_sk, lugar|null, tipo|null, fechaInicio|null, fechaFin|null, esfuerzo|null }
+//
 // `esfuerzo` se devuelve como *bool. La interfaz TS dice `string|null` pero
 // el código Rust nunca lo leía bien (BIT → &str fallaba), así que enviábamos
 // siempre null. Aquí enviamos el bool real; el frontend hace truthiness
@@ -117,4 +140,13 @@ type AddAircraftReq struct {
 
 type UpdateAircraftCurrentFlagReq struct {
 	CurrentFlag bool `json:"current_flag"`
+}
+
+type AddEscuadrillaCapbaReq struct {
+	CapbaID            int32 `json:"capba_id"`
+	CapacidadOperativa int32 `json:"capacidad_operativa"`
+}
+
+type UpdateEscuadrillaCapbaReq struct {
+	CapacidadOperativa int32 `json:"capacidad_operativa"`
 }

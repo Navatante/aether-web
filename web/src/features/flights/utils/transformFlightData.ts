@@ -82,6 +82,10 @@ export function transformFormDataForSubmit(data: FormData) {
             autoridad: cupo.autoridad,
             horas: cupo.horas || ""
         })),
+        capbas: data.capbas.map(capba => ({
+            capba: capba.capba,
+            horas: capba.horas || ""
+        })),
         pasajeros: data.pasajeros.map(pasajero => ({
             tipo: pasajero.tipo,
             cantidad: pasajero.cantidad || "",

@@ -13,6 +13,7 @@ type FlightFormData struct {
 	Dvs       []DvData       `json:"dvs"`
 	Papeletas []PapeletaData `json:"papeletas"`
 	Cupos     []CupoData     `json:"cupos"`
+	Capbas    []CapbaData    `json:"capbas"`
 	Pasajeros []PasajeroData `json:"pasajeros"`
 }
 
@@ -101,6 +102,11 @@ type CupoData struct {
 	Horas     string `json:"horas"`
 }
 
+type CapbaData struct {
+	Capba int32  `json:"capba"`
+	Horas string `json:"horas"`
+}
+
 type PasajeroData struct {
 	Tipo     int32  `json:"tipo"`
 	Cantidad string `json:"cantidad"`
@@ -142,9 +148,10 @@ type FlightItem struct {
 }
 
 type FlightDetails struct {
-	Tripulacion    Tripulacion    `json:"tripulacion"`
-	CuposAutoridad []CupoJSON     `json:"cuposAutoridad"`
-	Pasajeros      []PasajeroJSON `json:"pasajeros"`
+	Tripulacion        Tripulacion    `json:"tripulacion"`
+	CuposAutoridad     []CupoJSON     `json:"cuposAutoridad"`
+	CapacidadesBasicas []CapbaJSON    `json:"capacidadesBasicas"`
+	Pasajeros          []PasajeroJSON `json:"pasajeros"`
 }
 
 type Tripulacion struct {
@@ -232,6 +239,11 @@ type ProyectilesJSON struct {
 type CupoJSON struct {
 	Autoridad string  `json:"autoridad"`
 	Horas     float64 `json:"horas"`
+}
+
+type CapbaJSON struct {
+	Capba string  `json:"capba"`
+	Horas float64 `json:"horas"`
 }
 
 type PasajeroJSON struct {

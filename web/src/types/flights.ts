@@ -23,6 +23,7 @@ export interface FlightDetails {
         dotaciones: CrewMember[];
     };
     cuposAutoridad: CupoAutoridad[];
+    capacidadesBasicas: CapacidadBasica[];
     pasajeros: Pasajero[];
 }
 
@@ -123,6 +124,14 @@ export interface Papeleta {
  */
 export interface CupoAutoridad {
     autoridad: string;
+    horas: number;
+}
+
+/**
+ * Capacidad básica (capba)
+ */
+export interface CapacidadBasica {
+    capba: string;
     horas: number;
 }
 

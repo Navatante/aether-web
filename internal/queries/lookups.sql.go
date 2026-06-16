@@ -62,6 +62,24 @@ func (q *Queries) AddDepartureArrivalPlace(ctx context.Context, arg AddDeparture
 	return err
 }
 
+const addEscuadrillaCapba = `-- name: AddEscuadrillaCapba :exec
+INSERT INTO operations.escuadrilla_capba (
+    escuadrilla_capba_escuadrilla_fk, escuadrilla_capba_capba_fk, escuadrilla_capba_capacidad_operativa
+) VALUES ($1, $2, $3)
+`
+
+type AddEscuadrillaCapbaParams struct {
+	EscuadrillaCapbaEscuadrillaFk      int32 `json:"escuadrilla_capba_escuadrilla_fk"`
+	EscuadrillaCapbaCapbaFk            int32 `json:"escuadrilla_capba_capba_fk"`
+	EscuadrillaCapbaCapacidadOperativa int32 `json:"escuadrilla_capba_capacidad_operativa"`
+}
+
+// Asigna una capba del catálogo global a la escuadrilla con su capacidad operativa.
+func (q *Queries) AddEscuadrillaCapba(ctx context.Context, arg AddEscuadrillaCapbaParams) error {
+	_, err := q.db.Exec(ctx, addEscuadrillaCapba, arg.EscuadrillaCapbaEscuadrillaFk, arg.EscuadrillaCapbaCapbaFk, arg.EscuadrillaCapbaCapacidadOperativa)
+	return err
+}
+
 const deleteAircraft = `-- name: DeleteAircraft :execrows
 DELETE FROM operations.aircraft
 WHERE aircraft_sk = $1 AND aircraft_escuadrilla_fk = $2
@@ -86,6 +104,25 @@ DELETE FROM operations.departure_arrival_place WHERE departure_arrival_place_sk 
 
 func (q *Queries) DeleteDepartureArrivalPlace(ctx context.Context, departureArrivalPlaceSk int32) (int64, error) {
 	result, err := q.db.Exec(ctx, deleteDepartureArrivalPlace, departureArrivalPlaceSk)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteEscuadrillaCapba = `-- name: DeleteEscuadrillaCapba :execrows
+DELETE FROM operations.escuadrilla_capba
+WHERE escuadrilla_capba_sk = $1 AND escuadrilla_capba_escuadrilla_fk = $2
+`
+
+type DeleteEscuadrillaCapbaParams struct {
+	EscuadrillaCapbaSk            int32 `json:"escuadrilla_capba_sk"`
+	EscuadrillaCapbaEscuadrillaFk int32 `json:"escuadrilla_capba_escuadrilla_fk"`
+}
+
+// Desasigna una capba de la escuadrilla.
+func (q *Queries) DeleteEscuadrillaCapba(ctx context.Context, arg DeleteEscuadrillaCapbaParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteEscuadrillaCapba, arg.EscuadrillaCapbaSk, arg.EscuadrillaCapbaEscuadrillaFk)
 	if err != nil {
 		return 0, err
 	}
@@ -233,6 +270,77 @@ func (q *Queries) LookupAuthorities(ctx context.Context) ([]LookupAuthoritiesRow
 	return items, nil
 }
 
+const lookupCapbaCatalog = `-- name: LookupCapbaCatalog :many
+SELECT c.capba_id, c.capba_name, g.capba_group_name
+FROM operations.capba c
+JOIN operations.capba_group g ON g.capba_group_code = c.capba_group_code_fk
+ORDER BY c.capba_id
+`
+
+type LookupCapbaCatalogRow struct {
+	CapbaID        int32  `json:"capba_id"`
+	CapbaName      string `json:"capba_name"`
+	CapbaGroupName string `json:"capba_group_name"`
+}
+
+// Catálogo global de capacidades básicas (capba + grupo). Datos doctrinales
+// compartidos por todas las escuadrillas: sin escuadrilla_fk. Sirve para elegir
+// qué capba asignar a la escuadrilla en la gestión.
+func (q *Queries) LookupCapbaCatalog(ctx context.Context) ([]LookupCapbaCatalogRow, error) {
+	rows, err := q.db.Query(ctx, lookupCapbaCatalog)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LookupCapbaCatalogRow
+	for rows.Next() {
+		var i LookupCapbaCatalogRow
+		if err := rows.Scan(&i.CapbaID, &i.CapbaName, &i.CapbaGroupName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupCapbas = `-- name: LookupCapbas :many
+SELECT c.capba_id, c.capba_name
+FROM operations.capba c
+JOIN operations.escuadrilla_capba ec ON ec.escuadrilla_capba_capba_fk = c.capba_id
+WHERE ec.escuadrilla_capba_escuadrilla_fk = $1
+ORDER BY c.capba_id
+`
+
+type LookupCapbasRow struct {
+	CapbaID   int32  `json:"capba_id"`
+	CapbaName string `json:"capba_name"`
+}
+
+// Capacidades básicas asignadas a la escuadrilla (vía operations.escuadrilla_capba).
+// RLS explícita: $1 = escuadrilla_id; solo capacidades de la escuadrilla activa.
+func (q *Queries) LookupCapbas(ctx context.Context, escuadrillaCapbaEscuadrillaFk int32) ([]LookupCapbasRow, error) {
+	rows, err := q.db.Query(ctx, lookupCapbas, escuadrillaCapbaEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LookupCapbasRow
+	for rows.Next() {
+		var i LookupCapbasRow
+		if err := rows.Scan(&i.CapbaID, &i.CapbaName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lookupComisionLugares = `-- name: LookupComisionLugares :many
 SELECT comision_lugar_sk, comision_name
 FROM detall.comision_lugar
@@ -335,6 +443,55 @@ func (q *Queries) LookupDepartureArrivalPlaces(ctx context.Context) ([]Operation
 	for rows.Next() {
 		var i OperationsDepartureArrivalPlace
 		if err := rows.Scan(&i.DepartureArrivalPlaceSk, &i.DepartureArrivalPlaceCode, &i.DepartureArrivalPlaceName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupEscuadrillaCapbas = `-- name: LookupEscuadrillaCapbas :many
+SELECT ec.escuadrilla_capba_sk,
+       c.capba_id,
+       c.capba_name,
+       g.capba_group_name,
+       ec.escuadrilla_capba_capacidad_operativa
+FROM operations.escuadrilla_capba ec
+JOIN operations.capba c ON c.capba_id = ec.escuadrilla_capba_capba_fk
+JOIN operations.capba_group g ON g.capba_group_code = c.capba_group_code_fk
+WHERE ec.escuadrilla_capba_escuadrilla_fk = $1
+ORDER BY c.capba_id
+`
+
+type LookupEscuadrillaCapbasRow struct {
+	EscuadrillaCapbaSk                 int32  `json:"escuadrilla_capba_sk"`
+	CapbaID                            int32  `json:"capba_id"`
+	CapbaName                          string `json:"capba_name"`
+	CapbaGroupName                     string `json:"capba_group_name"`
+	EscuadrillaCapbaCapacidadOperativa int32  `json:"escuadrilla_capba_capacidad_operativa"`
+}
+
+// Capbas asignadas a la escuadrilla con su grupo y capacidad operativa (vista de gestión).
+// RLS explícita: $1 = escuadrilla_id.
+func (q *Queries) LookupEscuadrillaCapbas(ctx context.Context, escuadrillaCapbaEscuadrillaFk int32) ([]LookupEscuadrillaCapbasRow, error) {
+	rows, err := q.db.Query(ctx, lookupEscuadrillaCapbas, escuadrillaCapbaEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LookupEscuadrillaCapbasRow
+	for rows.Next() {
+		var i LookupEscuadrillaCapbasRow
+		if err := rows.Scan(
+			&i.EscuadrillaCapbaSk,
+			&i.CapbaID,
+			&i.CapbaName,
+			&i.CapbaGroupName,
+			&i.EscuadrillaCapbaCapacidadOperativa,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -818,6 +975,27 @@ func (q *Queries) UpdateAircraftCurrentFlag(ctx context.Context, arg UpdateAircr
 	var aircraft_current_flag bool
 	err := row.Scan(&aircraft_current_flag)
 	return aircraft_current_flag, err
+}
+
+const updateEscuadrillaCapba = `-- name: UpdateEscuadrillaCapba :execrows
+UPDATE operations.escuadrilla_capba
+SET escuadrilla_capba_capacidad_operativa = $1
+WHERE escuadrilla_capba_sk = $2 AND escuadrilla_capba_escuadrilla_fk = $3
+`
+
+type UpdateEscuadrillaCapbaParams struct {
+	EscuadrillaCapbaCapacidadOperativa int32 `json:"escuadrilla_capba_capacidad_operativa"`
+	EscuadrillaCapbaSk                 int32 `json:"escuadrilla_capba_sk"`
+	EscuadrillaCapbaEscuadrillaFk      int32 `json:"escuadrilla_capba_escuadrilla_fk"`
+}
+
+// Actualiza la capacidad operativa de una asignación de la escuadrilla.
+func (q *Queries) UpdateEscuadrillaCapba(ctx context.Context, arg UpdateEscuadrillaCapbaParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateEscuadrillaCapba, arg.EscuadrillaCapbaCapacidadOperativa, arg.EscuadrillaCapbaSk, arg.EscuadrillaCapbaEscuadrillaFk)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const upsertEventName = `-- name: UpsertEventName :exec

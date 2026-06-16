@@ -84,6 +84,11 @@ INSERT INTO operations.cupo_hour (
     cupo_flight_fk, cupo_authority_fk, cupo_hour_qty
 ) VALUES ($1, $2, $3);
 
+-- name: InsertCapbaHour :exec
+INSERT INTO operations.capba_hour (
+    capba_flight_fk, capba_capba_fk, capba_hour_qty
+) VALUES ($1, $2, $3);
+
 -- name: InsertPassenger :exec
 INSERT INTO operations.passenger (
     passenger_flight_fk, passenger_type_fk, passenger_qty, passenger_route
@@ -222,6 +227,14 @@ SELECT ch.cupo_flight_fk AS flight_sk,
 FROM operations.cupo_hour ch
 JOIN operations.authority a ON a.authority_sk = ch.cupo_authority_fk
 WHERE ch.cupo_flight_fk = ANY($1::int[]);
+
+-- name: FlightCapbas :many
+SELECT ch.capba_flight_fk AS flight_sk,
+       c.capba_name       AS capba,
+       ch.capba_hour_qty::numeric AS horas
+FROM operations.capba_hour ch
+JOIN operations.capba c ON c.capba_id = ch.capba_capba_fk
+WHERE ch.capba_flight_fk = ANY($1::int[]);
 
 -- name: FlightPassengers :many
 SELECT p.passenger_flight_fk AS flight_sk,

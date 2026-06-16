@@ -98,6 +98,41 @@ func (q *Queries) FlightApproaches(ctx context.Context, dollar_1 []int32) ([]Fli
 	return items, nil
 }
 
+const flightCapbas = `-- name: FlightCapbas :many
+SELECT ch.capba_flight_fk AS flight_sk,
+       c.capba_name       AS capba,
+       ch.capba_hour_qty::numeric AS horas
+FROM operations.capba_hour ch
+JOIN operations.capba c ON c.capba_id = ch.capba_capba_fk
+WHERE ch.capba_flight_fk = ANY($1::int[])
+`
+
+type FlightCapbasRow struct {
+	FlightSk int32          `json:"flight_sk"`
+	Capba    string         `json:"capba"`
+	Horas    pgtype.Numeric `json:"horas"`
+}
+
+func (q *Queries) FlightCapbas(ctx context.Context, dollar_1 []int32) ([]FlightCapbasRow, error) {
+	rows, err := q.db.Query(ctx, flightCapbas, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlightCapbasRow
+	for rows.Next() {
+		var i FlightCapbasRow
+		if err := rows.Scan(&i.FlightSk, &i.Capba, &i.Horas); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const flightCrew = `-- name: FlightCrew :many
 
 SELECT DISTINCT
@@ -592,6 +627,23 @@ func (q *Queries) InsertApproach(ctx context.Context, arg InsertApproachParams) 
 		arg.AppTypeFk,
 		arg.AppQty,
 	)
+	return err
+}
+
+const insertCapbaHour = `-- name: InsertCapbaHour :exec
+INSERT INTO operations.capba_hour (
+    capba_flight_fk, capba_capba_fk, capba_hour_qty
+) VALUES ($1, $2, $3)
+`
+
+type InsertCapbaHourParams struct {
+	CapbaFlightFk int32          `json:"capba_flight_fk"`
+	CapbaCapbaFk  int32          `json:"capba_capba_fk"`
+	CapbaHourQty  pgtype.Numeric `json:"capba_hour_qty"`
+}
+
+func (q *Queries) InsertCapbaHour(ctx context.Context, arg InsertCapbaHourParams) error {
+	_, err := q.db.Exec(ctx, insertCapbaHour, arg.CapbaFlightFk, arg.CapbaCapbaFk, arg.CapbaHourQty)
 	return err
 }
 

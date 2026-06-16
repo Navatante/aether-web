@@ -27,16 +27,16 @@ type Festivo struct {
 }
 
 type WriteReq struct {
-	FestivoDia    string `json:"festivo_dia"`    // YYYY-MM-DD
+	FestivoDia    string `json:"festivo_dia"` // YYYY-MM-DD
 	FestivoMotivo string `json:"festivo_motivo"`
 }
 
 // ===== Sentinel errors =====
 
 var (
-	ErrNotFound       = errors.New("festivos: not found")
-	ErrInvalidInput   = errors.New("festivos: invalid input")
-	ErrDateInUse      = errors.New("festivos: already exists on that date")
+	ErrNotFound     = errors.New("festivos: not found")
+	ErrInvalidInput = errors.New("festivos: invalid input")
+	ErrDateInUse    = errors.New("festivos: already exists on that date")
 )
 
 // ===== Service =====

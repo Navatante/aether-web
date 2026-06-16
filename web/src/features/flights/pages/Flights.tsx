@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { FlightData, CrewMember } from "@/types/flights";
 import type { FlightItem } from "@/types/generated/flights";
 import {
-    User, ChevronDown, ChevronUp, Users, MapPin, Shield,
+    User, ChevronDown, ChevronUp, Users, MapPin, Shield, Layers,
     Search, ChevronLeft, ChevronRight, RefreshCw, Trash2
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -420,7 +420,7 @@ const Flights = () => {
                                             <DetailsRow colSpan={7}>
                                                         <div className="flex gap-4 mb-6 border-b border-border">
                                                             <button onClick={() => setActiveTab('tripulacion')} className={`pb-2 px-4 transition-all ${activeTab === 'tripulacion' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Users className="w-4 h-4 inline mr-2" />Tripulación</button>
-                                                            <button onClick={() => setActiveTab('autoridad')} className={`pb-2 px-4 transition-all ${activeTab === 'autoridad' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Shield className="w-4 h-4 inline mr-2" />Autoridad y Pasajeros</button>
+                                                            <button onClick={() => setActiveTab('autoridad')} className={`pb-2 px-4 transition-all ${activeTab === 'autoridad' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Shield className="w-4 h-4 inline mr-2" />Autoridad, Capba y Pasajeros</button>
                                                             {hasPermission(PermissionLevel.OPERACIONAL) && (
                                                                 <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                                                                     <AlertDialogTrigger asChild>
@@ -504,6 +504,19 @@ const Flights = () => {
                                                                         </div>
                                                                     </PageCard>
                                                                 )}
+                                                                {flight.detalles.capacidadesBasicas.length > 0 && (
+                                                                    <PageCard>
+                                                                        <h4 className="text-foreground font-semibold flex items-center gap-2"><Layers className="w-4 h-4 text-muted-foreground" />Capacidades Básicas</h4>
+                                                                        <div className="space-y-2">
+                                                                            {flight.detalles.capacidadesBasicas.map((c, i) => (
+                                                                                <div key={i} className="flex justify-between items-center p-3 rounded">
+                                                                                    <span className="text-foreground text-sm font-normal">{c.capba}</span>
+                                                                                    <span className="text-muted-foreground text-sm">{c.horas} horas</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </PageCard>
+                                                                )}
                                                                 {flight.detalles.pasajeros.length > 0 && (
                                                                     <PageCard>
                                                                         <h4 className="text-foreground font-semibold mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-muted-foreground" />Información de Pasajeros</h4>
@@ -518,8 +531,8 @@ const Flights = () => {
                                                                         </div>
                                                                     </PageCard>
                                                                 )}
-                                                                {flight.detalles.cuposAutoridad.length === 0 && flight.detalles.pasajeros.length === 0 && (
-                                                                    <div className="text-center text-muted-foreground py-8">No hay información de autoridad o pasajeros</div>
+                                                                {flight.detalles.cuposAutoridad.length === 0 && flight.detalles.capacidadesBasicas.length === 0 && flight.detalles.pasajeros.length === 0 && (
+                                                                    <div className="text-center text-muted-foreground py-8">No hay información de autoridad, capacidades o pasajeros</div>
                                                                 )}
                                                             </div>
                                                         )}

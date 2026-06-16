@@ -135,6 +135,12 @@ const cupoSchema = z.object({
     horas: requiredHourSchema,
 });
 
+// Esquema para capba (capacidades básicas) - capba es número requerido
+const capbaSchema = z.object({
+    capba: z.number({ required_error: "Requerido" }),
+    horas: requiredHourSchema,
+});
+
 // Esquema para pasajeros - tipo es número requerido
 const pasajeroSchema = z.object({
     tipo: z.number({ required_error: "Requerido" }),
@@ -163,6 +169,7 @@ export const formSchema = z.object({
     dvs: z.array(dvSchema),
     papeletas: z.array(papeletaSchema),
     cupos: z.array(cupoSchema),
+    capbas: z.array(capbaSchema),
     pasajeros: z.array(pasajeroSchema),
 });
 
@@ -185,6 +192,7 @@ export type FormDefaultValues = {
     dvs: Array<Partial<FormData['dvs'][number]> & { name?: number }>;
     papeletas: Array<{ crew: number[]; papeleta: { sk: number; period: 'dia' | 'gvn' }[] }>;
     cupos: Array<Partial<FormData['cupos'][number]> & { autoridad?: number }>;
+    capbas: Array<Partial<FormData['capbas'][number]> & { capba?: number }>;
     pasajeros: Array<Partial<FormData['pasajeros'][number]> & { tipo?: number }>;
 };
 

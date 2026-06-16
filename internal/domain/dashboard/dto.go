@@ -14,13 +14,13 @@ type Request struct {
 // ===== Static =====
 
 type StaticStats struct {
-	Pilotos           PilotStats          `json:"pilotos"`
-	TripulacionCabina TripulacionStats    `json:"tripulacion_cabina"`
-	Mantenedores      MantenedoresStats   `json:"mantenedores"`
+	Pilotos           PilotStats           `json:"pilotos"`
+	TripulacionCabina TripulacionStats     `json:"tripulacion_cabina"`
+	Mantenedores      MantenedoresStats    `json:"mantenedores"`
 	Administrativos   AdministrativosStats `json:"administrativos"`
-	PersonalTotal     PersonalTotalStats  `json:"personal_total"`
-	CRP               int                 `json:"crp"`
-	Airflow           int                 `json:"airflow"`
+	PersonalTotal     PersonalTotalStats   `json:"personal_total"`
+	CRP               int                  `json:"crp"`
+	Airflow           int                  `json:"airflow"`
 }
 
 type PilotStats struct {
@@ -34,14 +34,14 @@ type PilotStats struct {
 }
 
 type TripulacionStats struct {
-	Total                   int `json:"total"`
-	Alumnos                 int `json:"alumnos"`
-	Dotaciones              int `json:"dotaciones"`
-	Cabezas                 int `json:"cabezas"`
-	DVInstructores          int `json:"dv_instructores"`
-	DVPruebas               int `json:"dv_pruebas"`
-	DVInstructoresYPruebas  int `json:"dv_instructores_y_pruebas"`
-	Nadadores               int `json:"nadadores"`
+	Total                  int `json:"total"`
+	Alumnos                int `json:"alumnos"`
+	Dotaciones             int `json:"dotaciones"`
+	Cabezas                int `json:"cabezas"`
+	DVInstructores         int `json:"dv_instructores"`
+	DVPruebas              int `json:"dv_pruebas"`
+	DVInstructoresYPruebas int `json:"dv_instructores_y_pruebas"`
+	Nadadores              int `json:"nadadores"`
 }
 
 type MantenedoresStats struct {
@@ -59,17 +59,17 @@ type AdministrativosStats struct {
 }
 
 type PersonalTotalStats struct {
-	Total           int `json:"total"`
-	Oficiales       int `json:"oficiales"`
-	Suboficiales    int `json:"suboficiales"`
-	TropaMarineria  int `json:"tropa_marineria"`
+	Total          int `json:"total"`
+	Oficiales      int `json:"oficiales"`
+	Suboficiales   int `json:"suboficiales"`
+	TropaMarineria int `json:"tropa_marineria"`
 }
 
 // ===== Dynamic =====
 
 type DynamicStats struct {
-	FechaInicio         string             `json:"fechaInicio"`         // YYYY-MM-DD
-	FechaFin            string             `json:"fechaFin"`            // YYYY-MM-DD
+	FechaInicio         string             `json:"fechaInicio"` // YYYY-MM-DD
+	FechaFin            string             `json:"fechaFin"`    // YYYY-MM-DD
 	ResumenGeneral      ResumenGeneral     `json:"resumenGeneral"`
 	HorasDeVuelo        []HorasDeVuelo     `json:"horasDeVuelo"`
 	HorasPorHelicoptero []HorasHelicoptero `json:"horasPorHelicoptero"`
@@ -108,14 +108,14 @@ type HorasEventoLugar struct {
 }
 
 type HorasPeriodo struct {
-	DiaReal                float64 `json:"dia_real"`
-	DiaSimulado            float64 `json:"dia_simulado"`
-	NocheSinGafasReal      float64 `json:"noche_sin_gafas_real"`
-	NocheSinGafasSimulado  float64 `json:"noche_sin_gafas_simulado"`
-	GVNReal                float64 `json:"gvn_real"`
-	AnvisReal              float64 `json:"anvis_real"`
-	IITReal                float64 `json:"iit_real"`
-	GVNSimulado            float64 `json:"gvn_simulado"`
-	AnvisSimulado          float64 `json:"anvis_simulado"`
-	IITSimulado            float64 `json:"iit_simulado"`
+	DiaReal               float64 `json:"dia_real"`
+	DiaSimulado           float64 `json:"dia_simulado"`
+	NocheSinGafasReal     float64 `json:"noche_sin_gafas_real"`
+	NocheSinGafasSimulado float64 `json:"noche_sin_gafas_simulado"`
+	GVNReal               float64 `json:"gvn_real"`
+	AnvisReal             float64 `json:"anvis_real"`
+	IITReal               float64 `json:"iit_real"`
+	GVNSimulado           float64 `json:"gvn_simulado"`
+	AnvisSimulado         float64 `json:"anvis_simulado"`
+	IITSimulado           float64 `json:"iit_simulado"`
 }

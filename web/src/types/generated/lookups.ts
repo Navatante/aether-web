@@ -38,6 +38,28 @@ export interface Authority {
   authority_sk: number /* int32 */;
   authority_name: string;
 }
+export interface Capba {
+  capba_id: number /* int32 */;
+  capba_name: string;
+}
+/**
+ * CapbaCatalogItem es una capba del catálogo global (para elegir al asignar).
+ */
+export interface CapbaCatalogItem {
+  capba_id: number /* int32 */;
+  capba_name: string;
+  capba_group_name: string;
+}
+/**
+ * EscuadrillaCapba es una capba asignada a la escuadrilla (vista de gestión).
+ */
+export interface EscuadrillaCapba {
+  escuadrilla_capba_sk: number /* int32 */;
+  capba_id: number /* int32 */;
+  capba_name: string;
+  capba_group_name: string;
+  escuadrilla_capba_capacidad_operativa: number /* int32 */;
+}
 export interface Crew {
   person_sk: number /* int32 */;
   person_nk: string;
@@ -61,7 +83,7 @@ export interface ComisionLugar {
 }
 /**
  * RecentComision es el contrato esperado por src/shared/hooks/useLookups.ts:
- *   { comision_sk, lugar|null, tipo|null, fechaInicio|null, fechaFin|null, esfuerzo|null }
+ * 	{ comision_sk, lugar|null, tipo|null, fechaInicio|null, fechaFin|null, esfuerzo|null }
  * `esfuerzo` se devuelve como *bool. La interfaz TS dice `string|null` pero
  * el código Rust nunca lo leía bien (BIT → &str fallaba), así que enviábamos
  * siempre null. Aquí enviamos el bool real; el frontend hace truthiness
@@ -102,4 +124,11 @@ export interface AddAircraftReq {
 }
 export interface UpdateAircraftCurrentFlagReq {
   current_flag: boolean;
+}
+export interface AddEscuadrillaCapbaReq {
+  capba_id: number /* int32 */;
+  capacidad_operativa: number /* int32 */;
+}
+export interface UpdateEscuadrillaCapbaReq {
+  capacidad_operativa: number /* int32 */;
 }

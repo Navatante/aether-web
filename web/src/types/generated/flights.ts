@@ -15,6 +15,7 @@ export interface FlightFormData {
   dvs: DvData[];
   papeletas: PapeletaData[];
   cupos: CupoData[];
+  capbas: CapbaData[];
   pasajeros: PasajeroData[];
 }
 export interface GeneralData {
@@ -89,6 +90,10 @@ export interface CupoData {
   autoridad: number /* int32 */;
   horas: string;
 }
+export interface CapbaData {
+  capba: number /* int32 */;
+  horas: string;
+}
 export interface PasajeroData {
   tipo: number /* int32 */;
   cantidad: string;
@@ -123,6 +128,7 @@ export interface FlightItem {
 export interface FlightDetails {
   tripulacion: Tripulacion;
   cuposAutoridad: CupoJSON[];
+  capacidadesBasicas: CapbaJSON[];
   pasajeros: PasajeroJSON[];
 }
 export interface Tripulacion {
@@ -197,6 +203,10 @@ export interface ProyectilesJSON {
 }
 export interface CupoJSON {
   autoridad: string;
+  horas: number /* float64 */;
+}
+export interface CapbaJSON {
+  capba: string;
   horas: number /* float64 */;
 }
 export interface PasajeroJSON {

@@ -162,6 +162,19 @@ func (s *Service) Insert(ctx context.Context, esc int32, userID, ip string, data
 			return InsertResult{}, fmt.Errorf("cupo_hour: %w", err)
 		}
 	}
+	for _, capba := range data.Capbas {
+		hours, ok := parseFloatNonZero(capba.Horas)
+		if !ok {
+			continue
+		}
+		if err := q.InsertCapbaHour(ctx, queries.InsertCapbaHourParams{
+			CapbaFlightFk: flightSk,
+			CapbaCapbaFk:  capba.Capba,
+			CapbaHourQty:  numericFromFloat(hours),
+		}); err != nil {
+			return InsertResult{}, fmt.Errorf("capba_hour: %w", err)
+		}
+	}
 	for _, pax := range data.Pasajeros {
 		qty, ok := parseIntNonZero(pax.Cantidad)
 		if !ok {
@@ -454,6 +467,7 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 	proj, _ := q.FlightProjectiles(ctx, flightSks)
 	paps, _ := q.FlightPapeletas(ctx, flightSks)
 	cupos, _ := q.FlightCupos(ctx, flightSks)
+	capbas, _ := q.FlightCapbas(ctx, flightSks)
 	pax, _ := q.FlightPassengers(ctx, flightSks)
 
 	// Indexar por (flight, person).
@@ -527,6 +541,12 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 			Autoridad: r.Autoridad, Horas: numericToFloat(r.Horas),
 		})
 	}
+	capbasByFlight := map[int32][]CapbaJSON{}
+	for _, r := range capbas {
+		capbasByFlight[r.FlightSk] = append(capbasByFlight[r.FlightSk], CapbaJSON{
+			Capba: r.Capba, Horas: numericToFloat(r.Horas),
+		})
+	}
 	paxByFlight := map[int32][]PasajeroJSON{}
 	for _, r := range pax {
 		paxByFlight[r.FlightSk] = append(paxByFlight[r.FlightSk], PasajeroJSON{
@@ -598,8 +618,9 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 					Pilotos:    orEmptyPilotos(pilotos),
 					Dotaciones: orEmptyDotaciones(dotaciones),
 				},
-				CuposAutoridad: orEmptyCupos(cuposByFlight[r.FlightSk]),
-				Pasajeros:      orEmptyPasajeros(paxByFlight[r.FlightSk]),
+				CuposAutoridad:     orEmptyCupos(cuposByFlight[r.FlightSk]),
+				CapacidadesBasicas: orEmptyCapbas(capbasByFlight[r.FlightSk]),
+				Pasajeros:          orEmptyPasajeros(paxByFlight[r.FlightSk]),
 			},
 		})
 	}
@@ -746,6 +767,13 @@ func orEmptyDotaciones(s []DotacionJSON) []DotacionJSON {
 func orEmptyCupos(s []CupoJSON) []CupoJSON {
 	if s == nil {
 		return []CupoJSON{}
+	}
+	return s
+}
+
+func orEmptyCapbas(s []CapbaJSON) []CapbaJSON {
+	if s == nil {
+		return []CapbaJSON{}
 	}
 	return s
 }
