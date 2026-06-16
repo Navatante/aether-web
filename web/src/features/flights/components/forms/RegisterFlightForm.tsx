@@ -78,7 +78,7 @@ const createDefaultDv = () => ({
     }
 });
 
-const createDefaultPapeleta = (): { crew: number[]; papeleta: { sk: number; period: 'dia' | 'gvn' }[] } => ({
+const createDefaultPapeleta = (): { crew: number[]; papeleta: { sk: number; period: 'dia' | 'nc' | 'gvn' }[] } => ({
     crew: [],
     papeleta: [],
 });

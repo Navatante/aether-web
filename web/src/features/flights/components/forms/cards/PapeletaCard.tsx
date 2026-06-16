@@ -120,7 +120,7 @@ function PapeletaCard({
                     name={`papeletas.${index}.papeleta` as const}
                     control={control}
                     render={({ field }) => {
-                        const items: { sk: number; period: 'dia' | 'gvn' }[] = field.value || [];
+                        const items: { sk: number; period: 'dia' | 'nc' | 'gvn' }[] = field.value || [];
                         const selectedSks = items.map(i => i.sk);
 
                         const papeletaOptions = papeletasArray?.map(p => ({
@@ -138,8 +138,10 @@ function PapeletaCard({
                                     value={null}
                                     onChange={(opt) => {
                                         if (!opt) return;
-                                        const isGvn = opt.label.startsWith('(G)');
-                                        field.onChange([...items, { sk: opt.value, period: isGvn ? 'gvn' : 'dia' }]);
+                                        const isGvn = opt.label.startsWith('G-');
+                                        const isNc = opt.label.startsWith('N-');
+                                        const period = isGvn ? 'gvn' : isNc ? 'nc' : 'dia';
+                                        field.onChange([...items, { sk: opt.value, period }]);
                                     }}
                                     placeholder="Añadir papeleta..."
                                     isLoading={papeletasLoading}
@@ -157,7 +159,7 @@ function PapeletaCard({
                                         <div key={item.sk} className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/40">
                                             <span className="flex-1 text-sm text-foreground">{label}</span>
 
-                                            {/* Toggle Dia/GVN */}
+                                            {/* Toggle Dia/NC/GVN */}
                                             <div className="flex rounded-lg overflow-hidden border border-input text-xs font-medium">
                                                 <button
                                                     type="button"
@@ -168,6 +170,16 @@ function PapeletaCard({
                                                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                                                     )}>
                                                     Dia
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => field.onChange(items.map(i => i.sk === item.sk ? { ...i, period: 'nc' } : i))}
+                                                    className={cn("px-2 py-0.5 transition-colors",
+                                                        item.period === 'nc'
+                                                            ? "bg-danger text-danger-foreground"
+                                                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                                    )}>
+                                                    NC
                                                 </button>
                                                 <button
                                                     type="button"

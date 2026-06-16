@@ -45,6 +45,10 @@ migrations/0004_seed_productive_data.down.sql
 /.venv/
 database-utils/.venv/
 
+# Caché de bytecode de Python.
+__pycache__/
+*.pyc
+
 # Artefactos de tsc -b (emit de tsconfig.node.json).
 web/vite.config.js
 web/vite.config.d.ts

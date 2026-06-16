@@ -187,6 +187,31 @@ def map_papeleta_plan(plan):
     return PAPELETA_PLAN_MAPPING.get(plan.strip())
 
 
+# Papeletas cuyo prefijo G/N ya codifica el periodo pero sin el guion de la
+# norma. Los falsos positivos (GND TPT = Ground Transport, NAV-204 = Navegación)
+# quedan deliberadamente fuera del allowlist.
+PAPELETA_GVN_PREFIXED = {
+    "GFAM-202", "GBUQ-210", "GBUQ-211", "GTAC-203", "GNAV-204", "GSAR-207",
+}
+PAPELETA_NOCTURNO_PREFIXED = {"NFAM-105", "NBUQ-209"}
+
+
+def map_papeleta_name(name):
+    """Aplica la norma de prefijos de periodo: GVN→'G-', Nocturno conv.→'N-'."""
+    if name is None:
+        return name
+    n = name.strip()
+    # Marcador GVN como sufijo entre paréntesis → prefijo G-
+    if n.endswith("(G)"):
+        return f"G-{n[:-3].strip()}"
+    # Prefijo G/N ya existente (sin guion) → normalizar a la norma
+    if n in PAPELETA_GVN_PREFIXED:
+        return f"G-{n[1:]}"
+    if n in PAPELETA_NOCTURNO_PREFIXED:
+        return f"N-{n[1:]}"
+    return n
+
+
 DEFAULT_USERS_FILE = Path(__file__).resolve().parent / "person_users.json"
 
 
@@ -373,6 +398,7 @@ TABLE_MAPPINGS = {
             "papeleta_expiration": "papeleta_expiration",
         },
         "transforms": {
+            "papeleta_name": map_papeleta_name,
             "papeleta_block": map_papeleta_block,
             "papeleta_plan": map_papeleta_plan,
             "papeleta_tv": lambda x: float(x) if x else None,

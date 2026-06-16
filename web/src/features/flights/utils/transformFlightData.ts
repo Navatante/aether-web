@@ -75,7 +75,7 @@ export function transformFormDataForSubmit(data: FormData) {
             crew: papeleta.crew || [],
             papeleta: papeleta.papeleta.map(item => ({
                 sk: item.sk,
-                period: item.period === 'gvn' ? 3 : 1,
+                period: item.period === 'gvn' ? 3 : item.period === 'nc' ? 2 : 1,
             })),
         })),
         cupos: data.cupos.map(cupo => ({

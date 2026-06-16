@@ -224,7 +224,9 @@ const Flights = () => {
                                             "px-2 py-1 rounded text-sm cursor-help font-medium",
                                             p.periodo === 3
                                                 ? "bg-success-muted text-success-muted-foreground"
-                                                : "bg-info-muted text-info-muted-foreground"
+                                                : p.periodo === 2
+                                                    ? "bg-danger-muted text-danger-muted-foreground"
+                                                    : "bg-info-muted text-info-muted-foreground"
                                         )}>{p.nombre}</span>
                                     </TooltipTrigger>
                                     <TooltipContent variant="info"><p>{p.descripcion}</p></TooltipContent>

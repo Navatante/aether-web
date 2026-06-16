@@ -120,7 +120,7 @@ const dvSchema = z.object({
 // Sub-esquema para cada papeleta seleccionada individualmente
 const papeletaItemSchema = z.object({
     sk: z.number(),
-    period: z.enum(['dia', 'gvn']),
+    period: z.enum(['dia', 'nc', 'gvn']),
 });
 
 // Esquema para papeletas
@@ -190,7 +190,7 @@ export type FormDefaultValues = {
     };
     pilots: Array<Partial<FormData['pilots'][number]> & { name?: number }>;
     dvs: Array<Partial<FormData['dvs'][number]> & { name?: number }>;
-    papeletas: Array<{ crew: number[]; papeleta: { sk: number; period: 'dia' | 'gvn' }[] }>;
+    papeletas: Array<{ crew: number[]; papeleta: { sk: number; period: 'dia' | 'nc' | 'gvn' }[] }>;
     cupos: Array<Partial<FormData['cupos'][number]> & { autoridad?: number }>;
     capbas: Array<Partial<FormData['capbas'][number]> & { capba?: number }>;
     pasajeros: Array<Partial<FormData['pasajeros'][number]> & { tipo?: number }>;
