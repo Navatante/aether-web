@@ -129,3 +129,17 @@ Piezas compartidas en `shared/components/common/`: `PageTableContainer`, `Sticky
 ## Permisos en la UI
 
 `useHasPermission(...)` solo oculta botones: es cosmético. La garantía real es el 403 del backend (`RequirePermission`). Al añadir una acción de escritura, replica en la UI exactamente la allow-list de la ruta (sin jerarquía entre niveles).
+
+## Render condicional por escuadrilla
+
+Para mostrar componentes solo a ciertas escuadrillas, usa `useEscuadrilla()` (de `providers/UserProvider`), que devuelve `{ id, code, name }` de la sesión. Discrimina por **`code`** (estable y legible), no por `id`:
+
+```tsx
+import { useEscuadrilla } from "@/providers/UserProvider";
+const { code } = useEscuadrilla();
+{code === ESCUADRILLA.PRIMERA && <FeatureSoloPrimera />}
+```
+
+- **Centraliza los códigos en constantes** (un módulo de feature o `shared/`), no esparzas strings mágicos (`"801"`) por los componentes.
+- **Es cosmético, igual que `useHasPermission`**: oculta *UI*, no *datos*. Pero la RLS por escuadrilla del backend ya filtra todos los datos por el `EscuadrillaID` de la sesión, así que un usuario nunca verá datos de otra escuadrilla aunque manipule el frontend.
+- **Maneja el `loading` inicial**: al montar, `code` es `null` mientras `refreshUser()` resuelve. Si el render por defecto no debe parpadear, combina con `loading` de `useUserData()`.
