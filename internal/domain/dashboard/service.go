@@ -20,6 +20,20 @@ func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{pool: pool, q: queries.New(pool)}
 }
 
+// HistoricStart devuelve la fecha de creación de la escuadrilla de la sesión,
+// usada como ancla del rango "histórico" en ResolveRange. Si la fila no tiene
+// fecha (no debería ocurrir) cae al ancla de respaldo.
+func (s *Service) HistoricStart(ctx context.Context, escuadrillaID int) (time.Time, error) {
+	d, err := s.q.EscuadrillaCreationDate(ctx, int32(escuadrillaID))
+	if err != nil {
+		return time.Time{}, err
+	}
+	if !d.Valid {
+		return defaultHistoricStart, nil
+	}
+	return d.Time, nil
+}
+
 // StaticStats ejecuta las 7 queries de stats estáticas en paralelo no es
 // necesario aquí: el coste dominante son IO de BD, todas se sirven del
 // pool. Se ejecutan secuencialmente para no estresar conexiones.

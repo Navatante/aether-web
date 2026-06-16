@@ -17,7 +17,7 @@ func TestResolveRangeCustom(t *testing.T) {
 		RangeType: "custom",
 		DateFrom:  "2026-01-15",
 		DateTo:    "2026-02-20",
-	}, today)
+	}, today, date(2020, 1, 1))
 	if err != nil {
 		t.Fatalf("ResolveRange: %v", err)
 	}
@@ -34,7 +34,7 @@ func TestResolveRangeCustomValidation(t *testing.T) {
 		{RangeType: "lo-que-sea", DateFrom: "2026-01-15", DateTo: "2026-02-20"}, // tipo desconocido
 	}
 	for _, req := range cases {
-		if _, err := ResolveRange(req, today); err == nil {
+		if _, err := ResolveRange(req, today, date(2020, 1, 1)); err == nil {
 			t.Errorf("ResolveRange(%+v) debería fallar", req)
 		}
 	}
@@ -57,10 +57,12 @@ func TestResolveRangePredefined(t *testing.T) {
 		{"anio-actual", date(2026, 1, 1), date(2026, 6, 10)},
 		{"ultimo-anio", date(2025, 1, 1), date(2025, 12, 31)},
 		{"ultimos-2-anios", date(2024, 1, 1), date(2025, 12, 31)},
-		{"historico", date(2020, 1, 1), date(2026, 6, 10)},
+		// historico ancla en el historicStart que se inyecta (fecha de creación
+		// de la escuadrilla), no en una constante: usamos 2019-03-15 para probarlo.
+		{"historico", date(2019, 3, 15), date(2026, 6, 10)},
 	}
 	for _, tc := range cases {
-		got, err := ResolveRange(Request{RangeType: "predefined", PredefinedRange: tc.key}, today)
+		got, err := ResolveRange(Request{RangeType: "predefined", PredefinedRange: tc.key}, today, date(2019, 3, 15))
 		if err != nil {
 			t.Errorf("%q: %v", tc.key, err)
 			continue
@@ -76,7 +78,7 @@ func TestResolveRangePredefined(t *testing.T) {
 func TestResolveRangeSundayWeek(t *testing.T) {
 	// Domingo 2026-06-14: la semana actual empezó el lunes 8.
 	sunday := time.Date(2026, 6, 14, 9, 0, 0, 0, time.UTC)
-	got, err := ResolveRange(Request{PredefinedRange: "semana-actual"}, sunday)
+	got, err := ResolveRange(Request{PredefinedRange: "semana-actual"}, sunday, date(2020, 1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,7 +88,7 @@ func TestResolveRangeSundayWeek(t *testing.T) {
 }
 
 func TestResolveRangeUnknownPredefined(t *testing.T) {
-	if _, err := ResolveRange(Request{PredefinedRange: "trimestre-fiscal"}, today); err == nil {
+	if _, err := ResolveRange(Request{PredefinedRange: "trimestre-fiscal"}, today, date(2020, 1, 1)); err == nil {
 		t.Error("predefined desconocido debería fallar")
 	}
 }

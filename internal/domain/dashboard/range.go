@@ -6,9 +6,9 @@ import (
 	"time"
 )
 
-// historicStart es la fecha mínima del sistema (igual que en SQL Server:
-// "Standardized system inception date").
-var historicStart = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+// defaultHistoricStart es el ancla de respaldo para el rango "histórico"
+// cuando no se puede leer escuadrilla_creation_date (no debería ocurrir).
+var defaultHistoricStart = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // DateRange resuelve un rango cerrado [From, To] (ambos inclusive) a partir
 // de los parámetros de entrada. To se usa como < (To + 1 día) en las queries.
@@ -18,8 +18,9 @@ type DateRange struct {
 }
 
 // ResolveRange traduce un Request a fechas concretas. today permite inyectar
-// la fecha actual en tests; si es zero, se usa time.Now().UTC().
-func ResolveRange(req Request, today time.Time) (DateRange, error) {
+// la fecha actual en tests; si es zero, se usa time.Now().UTC(). historicStart
+// ancla el rango "histórico" (fecha de creación de la escuadrilla de la sesión).
+func ResolveRange(req Request, today, historicStart time.Time) (DateRange, error) {
 	if today.IsZero() {
 		today = time.Now().UTC()
 	}
@@ -44,12 +45,12 @@ func ResolveRange(req Request, today time.Time) (DateRange, error) {
 		return DateRange{From: from, To: to}, nil
 
 	case "", "predefined":
-		return resolvePredefined(req.PredefinedRange, today)
+		return resolvePredefined(req.PredefinedRange, today, historicStart)
 	}
 	return DateRange{}, fmt.Errorf("range_type desconocido: %q", req.RangeType)
 }
 
-func resolvePredefined(key string, today time.Time) (DateRange, error) {
+func resolvePredefined(key string, today, historicStart time.Time) (DateRange, error) {
 	switch key {
 	case "", "ultimos-7-dias":
 		return DateRange{From: today.AddDate(0, 0, -6), To: today}, nil

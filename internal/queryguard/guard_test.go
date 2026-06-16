@@ -45,6 +45,9 @@ import (
 //   - personkeyed  → operan sobre un person_sk concreto. CATEGORÍA A VIGILAR:
 //     si el person_sk pudiera venir de otra escuadrilla habría que añadir un
 //     chequeo de escuadrilla. Hoy se acepta como baseline.
+//   - escuadrillaself → leen la propia fila de detall.escuadrilla por su PK
+//     (escuadrilla_sk = la escuadrilla de la sesión); el acceso ya está acotado
+//     a la escuadrilla activa, solo que por PK y no por una columna *_escuadrilla_fk.
 //
 // Para exentar una query nueva: añádela aquí con su categoría y, si no encaja
 // en ninguna, documenta el motivo. Para dejar de exentarla: añade el filtro
@@ -59,6 +62,7 @@ var exemptBaseline = map[string]string{
 	"DeleteFestivo":                  "festivos",
 	"DeletePersonFromComision":       "comisionchild",
 	"DeleteSessionByTokenHash":       "auth",
+	"EscuadrillaCreationDate":        "escuadrillaself",
 	"FestivoExistsOnDate":            "festivos",
 	"FestivoExistsOnDateOtherSk":     "festivos",
 	"FlightApproaches":               "flightchild",

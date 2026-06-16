@@ -34,11 +34,13 @@ type Request struct {
 // Range parser (espejo de dashboard.ResolveRange, sin acoplar)
 // ============================================================
 
-var historicStart = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+// defaultHistoricStart es el ancla de respaldo para el rango "histórico"
+// cuando no se puede leer escuadrilla_creation_date (no debería ocurrir).
+var defaultHistoricStart = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 type dateRange struct{ from, to time.Time }
 
-func resolveRange(req Request, today time.Time) (dateRange, error) {
+func resolveRange(req Request, today, historicStart time.Time) (dateRange, error) {
 	if today.IsZero() {
 		today = time.Now().UTC()
 	}
@@ -137,7 +139,15 @@ type Service struct {
 func NewService(pool *pgxpool.Pool) *Service { return &Service{pool: pool, q: queries.New(pool)} }
 
 func (s *Service) ProjectilesByCrew(ctx context.Context, esc int32, req Request) (Result, error) {
-	r, err := resolveRange(req, time.Time{})
+	// El inicio del rango "histórico" se ancla en la fecha de creación de la
+	// escuadrilla de la sesión, no en una constante.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return Result{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
 	if err != nil {
 		return Result{}, err
 	}

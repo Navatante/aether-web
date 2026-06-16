@@ -24,6 +24,13 @@
 -- se ven afectados por este filtro.
 -- ============================================================
 
+-- name: EscuadrillaCreationDate :one
+-- Fecha de creación de la escuadrilla; ancla el inicio del rango "histórico"
+-- en hours.go (antes hardcodeado). $1 = escuadrilla_sk (de la sesión).
+SELECT escuadrilla_creation_date
+FROM detall.escuadrilla
+WHERE escuadrilla_sk = $1;
+
 -- name: NH90PeriodHours :many
 WITH
 person_hour_agg AS (

@@ -44,7 +44,11 @@ func (h *Handlers) DynamicStats(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
 	}
-	rng, err := ResolveRange(req, time.Time{})
+	historicStart, err := h.svc.HistoricStart(c.Request().Context(), user.EscuadrillaID)
+	if err != nil {
+		return err
+	}
+	rng, err := ResolveRange(req, time.Time{}, historicStart)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

@@ -11,8 +11,50 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const nH90PeriodHours = `-- name: NH90PeriodHours :many
+const escuadrillaCreationDate = `-- name: EscuadrillaCreationDate :one
 
+SELECT escuadrilla_creation_date
+FROM detall.escuadrilla
+WHERE escuadrilla_sk = $1
+`
+
+// ============================================================
+// Hours (Hito 4, lote 6)
+//
+// Reimplementa sp_get_personNH90PeriodHours. El rango de fechas se
+// resuelve en Go (mismo parser que dashboard) y se pasan ya como dates.
+// Esto evita lógica de fechas en SQL y mantiene la query pura.
+//
+// RLS explícita: $3 = escuadrilla_fk.
+// $4 = roles permitidos (array vacío = todos los roles).
+// $5 = incluir horas de arrastre (operations.previous_hour): modo "Totales".
+//
+//	previous_hour es acumulado vitalicio por persona (sin filtro de fecha) y
+//	son horas reales, por lo que solo suman a la parte real (y al total).
+//
+// Cambio de escuadrilla (el pasado se queda donde se voló): el roster siempre
+// se filtra por person_escuadrilla_fk actual ($3), así que una persona que se
+// mueve desaparece de la antigua. Para las horas registradas en Aether:
+//   - modo por escuadrilla ($5=false): person_hour SOLO cuenta vuelos de la
+//     escuadrilla actual (f.flight_escuadrilla_fk = $3) → "horas voladas aquí".
+//   - modo Totales ($5=true): person_hour cruza escuadrillas para esa persona
+//     (sin filtro de flight_escuadrilla_fk) → su histórico completo. Es una
+//     exención acotada a la RLS-por-código: solo expone datos propios de
+//     personas del roster actual, nunca de terceros.
+//
+// previous_model_* y previous_hour son person-centric (sin escuadrilla_fk) y no
+// se ven afectados por este filtro.
+// ============================================================
+// Fecha de creación de la escuadrilla; ancla el inicio del rango "histórico"
+// en hours.go (antes hardcodeado). $1 = escuadrilla_sk (de la sesión).
+func (q *Queries) EscuadrillaCreationDate(ctx context.Context, escuadrillaSk int32) (pgtype.Date, error) {
+	row := q.db.QueryRow(ctx, escuadrillaCreationDate, escuadrillaSk)
+	var escuadrilla_creation_date pgtype.Date
+	err := row.Scan(&escuadrilla_creation_date)
+	return escuadrilla_creation_date, err
+}
+
+const nH90PeriodHours = `-- name: NH90PeriodHours :many
 WITH
 person_hour_agg AS (
     SELECT
@@ -108,33 +150,6 @@ type NH90PeriodHoursRow struct {
 	TotalGvnHourQty   pgtype.Numeric `json:"total_gvn_hour_qty"`
 }
 
-// ============================================================
-// Hours (Hito 4, lote 6)
-//
-// Reimplementa sp_get_personNH90PeriodHours. El rango de fechas se
-// resuelve en Go (mismo parser que dashboard) y se pasan ya como dates.
-// Esto evita lógica de fechas en SQL y mantiene la query pura.
-//
-// RLS explícita: $3 = escuadrilla_fk.
-// $4 = roles permitidos (array vacío = todos los roles).
-// $5 = incluir horas de arrastre (operations.previous_hour): modo "Totales".
-//
-//	previous_hour es acumulado vitalicio por persona (sin filtro de fecha) y
-//	son horas reales, por lo que solo suman a la parte real (y al total).
-//
-// Cambio de escuadrilla (el pasado se queda donde se voló): el roster siempre
-// se filtra por person_escuadrilla_fk actual ($3), así que una persona que se
-// mueve desaparece de la antigua. Para las horas registradas en Aether:
-//   - modo por escuadrilla ($5=false): person_hour SOLO cuenta vuelos de la
-//     escuadrilla actual (f.flight_escuadrilla_fk = $3) → "horas voladas aquí".
-//   - modo Totales ($5=true): person_hour cruza escuadrillas para esa persona
-//     (sin filtro de flight_escuadrilla_fk) → su histórico completo. Es una
-//     exención acotada a la RLS-por-código: solo expone datos propios de
-//     personas del roster actual, nunca de terceros.
-//
-// previous_model_* y previous_hour son person-centric (sin escuadrilla_fk) y no
-// se ven afectados por este filtro.
-// ============================================================
 // Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
 // activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
 func (q *Queries) NH90PeriodHours(ctx context.Context, arg NH90PeriodHoursParams) ([]NH90PeriodHoursRow, error) {
