@@ -361,6 +361,18 @@ type Querier interface {
 	// $5 = incluir horas de arrastre (operations.previous_hour): modo "Totales".
 	//      previous_hour es acumulado vitalicio por persona (sin filtro de fecha) y
 	//      son horas reales, por lo que solo suman a la parte real (y al total).
+	//
+	// Cambio de escuadrilla (el pasado se queda donde se voló): el roster siempre
+	// se filtra por person_escuadrilla_fk actual ($3), así que una persona que se
+	// mueve desaparece de la antigua. Para las horas registradas en Aether:
+	//   - modo por escuadrilla ($5=false): person_hour SOLO cuenta vuelos de la
+	//     escuadrilla actual (f.flight_escuadrilla_fk = $3) → "horas voladas aquí".
+	//   - modo Totales ($5=true): person_hour cruza escuadrillas para esa persona
+	//     (sin filtro de flight_escuadrilla_fk) → su histórico completo. Es una
+	//     exención acotada a la RLS-por-código: solo expone datos propios de
+	//     personas del roster actual, nunca de terceros.
+	// previous_model_* y previous_hour son person-centric (sin escuadrilla_fk) y no
+	// se ven afectados por este filtro.
 	// ============================================================
 	// Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
 	// activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
