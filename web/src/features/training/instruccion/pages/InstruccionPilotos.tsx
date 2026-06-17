@@ -39,7 +39,7 @@ interface Papeleta {
 
 interface PapeletaRealizada {
     session_fk: number;
-    flight_datetime: string;
+    flight_date: string;
 }
 
 interface Persona {
@@ -68,7 +68,7 @@ function StatusCell({ personSk, papeletaSk, papeletasRealizadas }: StatusCellPro
     const isCompleted = realizada !== null;
 
     const tooltipText = isCompleted
-        ? `Papeleta realizada el ${formatearFecha(realizada.flight_datetime)}`
+        ? `Papeleta realizada el ${formatearFecha(realizada.flight_date)}`
         : 'Nunca se realizó esta papeleta';
 
     return (
