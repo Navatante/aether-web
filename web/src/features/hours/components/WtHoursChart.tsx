@@ -7,9 +7,9 @@ import {
 } from "@/components/ui/chart"
 import type { WtTripulanteData } from "@/types/hours"
 
-// Una sola línea: horas de Winch Trim, en color de acento (--chart-accent).
+// Una sola línea: horas de Winch Trim, en blanco (--chart-1).
 const chartConfig = {
-    wt_hour_qty: { label: "Winch Trim", color: "var(--chart-accent)" },
+    wt_hour_qty: { label: "Winch Trim", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
 function CustomLegend() {
@@ -18,7 +18,7 @@ function CustomLegend() {
             <div className="flex items-center gap-1.5">
                 <div className="flex items-center h-2.5 w-6">
                     <div className="w-full h-[2px] rounded"
-                         style={{ backgroundColor: "var(--chart-accent)" }} />
+                         style={{ backgroundColor: "var(--chart-1)" }} />
                 </div>
                 <span className="text-xs text-muted-foreground">Winch Trim</span>
             </div>
@@ -82,7 +82,7 @@ export default function WtHoursChart({ data }: WtHoursChartProps) {
                                     <div className="flex items-center gap-2">
                                         <div
                                             className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
-                                            style={{ backgroundColor: "var(--chart-accent)" }}
+                                            style={{ backgroundColor: "var(--chart-1)" }}
                                         />
                                         <span className="text-sm font-medium">Winch Trim</span>
                                         <span className="ml-auto font-mono text-sm font-semibold tabular-nums">
