@@ -314,7 +314,9 @@ type Querier interface {
 	InsertWtHour(ctx context.Context, arg InsertWtHourParams) error
 	// =============== instruccion ===============
 	InstruccionPapeletas(ctx context.Context, arg InstruccionPapeletasParams) ([]InstruccionPapeletasRow, error)
-	// Última papeleta (MAX flight_date) por (persona, session_fk) limitada a planes en $1.
+	// Última papeleta (MAX fecha) por (persona, session_fk) limitada a planes en $1.
+	// Una papeleta se considera realizada tanto si se voló (papeleta_crew_count)
+	// como si se impartió en Ground School (operations.ground_school).
 	InstruccionPapeletasRealizadas(ctx context.Context, arg InstruccionPapeletasRealizadasParams) ([]InstruccionPapeletasRealizadasRow, error)
 	InstruccionPersonas(ctx context.Context, arg InstruccionPersonasParams) ([]InstruccionPersonasRow, error)
 	// Horas de vuelo como instructor (operations.instructor_hour), una fila por

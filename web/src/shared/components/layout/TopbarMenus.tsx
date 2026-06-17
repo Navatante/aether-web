@@ -66,7 +66,7 @@ export function TopbarMenus() {
                                     </MenubarItem>
                                     <MenubarItem onSelect={() => setRegisterGroundSchoolOpen(true)}>
                                         <Presentation className="mr-2 h-4 w-4" />
-                                        GroundSchool
+                                        Ground School
                                     </MenubarItem>
                                     <MenubarItem>
                                         <BookOpen className="mr-2 h-4 w-4" />

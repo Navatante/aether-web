@@ -322,18 +322,39 @@ func (q *Queries) InstruccionPapeletas(ctx context.Context, arg InstruccionPapel
 
 const instruccionPapeletasRealizadas = `-- name: InstruccionPapeletasRealizadas :many
 SELECT
-    pcc.papeleta_crew_count_person_fk AS person_sk,
-    pcc.papeleta_crew_count_session_fk AS session_fk,
-    MAX(f.flight_date)::date AS flight_date
-FROM operations.papeleta_crew_count pcc
-JOIN operations.papeleta dp ON dp.papeleta_sk = pcc.papeleta_crew_count_session_fk
-JOIN operations.flight  f  ON f.flight_sk = pcc.papeleta_crew_count_flight_fk
-JOIN detall.person      p  ON p.person_sk = pcc.papeleta_crew_count_person_fk
-WHERE dp.papeleta_plan = ANY($1::text[])
-  AND p.person_rol = ANY($2::text[])
-  AND p.person_current_flag = TRUE
-  AND p.person_escuadrilla_fk = $3
-GROUP BY pcc.papeleta_crew_count_person_fk, pcc.papeleta_crew_count_session_fk
+    person_sk,
+    session_fk,
+    MAX(fecha)::date AS flight_date
+FROM (
+    SELECT
+        pcc.papeleta_crew_count_person_fk  AS person_sk,
+        pcc.papeleta_crew_count_session_fk AS session_fk,
+        f.flight_date                      AS fecha
+    FROM operations.papeleta_crew_count pcc
+    JOIN operations.papeleta dp ON dp.papeleta_sk = pcc.papeleta_crew_count_session_fk
+    JOIN operations.flight  f  ON f.flight_sk = pcc.papeleta_crew_count_flight_fk
+    JOIN detall.person      p  ON p.person_sk = pcc.papeleta_crew_count_person_fk
+    WHERE dp.papeleta_plan = ANY($1::text[])
+      AND p.person_rol = ANY($2::text[])
+      AND p.person_current_flag = TRUE
+      AND p.person_escuadrilla_fk = $3
+
+    UNION ALL
+
+    SELECT
+        gs.ground_school_person_fk   AS person_sk,
+        gs.ground_school_papeleta_fk AS session_fk,
+        gs.ground_school_datetime::date AS fecha
+    FROM operations.ground_school gs
+    JOIN operations.papeleta dp ON dp.papeleta_sk = gs.ground_school_papeleta_fk
+    JOIN detall.person      p  ON p.person_sk = gs.ground_school_person_fk
+    WHERE dp.papeleta_plan = ANY($1::text[])
+      AND p.person_rol = ANY($2::text[])
+      AND p.person_current_flag = TRUE
+      AND p.person_escuadrilla_fk = $3
+      AND gs.ground_school_escuadrilla_fk = $3
+) realizadas
+GROUP BY person_sk, session_fk
 `
 
 type InstruccionPapeletasRealizadasParams struct {
@@ -348,7 +369,9 @@ type InstruccionPapeletasRealizadasRow struct {
 	FlightDate pgtype.Date `json:"flight_date"`
 }
 
-// Última papeleta (MAX flight_date) por (persona, session_fk) limitada a planes en $1.
+// Última papeleta (MAX fecha) por (persona, session_fk) limitada a planes en $1.
+// Una papeleta se considera realizada tanto si se voló (papeleta_crew_count)
+// como si se impartió en Ground School (operations.ground_school).
 func (q *Queries) InstruccionPapeletasRealizadas(ctx context.Context, arg InstruccionPapeletasRealizadasParams) ([]InstruccionPapeletasRealizadasRow, error) {
 	rows, err := q.db.Query(ctx, instruccionPapeletasRealizadas, arg.Column1, arg.Column2, arg.PersonEscuadrillaFk)
 	if err != nil {
