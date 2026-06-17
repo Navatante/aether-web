@@ -909,6 +909,7 @@ const lookupPersonsNk = `-- name: LookupPersonsNk :many
 SELECT person_sk, person_nk
 FROM detall.v_person_ordered
 WHERE person_current_flag = TRUE
+  AND person_rol <> 'No Tripulante'
   AND person_escuadrilla_fk = $1
 ORDER BY order_position
 `
@@ -918,8 +919,9 @@ type LookupPersonsNkRow struct {
 	PersonNk *string `json:"person_nk"`
 }
 
-// Todas las personas activas de la escuadrilla con su person_nk (para selectores
-// que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+// Personas activas de la escuadrilla (excluye 'No Tripulante') con su person_nk
+// (para selectores que muestran el NK en lugar del nombre completo, p. ej.
+// Ground School).
 func (q *Queries) LookupPersonsNk(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsNkRow, error) {
 	rows, err := q.db.Query(ctx, lookupPersonsNk, personEscuadrillaFk)
 	if err != nil {

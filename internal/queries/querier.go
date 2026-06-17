@@ -441,8 +441,9 @@ type Querier interface {
 	// get_persons_lookup: "rank name last_name_1 [last_name_2]".
 	LookupPersons(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsRow, error)
 	LookupPersonsForComision(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsForComisionRow, error)
-	// Todas las personas activas de la escuadrilla con su person_nk (para selectores
-	// que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+	// Personas activas de la escuadrilla (excluye 'No Tripulante') con su person_nk
+	// (para selectores que muestran el NK en lugar del nombre completo, p. ej.
+	// Ground School).
 	LookupPersonsNk(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsNkRow, error)
 	// get_pilots_lookup: pilotos ordenados por la vista canónica.
 	LookupPilots(ctx context.Context, personEscuadrillaFk int32) ([]LookupPilotsRow, error)

@@ -112,11 +112,13 @@ WHERE papeleta_escuadrilla_fk = $1
 ORDER BY papeleta_name;
 
 -- name: LookupPersonsNk :many
--- Todas las personas activas de la escuadrilla con su person_nk (para selectores
--- que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+-- Personas activas de la escuadrilla (excluye 'No Tripulante') con su person_nk
+-- (para selectores que muestran el NK en lugar del nombre completo, p. ej.
+-- Ground School).
 SELECT person_sk, person_nk
 FROM detall.v_person_ordered
 WHERE person_current_flag = TRUE
+  AND person_rol <> 'No Tripulante'
   AND person_escuadrilla_fk = $1
 ORDER BY order_position;
 
