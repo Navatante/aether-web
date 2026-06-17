@@ -84,6 +84,7 @@ ORDER BY c.capba_id;
 SELECT person_sk, person_nk
 FROM detall.v_person_ordered
 WHERE person_rol = 'Piloto'
+  AND person_current_flag = TRUE
   AND person_escuadrilla_fk = $1
 ORDER BY order_position;
 
@@ -92,6 +93,7 @@ ORDER BY order_position;
 SELECT person_sk, person_nk
 FROM detall.v_person_ordered
 WHERE person_rol NOT IN ('Piloto', 'No Tripulante')
+  AND person_current_flag = TRUE
   AND person_escuadrilla_fk = $1
 ORDER BY order_position;
 
@@ -136,7 +138,8 @@ LIMIT 20;
 -- name: LookupPersonsForComision :many
 SELECT person_sk, person_rank, person_name, person_last_name_1, person_last_name_2
 FROM detall.v_person_ordered
-WHERE person_escuadrilla_fk = $1
+WHERE person_current_flag = TRUE
+  AND person_escuadrilla_fk = $1
 ORDER BY order_position;
 
 -- name: LookupPersons :many
@@ -147,7 +150,8 @@ SELECT
      CASE WHEN COALESCE(person_last_name_2, '') = '' THEN '' ELSE ' ' || person_last_name_2 END
     )::text AS full_name
 FROM detall.v_person_ordered
-WHERE person_escuadrilla_fk = $1
+WHERE person_current_flag = TRUE
+  AND person_escuadrilla_fk = $1
 ORDER BY order_position;
 
 

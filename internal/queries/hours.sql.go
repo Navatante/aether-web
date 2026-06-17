@@ -50,6 +50,7 @@ LEFT JOIN real_cta   rc ON rc.person_sk = p.person_sk
 LEFT JOIN sim_cta    sc ON sc.person_sk = p.person_sk
 LEFT JOIN prev_cta   pc ON pc.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -177,6 +178,7 @@ SELECT
 FROM detall.v_person_ordered p
 LEFT JOIN formation_agg fa ON fa.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -251,6 +253,7 @@ SELECT
 FROM detall.v_person_ordered p
 LEFT JOIN gvntype_agg ga ON ga.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -325,6 +328,7 @@ FROM detall.v_person_ordered p
 LEFT JOIN ift_agg   ia ON ia.person_sk = p.person_sk
 LEFT JOIN prev_inst pi ON pi.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -395,6 +399,7 @@ SELECT
 FROM detall.v_person_ordered p
 LEFT JOIN instructor_agg ia ON ia.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -514,6 +519,7 @@ LEFT JOIN real_agg        r  ON r.person_sk  = p.person_sk
 LEFT JOIN sim_agg         s  ON s.person_sk  = p.person_sk
 LEFT JOIN prev_agg        pv ON pv.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
@@ -596,6 +602,7 @@ SELECT
 FROM detall.v_person_ordered p
 LEFT JOIN wt_agg wa ON wa.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
+  AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position
