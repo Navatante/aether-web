@@ -13,3 +13,33 @@ import type { Tripulante } from './generated/hours';
 export interface EnrichedTripulanteData extends Tripulante {
     total_all: number;
 }
+
+// Horas de vuelo en formación (operations.formation_hour): Día y GVN por persona.
+export type {
+    FormationTripulante as FormationTripulanteData,
+    FormationResult as FormationResponse,
+} from './generated/hours';
+
+// Horas por tipo de GVN (operations.gvntype_hour): IIT y ANVIS por persona.
+export type {
+    GvntypeTripulante as GvntypeTripulanteData,
+    GvntypeResult as GvntypeResponse,
+} from './generated/hours';
+
+// Horas por instrumentos (operations.ift_hour) por persona.
+export type {
+    IftTripulante as IftTripulanteData,
+    IftResult as IftResponse,
+} from './generated/hours';
+
+// Horas como instructor (operations.instructor_hour) por persona.
+export type {
+    InstructorTripulante as InstructorTripulanteData,
+    InstructorResult as InstructorResponse,
+} from './generated/hours';
+
+// Horas como Comandante de Aeronave (CTA) por persona.
+export type {
+    CtaTripulante as CtaTripulanteData,
+    CtaResult as CtaResponse,
+} from './generated/hours';

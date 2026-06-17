@@ -24,3 +24,72 @@ export interface Result {
   endDate: string;
   tripulantes: Tripulante[];
 }
+/**
+ * FormationTripulante son las horas de vuelo en formación (operations.formation_hour)
+ * por persona, desglosadas en los dos periodos relevantes: Día y GVN.
+ */
+export interface FormationTripulante {
+  person_nk: string;
+  day_hour_qty: number /* float64 */;
+  gvn_hour_qty: number /* float64 */;
+}
+export interface FormationResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: FormationTripulante[];
+}
+/**
+ * GvntypeTripulante son las horas por tipo de gafas de visión nocturna
+ * (operations.gvntype_hour) por persona: IIT y ANVIS.
+ */
+export interface GvntypeTripulante {
+  person_nk: string;
+  iit_hour_qty: number /* float64 */;
+  anvis_hour_qty: number /* float64 */;
+}
+export interface GvntypeResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: GvntypeTripulante[];
+}
+/**
+ * IftTripulante son las horas de vuelo por instrumentos (operations.ift_hour)
+ * por persona.
+ */
+export interface IftTripulante {
+  person_nk: string;
+  ift_hour_qty: number /* float64 */;
+}
+export interface IftResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: IftTripulante[];
+}
+/**
+ * InstructorTripulante son las horas de vuelo como instructor
+ * (operations.instructor_hour) por persona.
+ */
+export interface InstructorTripulante {
+  person_nk: string;
+  instructor_hour_qty: number /* float64 */;
+}
+export interface InstructorResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: InstructorTripulante[];
+}
+/**
+ * CtaTripulante son las horas como Comandante de Aeronave (CTA) por persona. El
+ * sumatorio combina los vuelos en Aether donde la persona es CTA con las horas
+ * CTA de los modelos anteriores (real + sim); ver el detalle en la query
+ * CtaHours de queries/hours.sql.
+ */
+export interface CtaTripulante {
+  person_nk: string;
+  cta_hour_qty: number /* float64 */;
+}
+export interface CtaResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: CtaTripulante[];
+}

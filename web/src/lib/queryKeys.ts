@@ -98,6 +98,16 @@ export const queryKeys = {
         all: (escuadrillaId: number) => ['hours', escuadrillaId] as const,
         pilotos: (escuadrillaId: number, params: Record<string, unknown>) =>
             ['hours', escuadrillaId, 'pilotos', params] as const,
+        formacion: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', escuadrillaId, 'formacion', params] as const,
+        gvntype: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', escuadrillaId, 'gvntype', params] as const,
+        ift: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', escuadrillaId, 'ift', params] as const,
+        instructor: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', escuadrillaId, 'instructor', params] as const,
+        cta: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['hours', escuadrillaId, 'cta', params] as const,
         landings: (escuadrillaId: number, params: Record<string, unknown>) =>
             ['hours', escuadrillaId, 'landings', params] as const,
         projectiles: (escuadrillaId: number, params: Record<string, unknown>) =>

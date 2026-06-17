@@ -189,6 +189,206 @@ func (s *Service) NH90PeriodHours(ctx context.Context, esc int32, req Request) (
 	}, nil
 }
 
+func (s *Service) FormationPeriodHours(ctx context.Context, esc int32, req Request) (FormationResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return FormationResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return FormationResult{}, err
+	}
+	rows, err := s.q.FormationPeriodHours(ctx, queries.FormationPeriodHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+		Column5:             req.IncludePrevious,
+	})
+	if err != nil {
+		return FormationResult{}, err
+	}
+	tripulantes := make([]FormationTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, FormationTripulante{
+			PersonNk:   nk,
+			DayHourQty: numericToFloat(row.DayHourQty),
+			GvnHourQty: numericToFloat(row.GvnHourQty),
+		})
+	}
+	return FormationResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
+func (s *Service) GvntypeHours(ctx context.Context, esc int32, req Request) (GvntypeResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return GvntypeResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return GvntypeResult{}, err
+	}
+	rows, err := s.q.GvntypeHours(ctx, queries.GvntypeHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+	})
+	if err != nil {
+		return GvntypeResult{}, err
+	}
+	tripulantes := make([]GvntypeTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, GvntypeTripulante{
+			PersonNk:     nk,
+			IitHourQty:   numericToFloat(row.IitHourQty),
+			AnvisHourQty: numericToFloat(row.AnvisHourQty),
+		})
+	}
+	return GvntypeResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
+func (s *Service) IftHours(ctx context.Context, esc int32, req Request) (IftResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return IftResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return IftResult{}, err
+	}
+	rows, err := s.q.IftHours(ctx, queries.IftHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+		Column5:             req.IncludePrevious,
+	})
+	if err != nil {
+		return IftResult{}, err
+	}
+	tripulantes := make([]IftTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, IftTripulante{
+			PersonNk:   nk,
+			IftHourQty: numericToFloat(row.IftHourQty),
+		})
+	}
+	return IftResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
+func (s *Service) InstructorHours(ctx context.Context, esc int32, req Request) (InstructorResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return InstructorResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return InstructorResult{}, err
+	}
+	rows, err := s.q.InstructorHours(ctx, queries.InstructorHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+	})
+	if err != nil {
+		return InstructorResult{}, err
+	}
+	tripulantes := make([]InstructorTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, InstructorTripulante{
+			PersonNk:          nk,
+			InstructorHourQty: numericToFloat(row.InstructorHourQty),
+		})
+	}
+	return InstructorResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
+func (s *Service) CtaHours(ctx context.Context, esc int32, req Request) (CtaResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return CtaResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return CtaResult{}, err
+	}
+	rows, err := s.q.CtaHours(ctx, queries.CtaHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+		Column5:             req.IncludePrevious,
+	})
+	if err != nil {
+		return CtaResult{}, err
+	}
+	tripulantes := make([]CtaTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, CtaTripulante{
+			PersonNk:   nk,
+			CtaHourQty: numericToFloat(row.CtaHourQty),
+		})
+	}
+	return CtaResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
 // ============================================================
 // Handlers
 // ============================================================
@@ -199,6 +399,11 @@ func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
 
 func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.GET("/hours/nh90-period", h.NH90PeriodHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/formation-period", h.FormationPeriodHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/gvntype", h.GvntypeHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/ift", h.IftHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/instructor", h.InstructorHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/cta", h.CtaHours, auth.RequireAuth(authSvc))
 }
 
 func (h *Handlers) NH90PeriodHours(c echo.Context) error {
@@ -214,6 +419,99 @@ func (h *Handlers) NH90PeriodHours(c echo.Context) error {
 		IncludePrevious: c.QueryParam("include_previous") == "true",
 	}
 	res, err := h.svc.NH90PeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) FormationPeriodHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+		IncludePrevious: c.QueryParam("include_previous") == "true",
+	}
+	res, err := h.svc.FormationPeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) GvntypeHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+	}
+	res, err := h.svc.GvntypeHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) IftHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+		IncludePrevious: c.QueryParam("include_previous") == "true",
+	}
+	res, err := h.svc.IftHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) InstructorHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+	}
+	res, err := h.svc.InstructorHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) CtaHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+		IncludePrevious: c.QueryParam("include_previous") == "true",
+	}
+	res, err := h.svc.CtaHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

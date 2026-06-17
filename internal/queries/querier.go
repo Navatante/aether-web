@@ -72,6 +72,26 @@ type Querier interface {
 	// Calificaciones por persona, filtradas por (type, role[]) y escuadrilla.
 	// Sólo las que tienen date_qualified, ordenadas por crew_ratings_fk.
 	CrewQualificationsByPersonAndType(ctx context.Context, arg CrewQualificationsByPersonAndTypeParams) ([]CrewQualificationsByPersonAndTypeRow, error)
+	// Horas como Comandante de Aeronave (CTA) por persona del roster.
+	//
+	// DE DÓNDE SALE EL SUMATORIO DE HORAS CTA: se suman las siguientes fuentes:
+	//   1) Vuelos en Aether: SUM(operations.flight.flight_total_hours) de los vuelos
+	//      en los que la persona figura como CTA (flight_person_cta_fk), acotados por
+	//      el rango $1/$2.
+	//   2) operations.previous_model_real_hour.previous_model_real_hours_cta: horas
+	//      CTA reales registradas con el modelo de aeronave anterior (rango $1/$2).
+	//   3) operations.previous_model_sim_hour.previous_model_sim_hours_cta: horas CTA
+	//      en simulador registradas con el modelo anterior (rango $1/$2).
+	//   4) SOLO en modo "Totales" ($5=true): operations.previous_hour.previous_hours_cta,
+	//      el arrastre vitalicio de horas CTA por persona (sin fecha ni escuadrilla).
+	// Las tablas previous_* son person-centric (sin escuadrilla_fk); el filtro de
+	// roster por $3 las acota a personas propias.
+	// $5 = modo "Totales": cruza escuadrillas en la parte de vuelos (para personas
+	// que cambiaron de escuadrilla) y añade el arrastre (4). Por escuadrilla
+	// ($5=false): solo vuelos de la actual (flight_escuadrilla_fk = $3), sin arrastre.
+	// Totales ($5=true): exención acotada a la RLS-por-código (solo datos propios del
+	// roster). $4 = roles permitidos (vacío = todos).
+	CtaHours(ctx context.Context, arg CtaHoursParams) ([]CtaHoursRow, error)
 	DeleteAbsence(ctx context.Context, arg DeleteAbsenceParams) (int64, error)
 	DeleteAircraft(ctx context.Context, arg DeleteAircraftParams) (int64, error)
 	DeleteComision(ctx context.Context, arg DeleteComisionParams) (int64, error)
@@ -159,6 +179,17 @@ type Querier interface {
 	FlightPersonHours(ctx context.Context, dollar_1 []int32) ([]FlightPersonHoursRow, error)
 	FlightProjectiles(ctx context.Context, dollar_1 []int32) ([]FlightProjectilesRow, error)
 	FlightWtHours(ctx context.Context, dollar_1 []int32) ([]FlightWtHoursRow, error)
+	// Horas de vuelo en formación (operations.formation_hour) por periodo, una fila
+	// por persona del roster. Solo dos periodos relevantes: Día (period_fk=1) y GVN
+	// (period_fk=3). Son horas reales registradas en Aether; no hay sim ni arrastre.
+	//
+	// RLS explícita: el roster se filtra por person_escuadrilla_fk actual ($3).
+	// $5 = modo "Totales": cruza escuadrillas (para personas que cambiaron de
+	// escuadrilla). Por escuadrilla ($5=false): solo vuelos de la actual
+	// (f.flight_escuadrilla_fk = $3). Totales ($5=true): todos los vuelos de la
+	// persona → exención acotada a la RLS-por-código (solo datos propios del roster).
+	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
+	FormationPeriodHours(ctx context.Context, arg FormationPeriodHoursParams) ([]FormationPeriodHoursRow, error)
 	// =============== sp_get_generalTacticalRatings ===============
 	// Métricas detalladas por persona para calcular el `state` de las
 	// calificaciones generales/tácticas (crew_ratings_fk 12-18).
@@ -214,6 +245,23 @@ type Querier interface {
 	// ============================================================
 	// =============== STATIC STATS ===============
 	GetStaticPilotsStats(ctx context.Context, personEscuadrillaFk int32) (GetStaticPilotsStatsRow, error)
+	// Horas por tipo de gafas de visión nocturna (operations.gvntype_hour): IIT y
+	// ANVIS, una fila por persona del roster. No hay periodo ni sim ni arrastre.
+	//
+	// RLS explícita: roster por person_escuadrilla_fk actual ($3) y horas solo de
+	// vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
+	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
+	GvntypeHours(ctx context.Context, arg GvntypeHoursParams) ([]GvntypeHoursRow, error)
+	// Horas de vuelo por instrumentos (operations.ift_hour), una fila por persona del
+	// roster.
+	//
+	// RLS explícita: roster por person_escuadrilla_fk actual ($3).
+	// $5 = modo "Totales": cruza escuadrillas (para personas que cambiaron de
+	// escuadrilla) y suma el arrastre vitalicio operations.previous_hour.previous_hours_inst.
+	// Por escuadrilla ($5=false): solo vuelos de la actual (f.flight_escuadrilla_fk = $3)
+	// y sin arrastre. Totales ($5=true): exención acotada a la RLS-por-código (solo
+	// datos propios del roster). $1/$2 = rango. $4 = roles (vacío = todos).
+	IftHours(ctx context.Context, arg IftHoursParams) ([]IftHoursRow, error)
 	InsertAbsence(ctx context.Context, arg InsertAbsenceParams) (int32, error)
 	InsertApproach(ctx context.Context, arg InsertApproachParams) error
 	InsertCapbaHour(ctx context.Context, arg InsertCapbaHourParams) error
@@ -259,6 +307,13 @@ type Querier interface {
 	// Última papeleta (MAX flight_date) por (persona, session_fk) limitada a planes en $1.
 	InstruccionPapeletasRealizadas(ctx context.Context, arg InstruccionPapeletasRealizadasParams) ([]InstruccionPapeletasRealizadasRow, error)
 	InstruccionPersonas(ctx context.Context, arg InstruccionPersonasParams) ([]InstruccionPersonasRow, error)
+	// Horas de vuelo como instructor (operations.instructor_hour), una fila por
+	// persona del roster. Sin periodo, sim ni arrastre.
+	//
+	// RLS explícita: roster por person_escuadrilla_fk actual ($3) y horas solo de
+	// vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
+	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
+	InstructorHours(ctx context.Context, arg InstructorHoursParams) ([]InstructorHoursRow, error)
 	// ============================================================
 	// Landings & Approaches (tomas y aproximaciones por piloto)
 	//
