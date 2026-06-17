@@ -26,6 +26,7 @@ export const queryKeys = {
         pilots: (escuadrillaId: number) => ['lookups', escuadrillaId, 'pilots'] as const,
         crew: (escuadrillaId: number) => ['lookups', escuadrillaId, 'crew'] as const,
         papeletas: (escuadrillaId: number) => ['lookups', escuadrillaId, 'papeletas'] as const,
+        groundSchoolPapeletas: (escuadrillaId: number) => ['lookups', escuadrillaId, 'groundSchoolPapeletas'] as const,
         passengerTypes: (escuadrillaId: number) => ['lookups', escuadrillaId, 'passengerTypes'] as const,
         comisionTypes: (escuadrillaId: number) => ['lookups', escuadrillaId, 'comisionTypes'] as const,
         comisionLugares: (escuadrillaId: number) => ['lookups', escuadrillaId, 'comisionLugares'] as const,
@@ -39,6 +40,7 @@ export const queryKeys = {
         personDivisiones: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personDivisiones'] as const,
         personRoles: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personRoles'] as const,
         persons: (escuadrillaId: number) => ['lookups', escuadrillaId, 'persons'] as const,
+        personsNk: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personsNk'] as const,
     },
 
     // ========================================================================
@@ -50,6 +52,12 @@ export const queryKeys = {
             ['flights', escuadrillaId, 'list', params] as const,
         crewBySks: (escuadrillaId: number, sks: string) =>
             ['flights', escuadrillaId, 'crewBySks', sks] as const,
+    },
+
+    groundSchool: {
+        all: (escuadrillaId: number) => ['groundSchool', escuadrillaId] as const,
+        list: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['groundSchool', escuadrillaId, 'list', params] as const,
     },
 
     personnel: {

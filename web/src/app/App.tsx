@@ -29,6 +29,7 @@ import { lazy } from "react";
 // No usar el barrel raíz @/features: su `export *` arrastraría el grafo de
 // todas las features (incl. las de gráficos → recharts) al bundle principal.
 import { Flights } from "@/features/flights";
+import { GroundSchool } from "@/features/groundschool";
 import { Personnel } from "@/features/personnel";
 import { Papeletas } from "@/features/papeletas";
 import { Comisiones, DiasDeComision } from "@/features/comisiones";
@@ -101,6 +102,7 @@ function AppContent() {
                         <Route path="dotaciones/adiestramiento" element={<AdiestramientoDotaciones />} />
                         <Route path="dotaciones/instruccion" element={<InstruccionDotaciones />} />
                         <Route path="flights" element={<Flights />} />
+                        <Route path="ground-school" element={<GroundSchool />} />
                         <Route path="personnel" element={<Personnel />} />
                         <Route path="papeletas" element={<Papeletas />} />
                         <Route path="calificaciones/modelRatings" element={<ModelRatings />} />

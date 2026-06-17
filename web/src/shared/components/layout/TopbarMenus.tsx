@@ -21,6 +21,7 @@ import {
 import {useState} from "react"
 
 import { RegisterFlightDialog } from "@/features/flights"
+import { RegisterGroundSchoolDialog } from "@/features/groundschool"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
@@ -28,6 +29,7 @@ import { RegisterAbsenceDialog } from "@/features/availability"
 export function TopbarMenus() {
     // === ESTADOS DE DIALOGS ===
     const [registerFlightOpen, setRegisterFlightOpen] = useState(false)
+    const [registerGroundSchoolOpen, setRegisterGroundSchoolOpen] = useState(false)
     const [registerComisionOpen, setRegisterComisionOpen] = useState(false)
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
@@ -62,7 +64,7 @@ export function TopbarMenus() {
                                         <Plane className="mr-2 h-4 w-4" />
                                         Vuelo
                                     </MenubarItem>
-                                    <MenubarItem>
+                                    <MenubarItem onSelect={() => setRegisterGroundSchoolOpen(true)}>
                                         <Presentation className="mr-2 h-4 w-4" />
                                         GroundSchool
                                     </MenubarItem>
@@ -141,6 +143,14 @@ export function TopbarMenus() {
                 <RegisterFlightDialog
                     open={registerFlightOpen}
                     onOpenChange={setRegisterFlightOpen}
+                />
+            )}
+
+            {/* Dialog Ground School (OPERACIONAL) */}
+            {canAccessOperacional && (
+                <RegisterGroundSchoolDialog
+                    open={registerGroundSchoolOpen}
+                    onOpenChange={setRegisterGroundSchoolOpen}
                 />
             )}
 

@@ -72,6 +72,8 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.Crew(ctx, esc)
 	case "papeletas":
 		data, err = h.svc.Papeletas(ctx, esc)
+	case "ground-school-papeletas":
+		data, err = h.svc.GroundSchoolPapeletas(ctx, esc)
 	case "capbas":
 		data, err = h.svc.Capbas(ctx, esc)
 	case "escuadrilla-capbas":
@@ -82,6 +84,8 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.PersonsForComision(ctx, esc)
 	case "persons":
 		data, err = h.svc.Persons(ctx, esc)
+	case "persons-nk":
+		data, err = h.svc.PersonsNk(ctx, esc)
 
 	// Lookups globales (sin escuadrilla)
 	case "departure-arrival-places":

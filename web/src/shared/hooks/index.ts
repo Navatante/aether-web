@@ -14,6 +14,7 @@ export {
     usePilotsLookup,
     useCrewLookup,
     usePapeletasLookup,
+    useGroundSchoolPapeletasLookup,
     usePassengerTypes,
     useComisionTypes,
     useComisionLugares,
@@ -27,6 +28,7 @@ export {
     usePersonDivisionesLookup,
     usePersonRolesLookup,
     usePersonsLookup,
+    usePersonsNkLookup,
 } from './useLookups'
 export type {
     AircraftLookup,

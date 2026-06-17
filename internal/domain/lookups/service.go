@@ -200,6 +200,30 @@ func (s *Service) Papeletas(ctx context.Context, esc int32) ([]Papeleta, error) 
 	return out, nil
 }
 
+func (s *Service) PersonsNk(ctx context.Context, esc int32) ([]Crew, error) {
+	rows, err := s.q.LookupPersonsNk(ctx, esc)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Crew, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, Crew{PersonSk: r.PersonSk, PersonNk: derefStr(r.PersonNk)})
+	}
+	return out, nil
+}
+
+func (s *Service) GroundSchoolPapeletas(ctx context.Context, esc int32) ([]Papeleta, error) {
+	rows, err := s.q.LookupGroundSchoolPapeletas(ctx, esc)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]Papeleta, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, Papeleta{PapeletaSk: r.PapeletaSk, PapeletaName: r.PapeletaName})
+	}
+	return out, nil
+}
+
 func (s *Service) PassengerTypes(ctx context.Context) ([]PassengerType, error) {
 	rows, err := s.q.LookupPassengerTypes(ctx)
 	if err != nil {

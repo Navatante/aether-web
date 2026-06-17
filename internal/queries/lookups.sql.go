@@ -588,6 +588,40 @@ func (q *Queries) LookupEventsManage(ctx context.Context) ([]OperationsEvent, er
 	return items, nil
 }
 
+const lookupGroundSchoolPapeletas = `-- name: LookupGroundSchoolPapeletas :many
+SELECT papeleta_sk, papeleta_name
+FROM operations.papeleta
+WHERE papeleta_escuadrilla_fk = $1
+  AND papeleta_block NOT IN ('Simulador', 'Vuelo')
+ORDER BY papeleta_name
+`
+
+type LookupGroundSchoolPapeletasRow struct {
+	PapeletaSk   int32  `json:"papeleta_sk"`
+	PapeletaName string `json:"papeleta_name"`
+}
+
+// Papeletas para Ground School: excluye los bloques prácticos de vuelo y simulador.
+func (q *Queries) LookupGroundSchoolPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupGroundSchoolPapeletasRow, error) {
+	rows, err := q.db.Query(ctx, lookupGroundSchoolPapeletas, papeletaEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LookupGroundSchoolPapeletasRow
+	for rows.Next() {
+		var i LookupGroundSchoolPapeletasRow
+		if err := rows.Scan(&i.PapeletaSk, &i.PapeletaName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lookupPapeletaBloques = `-- name: LookupPapeletaBloques :many
 SELECT papeleta_block_name FROM operations.papeleta_block ORDER BY papeleta_block_name
 `
@@ -861,6 +895,41 @@ func (q *Queries) LookupPersonsForComision(ctx context.Context, personEscuadrill
 			&i.PersonLastName1,
 			&i.PersonLastName2,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupPersonsNk = `-- name: LookupPersonsNk :many
+SELECT person_sk, person_nk
+FROM detall.v_person_ordered
+WHERE person_current_flag = TRUE
+  AND person_escuadrilla_fk = $1
+ORDER BY order_position
+`
+
+type LookupPersonsNkRow struct {
+	PersonSk int32   `json:"person_sk"`
+	PersonNk *string `json:"person_nk"`
+}
+
+// Todas las personas activas de la escuadrilla con su person_nk (para selectores
+// que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+func (q *Queries) LookupPersonsNk(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsNkRow, error) {
+	rows, err := q.db.Query(ctx, lookupPersonsNk, personEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LookupPersonsNkRow
+	for rows.Next() {
+		var i LookupPersonsNkRow
+		if err := rows.Scan(&i.PersonSk, &i.PersonNk); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -103,6 +103,23 @@ FROM operations.papeleta
 WHERE papeleta_escuadrilla_fk = $1
 ORDER BY papeleta_name;
 
+-- name: LookupGroundSchoolPapeletas :many
+-- Papeletas para Ground School: excluye los bloques prácticos de vuelo y simulador.
+SELECT papeleta_sk, papeleta_name
+FROM operations.papeleta
+WHERE papeleta_escuadrilla_fk = $1
+  AND papeleta_block NOT IN ('Simulador', 'Vuelo')
+ORDER BY papeleta_name;
+
+-- name: LookupPersonsNk :many
+-- Todas las personas activas de la escuadrilla con su person_nk (para selectores
+-- que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+SELECT person_sk, person_nk
+FROM detall.v_person_ordered
+WHERE person_current_flag = TRUE
+  AND person_escuadrilla_fk = $1
+ORDER BY order_position;
+
 -- name: LookupPassengerTypes :many
 SELECT passenger_type_sk, passenger_type_name
 FROM operations.passenger_type

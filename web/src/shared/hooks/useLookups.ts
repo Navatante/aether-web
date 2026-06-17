@@ -189,6 +189,11 @@ export function usePapeletasLookup() {
     return useLookup<PapeletaLookup>('papeletas', queryKeys.lookups.papeletas);
 }
 
+/** Papeletas para Ground School (excluye bloques 'Simulador' y 'Vuelo') */
+export function useGroundSchoolPapeletasLookup() {
+    return useLookup<PapeletaLookup>('ground-school-papeletas', queryKeys.lookups.groundSchoolPapeletas);
+}
+
 /** Obtiene lista de tipos de pasajero para selector */
 export function usePassengerTypes() {
     return useLookup<PassengerTypeLookup>('passenger-types', queryKeys.lookups.passengerTypes);
@@ -272,4 +277,9 @@ export function usePersonRolesLookup() {
 /** Obtiene lista de personas para selector de ausencias */
 export function usePersonsLookup() {
     return useLookup<PersonLookup>('persons', queryKeys.lookups.persons);
+}
+
+/** Personas activas con su person_nk (selectores que muestran el NK) */
+export function usePersonsNkLookup() {
+    return useLookup<CrewLookup>('persons-nk', queryKeys.lookups.personsNk);
 }

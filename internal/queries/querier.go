@@ -65,6 +65,7 @@ type Querier interface {
 	CountComisiones(ctx context.Context, arg CountComisionesParams) (int32, error)
 	CountEvents(ctx context.Context) (int32, error)
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
+	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
 	CountPersons(ctx context.Context, personEscuadrillaFk int32) (int32, error)
 	CountSuperusersInEscuadrilla(ctx context.Context, personEscuadrillaFk int32) (int32, error)
@@ -104,6 +105,7 @@ type Querier interface {
 	DeleteFestivo(ctx context.Context, festivoSk int32) (int64, error)
 	// =============== DELETE (cascade en BD elimina hijos) ===============
 	DeleteFlight(ctx context.Context, arg DeleteFlightParams) (int64, error)
+	DeleteGroundSchool(ctx context.Context, arg DeleteGroundSchoolParams) (int64, error)
 	DeleteNotCrewRating(ctx context.Context, arg DeleteNotCrewRatingParams) (int64, error)
 	DeletePersonComisionBySk(ctx context.Context, arg DeletePersonComisionBySkParams) (int64, error)
 	DeletePersonFromComision(ctx context.Context, arg DeletePersonFromComisionParams) (int64, error)
@@ -287,6 +289,14 @@ type Querier interface {
 	// =============== INSERT MASTER + DEPENDIENTES ===============
 	InsertFlight(ctx context.Context, arg InsertFlightParams) (int32, error)
 	InsertFormationHour(ctx context.Context, arg InsertFormationHourParams) error
+	// ============================================================
+	// Ground School (operations.ground_school)
+	//
+	// Registro de asistencia a clases de teoría (papeleta) por persona y fecha.
+	// Una sesión registra una papeleta + fecha para N personas → N filas.
+	// RLS por código: filtro explícito por ground_school_escuadrilla_fk = $1.
+	// ============================================================
+	InsertGroundSchool(ctx context.Context, arg InsertGroundSchoolParams) (int32, error)
 	InsertGvntypeHour(ctx context.Context, arg InsertGvntypeHourParams) error
 	InsertIftHour(ctx context.Context, arg InsertIftHourParams) error
 	InsertInstructorHour(ctx context.Context, arg InsertInstructorHourParams) error
@@ -348,6 +358,8 @@ type Querier interface {
 	// =============== LIST (sp_get_flights_with_flexible_crew) ===============
 	// Paginado + filtros opcionales. $2 = flight_sk (0=sin filtro), $3/$4 = date_from/to (NULL=sin filtro).
 	ListFlights(ctx context.Context, arg ListFlightsParams) ([]ListFlightsRow, error)
+	// Paginado + filtro opcional por $2 = ground_school_sk (0=sin filtro).
+	ListGroundSchool(ctx context.Context, arg ListGroundSchoolParams) ([]ListGroundSchoolRow, error)
 	// ============================================================
 	// Papeletas (Hito 4, lote 2)
 	//
@@ -415,6 +427,8 @@ type Querier interface {
 	LookupEvents(ctx context.Context) ([]LookupEventsRow, error)
 	// get_events_manage: nombre y lugar separados.
 	LookupEventsManage(ctx context.Context) ([]OperationsEvent, error)
+	// Papeletas para Ground School: excluye los bloques prácticos de vuelo y simulador.
+	LookupGroundSchoolPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupGroundSchoolPapeletasRow, error)
 	LookupPapeletaBloques(ctx context.Context) ([]string, error)
 	LookupPapeletaPlanes(ctx context.Context) ([]string, error)
 	LookupPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupPapeletasRow, error)
@@ -427,6 +441,9 @@ type Querier interface {
 	// get_persons_lookup: "rank name last_name_1 [last_name_2]".
 	LookupPersons(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsRow, error)
 	LookupPersonsForComision(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsForComisionRow, error)
+	// Todas las personas activas de la escuadrilla con su person_nk (para selectores
+	// que muestran el NK en lugar del nombre completo, p. ej. Ground School).
+	LookupPersonsNk(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsNkRow, error)
 	// get_pilots_lookup: pilotos ordenados por la vista canónica.
 	LookupPilots(ctx context.Context, personEscuadrillaFk int32) ([]LookupPilotsRow, error)
 	// TOP 20 (LIMIT 20) más recientes. esfuerzo: boolean (en SQL Server era BIT

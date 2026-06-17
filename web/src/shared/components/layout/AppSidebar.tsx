@@ -100,7 +100,7 @@ const mainNavItems: NavItemType[] = [
     },
     {
         title: "Ground school",
-        href: "/stats",
+        href: "/ground-school",
         icon: School,
     },
 ]
