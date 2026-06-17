@@ -87,7 +87,7 @@ export default function AdiestramientoPilotos() {
     const [periodFilter, setPeriodFilter] = useState<PeriodFilter>(0);
     const adiestramientoArgs = {
         roles: 'Piloto',
-        bloques: 'Práctico Piloto,Simulador,Vuelo',
+        bloques: 'Práctico Piloto,Teórico Piloto,Simulador,Vuelo',
         periodo: String(periodFilter),
     };
     const { data, isLoading, error: queryError, refetch } = useApiQuery<PapeletasPersonasData>(

@@ -30,22 +30,45 @@ WITH tripulantes AS (
       AND v.person_escuadrilla_fk = $2
 ),
 papeletas_validas AS (
-    SELECT DISTINCT
-        pcc.papeleta_crew_count_person_fk AS person_sk,
-        pap.papeleta_sk,
-        CASE WHEN p.person_rol = 'Piloto' THEN pap.papeleta_pilot_crp_value
-             ELSE pap.papeleta_dv_crp_value END AS crp_value
-    FROM operations.papeleta_crew_count pcc
-    JOIN operations.papeleta pap ON pcc.papeleta_crew_count_session_fk = pap.papeleta_sk
-    JOIN operations.flight f     ON pcc.papeleta_crew_count_flight_fk = f.flight_sk
-    JOIN detall.person p         ON pcc.papeleta_crew_count_person_fk = p.person_sk
-    WHERE p.person_escuadrilla_fk = $2
-      AND pap.papeleta_expiration IS NOT NULL
-      AND f.flight_date >= (CURRENT_DATE - pap.papeleta_expiration)
-      AND (
-            (p.person_rol = 'Piloto' AND pap.papeleta_pilot_crp_value IS NOT NULL)
-         OR (p.person_rol <> 'Piloto' AND pap.papeleta_dv_crp_value IS NOT NULL)
-      )
+    SELECT DISTINCT person_sk, papeleta_sk, crp_value
+    FROM (
+        -- Vía vuelo (papeleta_crew_count).
+        SELECT
+            pcc.papeleta_crew_count_person_fk AS person_sk,
+            pap.papeleta_sk,
+            CASE WHEN p.person_rol = 'Piloto' THEN pap.papeleta_pilot_crp_value
+                 ELSE pap.papeleta_dv_crp_value END AS crp_value
+        FROM operations.papeleta_crew_count pcc
+        JOIN operations.papeleta pap ON pcc.papeleta_crew_count_session_fk = pap.papeleta_sk
+        JOIN operations.flight f     ON pcc.papeleta_crew_count_flight_fk = f.flight_sk
+        JOIN detall.person p         ON pcc.papeleta_crew_count_person_fk = p.person_sk
+        WHERE p.person_escuadrilla_fk = $2
+          AND pap.papeleta_expiration IS NOT NULL
+          AND f.flight_date >= (CURRENT_DATE - pap.papeleta_expiration)
+          AND (
+                (p.person_rol = 'Piloto' AND pap.papeleta_pilot_crp_value IS NOT NULL)
+             OR (p.person_rol <> 'Piloto' AND pap.papeleta_dv_crp_value IS NOT NULL)
+          )
+
+        UNION ALL
+
+        -- Vía Ground School (teoría).
+        SELECT
+            gs.ground_school_person_fk AS person_sk,
+            pap.papeleta_sk,
+            CASE WHEN p.person_rol = 'Piloto' THEN pap.papeleta_pilot_crp_value
+                 ELSE pap.papeleta_dv_crp_value END AS crp_value
+        FROM operations.ground_school gs
+        JOIN operations.papeleta pap ON gs.ground_school_papeleta_fk = pap.papeleta_sk
+        JOIN detall.person p         ON gs.ground_school_person_fk = p.person_sk
+        WHERE p.person_escuadrilla_fk = $2
+          AND pap.papeleta_expiration IS NOT NULL
+          AND gs.ground_school_datetime::date >= (CURRENT_DATE - pap.papeleta_expiration)
+          AND (
+                (p.person_rol = 'Piloto' AND pap.papeleta_pilot_crp_value IS NOT NULL)
+             OR (p.person_rol <> 'Piloto' AND pap.papeleta_dv_crp_value IS NOT NULL)
+          )
+    ) u
 ),
 crp_por_persona AS (
     SELECT person_sk, SUM(crp_value)::numeric AS crp_raw
@@ -82,18 +105,37 @@ ORDER BY t.order_position;
 -- Filtramos por personas con rol en $1 y escuadrilla = $2.
 -- period_fk = 0 ⇒ todos los periodos; 1/2/3 ⇒ solo papeletas voladas en ese periodo
 -- (Día / Noche convencional / GVN), recalculando la "más reciente" dentro del periodo.
-WITH papeletas_recientes AS (
+WITH realizaciones AS (
+    -- Papeletas voladas (con su periodo).
     SELECT
         pcc.papeleta_crew_count_person_fk  AS person_fk,
         pcc.papeleta_crew_count_session_fk AS session_fk,
-        (CURRENT_DATE - ff.flight_date)::int AS dias_transcurridos,
-        ROW_NUMBER() OVER (
-            PARTITION BY pcc.papeleta_crew_count_person_fk, pcc.papeleta_crew_count_session_fk
-            ORDER BY ff.flight_date DESC
-        ) AS rn
+        ff.flight_date                     AS fecha
     FROM operations.papeleta_crew_count pcc
     JOIN operations.flight ff ON ff.flight_sk = pcc.papeleta_crew_count_flight_fk
     WHERE (sqlc.arg(period_fk)::int = 0 OR pcc.papeleta_crew_count_period_fk = sqlc.arg(period_fk)::int)
+
+    UNION ALL
+
+    -- Papeletas impartidas en Ground School (teoría, sin periodo de vuelo):
+    -- solo cuentan cuando no se filtra por un periodo concreto.
+    SELECT
+        gs.ground_school_person_fk      AS person_fk,
+        gs.ground_school_papeleta_fk    AS session_fk,
+        gs.ground_school_datetime::date AS fecha
+    FROM operations.ground_school gs
+    WHERE sqlc.arg(period_fk)::int = 0
+),
+papeletas_recientes AS (
+    SELECT
+        person_fk,
+        session_fk,
+        (CURRENT_DATE - fecha)::int AS dias_transcurridos,
+        ROW_NUMBER() OVER (
+            PARTITION BY person_fk, session_fk
+            ORDER BY fecha DESC
+        ) AS rn
+    FROM realizaciones
 )
 SELECT
     pr.person_fk AS person_sk,
