@@ -23,7 +23,7 @@ import { Toaster, toast } from "sonner";
 import Login from "@/features/auth/Login";
 import "./App.css";
 
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 
 // Páginas eager, importadas por la API pública de cada feature (su index.ts).
 // No usar el barrel raíz @/features: su `export *` arrastraría el grafo de
@@ -52,6 +52,9 @@ import {
 // y mantenerlo fuera del bundle principal. Import directo del archivo (no del
 // barrel @/features, que arrastraría todo el grafo y anularía el split).
 const Dashboard = lazy(() => import("@/features/dashboard/pages/Dashboard"));
+// Ruta de impresión: fuera de MainLayout (sin sidebar/topbar). lazy para aislar
+// el chunk de los informes (recharts, etc.) del bundle principal.
+const PrintRoute = lazy(() => import("@/features/reports/PrintRoute"));
 const Effort = lazy(() => import("@/features/effort/pages/Effort"));
 const HorasVueloPilotos = lazy(() => import("@/features/hours/pages/HorasVueloPilotos"));
 const TomasAproximacionesPilotos = lazy(() => import("@/features/hours/pages/TomasAproximacionesPilotos"));
@@ -115,6 +118,15 @@ function AppContent() {
                         <Route path="disponibilidad" element={<Disponibilidad />} />
                         <Route path="esfuerzo" element={<Effort />} />
                     </Route>
+                    {/* Ruta de impresión: hermana de MainLayout (sin sidebar/topbar). */}
+                    <Route
+                        path="print/:reportId"
+                        element={
+                            <Suspense fallback={<FullPageLoader />}>
+                                <PrintRoute />
+                            </Suspense>
+                        }
+                    />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

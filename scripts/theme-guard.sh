@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 SRC=web/src
 
 # Excepciones (rutas relativas a web/src). Mantener en sintonía con web/CLAUDE.md.
-ALLOWLIST='app/theme\.css|features/ratings/utils/colors\.ts|shared/components/common/glassColors\.ts|shared/components/common/GlassProgressBar|components/ui/chart\.tsx|components/ui/button\.tsx|components/ui/badge\.tsx|types/generated/'
+ALLOWLIST='app/theme\.css|app/print\.css|features/ratings/utils/colors\.ts|shared/components/common/glassColors\.ts|shared/components/common/GlassProgressBar|components/ui/chart\.tsx|components/ui/button\.tsx|components/ui/badge\.tsx|types/generated/'
 
 fail=0
 

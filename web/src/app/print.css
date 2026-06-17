@@ -1,0 +1,188 @@
+/* print.css — estilos de impresión para la documentación PDF (features/reports).
+   Importado por PrintDocument.tsx. El control de página lo da la primitiva
+   PrintPage (.print-page); el autor compone páginas, no pelea con CSS suelto.
+
+   EXCEPCIÓN de theme-guard (allowlist): este archivo usa blanco/negro/gris
+   ABSOLUTOS a propósito — el documento se imprime sobre papel y debe ser
+   independiente del tema (claro/oscuro) de la app. Por eso no usa tokens. */
+
+/* ── Hoja ──────────────────────────────────────────────────────────────── */
+@page {
+    size: A4;
+    margin: 16mm 14mm;
+}
+
+.print-page {
+    break-after: page;
+    color: #111111;
+}
+.print-page:last-child {
+    break-after: auto;
+}
+
+/* Vista en pantalla (preview): hojas A4 sobre fondo gris */
+@media screen {
+    .print-surface {
+        background: #e9e9ec;
+        min-height: 100vh;
+        padding: 24px 0;
+    }
+    .print-page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto 24px;
+        padding: 16mm 14mm;
+        background: #ffffff;
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
+        box-sizing: border-box;
+    }
+}
+
+@media print {
+    .no-print,
+    /* Toaster de sonner (montado en la raíz): no debe colarse en el PDF */
+    [data-sonner-toaster] {
+        display: none !important;
+    }
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    thead {
+        display: table-header-group;
+    }
+    tr,
+    .avoid-break {
+        break-inside: avoid;
+    }
+    /* La app está en tema oscuro: forzar fondo blanco en la raíz para que el
+       espacio sobrante de la última hoja no salga negro en el PDF. */
+    html,
+    body,
+    #root {
+        background: #ffffff !important;
+    }
+    .print-surface {
+        background: #ffffff;
+    }
+    .print-page {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        background: #ffffff;
+    }
+}
+
+/* ── Contenido del informe (clases reutilizables) ──────────────────────── */
+.report-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 2px solid #111111;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.report-header img {
+    height: 56px;
+    width: auto;
+}
+.report-title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.report-subtitle {
+    font-size: 13px;
+    color: #555555;
+    margin-top: 2px;
+}
+.report-muted {
+    color: #555555;
+}
+
+.report-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 24px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #cccccc;
+}
+
+/* Portada */
+.report-cover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 245mm;
+    gap: 16px;
+}
+.report-cover img {
+    height: 120px;
+    width: auto;
+    opacity: 0.85;
+}
+.report-cover-title {
+    font-size: 30px;
+    font-weight: 800;
+}
+.report-cover-month {
+    font-size: 22px;
+    text-transform: capitalize;
+}
+
+/* KPIs */
+.report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.report-kpi {
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.report-kpi-value {
+    font-size: 22px;
+    font-weight: 700;
+}
+.report-kpi-label {
+    font-size: 11px;
+    color: #555555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Tablas */
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.report-table th,
+.report-table td {
+    border: 1px solid #cccccc;
+    padding: 6px 8px;
+    text-align: left;
+}
+.report-table thead th {
+    background: #f0f0f0;
+    font-weight: 700;
+}
+.report-table td.num,
+.report-table th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-footer {
+    margin-top: 28px;
+    padding-top: 8px;
+    border-top: 1px solid #cccccc;
+    font-size: 10px;
+    color: #777777;
+    display: flex;
+    justify-content: space-between;
+}

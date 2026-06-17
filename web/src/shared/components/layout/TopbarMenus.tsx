@@ -25,6 +25,7 @@ import { RegisterGroundSchoolDialog } from "@/features/groundschool"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
+import { MonthPickerDialog } from "@/features/reports"
 
 export function TopbarMenus() {
     // === ESTADOS DE DIALOGS ===
@@ -33,6 +34,7 @@ export function TopbarMenus() {
     const [registerComisionOpen, setRegisterComisionOpen] = useState(false)
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
+    const [generateReportOpen, setGenerateReportOpen] = useState(false)
 
     // === CONTEXTO DE USUARIO ===
     const { hasPermission } = useUser();
@@ -105,7 +107,7 @@ export function TopbarMenus() {
                 <MenubarMenu>
                     <MenubarTrigger>Documentos</MenubarTrigger>
                     <MenubarContent>
-                        <MenubarItem>
+                        <MenubarItem onSelect={() => setGenerateReportOpen(true)}>
                             <FileBarChart className="mr-2 h-4 w-4" />
                             Generar Reporte PDF
                         </MenubarItem>
@@ -177,6 +179,13 @@ export function TopbarMenus() {
                     onSuccess={handleAbsenceSuccess}
                 />
             )}
+
+            {/* Dialog Generar Reporte PDF (Documentos) */}
+            <MonthPickerDialog
+                reportId="monthly"
+                open={generateReportOpen}
+                onOpenChange={setGenerateReportOpen}
+            />
         </>
     )
 }

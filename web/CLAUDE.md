@@ -123,7 +123,7 @@ Piezas compartidas en `shared/components/common/`: `PageTableContainer`, `Sticky
 - **Fuente única de verdad**: `src/app/theme.css` — tokens OKLCH en `:root` (claro) y `.dark` (oscuro), mapeados a clases Tailwind vía `@theme inline`. El modo oscuro lo gestiona `ThemeProvider` (clase `.dark` en `<html>`); nunca dual-codees colores con `dark:` a mano.
 - **Prohibido hardcodear colores** (hex/rgb/oklch o clases de paleta tipo `text-gray-400`, `bg-red-500`, `text-white`): usa tokens semánticos (`text-muted-foreground`, `bg-danger-muted`, `text-success`, `bg-table-header`, `bg-role-pilot`…). Para estilos inline o recharts: `var(--token)` (p. ej. `var(--effort-high)`, `var(--absence-permiso)`).
 - Si necesitas un color nuevo, añade el token en `theme.css` (`:root` + `.dark` + mapeo `--color-*`).
-- **Excepciones documentadas**: `features/ratings/utils/colors.ts` (COLOR_PALETTE categórica), `shared/components/common/glassColors.ts` y `GlassProgressBar*` (animación decorativa), `components/ui/chart.tsx` (defaults de recharts), `components/ui/button.tsx`/`badge.tsx` (variants stock de shadcn), scrims `bg-black/NN` en overlays.
+- **Excepciones documentadas**: `features/ratings/utils/colors.ts` (COLOR_PALETTE categórica), `shared/components/common/glassColors.ts` y `GlassProgressBar*` (animación decorativa), `components/ui/chart.tsx` (defaults de recharts), `components/ui/button.tsx`/`badge.tsx` (variants stock de shadcn), `app/print.css` (blanco/negro/gris absolutos para impresión en papel, independientes del tema), scrims `bg-black/NN` en overlays.
 - Guard: `make theme-guard` (también corre en CI). Allowlist en `scripts/theme-guard.sh`.
 
 ## Permisos en la UI
