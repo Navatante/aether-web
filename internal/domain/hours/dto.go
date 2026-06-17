@@ -91,3 +91,16 @@ type CtaResult struct {
 	EndDate     string          `json:"endDate"`
 	Tripulantes []CtaTripulante `json:"tripulantes"`
 }
+
+// WtTripulante son las horas de vuelo en Winch Trim (operations.wt_hour) por
+// persona. Usado en la página de horas de Dotaciones.
+type WtTripulante struct {
+	PersonNk  string  `json:"person_nk"`
+	WtHourQty float64 `json:"wt_hour_qty"`
+}
+
+type WtResult struct {
+	StartDate   string         `json:"startDate"`
+	EndDate     string         `json:"endDate"`
+	Tripulantes []WtTripulante `json:"tripulantes"`
+}

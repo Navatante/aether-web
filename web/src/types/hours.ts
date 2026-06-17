@@ -43,3 +43,9 @@ export type {
     CtaTripulante as CtaTripulanteData,
     CtaResult as CtaResponse,
 } from './generated/hours';
+
+// Horas en Winch Trim (operations.wt_hour) por persona (Dotaciones).
+export type {
+    WtTripulante as WtTripulanteData,
+    WtResult as WtResponse,
+} from './generated/hours';

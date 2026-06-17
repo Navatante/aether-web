@@ -515,6 +515,14 @@ type Querier interface {
 	UpdatePerson(ctx context.Context, arg UpdatePersonParams) (int64, error)
 	// Idempotente: si el nombre ya existe, no hace nada.
 	UpsertEventName(ctx context.Context, eventNameValue string) error
+	// Horas de vuelo en Winch Trim (operations.wt_hour), una fila por persona del
+	// roster (página /dotaciones/horas-vuelo). Sin periodo, sim ni arrastre: el modo
+	// "Totales" NO incluye Winch Trim, así que esta query solo opera por escuadrilla.
+	//
+	// RLS explícita: roster por person_escuadrilla_fk actual ($3) y horas solo de
+	// vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
+	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
+	WtHours(ctx context.Context, arg WtHoursParams) ([]WtHoursRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -93,3 +93,16 @@ export interface CtaResult {
   endDate: string;
   tripulantes: CtaTripulante[];
 }
+/**
+ * WtTripulante son las horas de vuelo en Winch Trim (operations.wt_hour) por
+ * persona. Usado en la página de horas de Dotaciones.
+ */
+export interface WtTripulante {
+  person_nk: string;
+  wt_hour_qty: number /* float64 */;
+}
+export interface WtResult {
+  startDate: string;
+  endDate: string;
+  tripulantes: WtTripulante[];
+}

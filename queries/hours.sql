@@ -297,3 +297,31 @@ WHERE p.person_nk IS NOT NULL
   AND p.person_escuadrilla_fk = $3
   AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
 ORDER BY p.order_position;
+
+-- name: WtHours :many
+-- Horas de vuelo en Winch Trim (operations.wt_hour), una fila por persona del
+-- roster (página /dotaciones/horas-vuelo). Sin periodo, sim ni arrastre: el modo
+-- "Totales" NO incluye Winch Trim, así que esta query solo opera por escuadrilla.
+--
+-- RLS explícita: roster por person_escuadrilla_fk actual ($3) y horas solo de
+-- vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
+-- $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
+WITH wt_agg AS (
+    SELECT
+        wh.wt_hour_person_fk AS person_sk,
+        SUM(wh.wt_hour_qty)::numeric AS wt
+    FROM operations.wt_hour wh
+    JOIN operations.flight f ON wh.wt_hour_flight_fk = f.flight_sk
+    WHERE f.flight_date >= $1 AND f.flight_date <= $2
+      AND f.flight_escuadrilla_fk = $3
+    GROUP BY wh.wt_hour_person_fk
+)
+SELECT
+    p.person_nk,
+    ROUND(COALESCE(wa.wt, 0), 1)::numeric AS wt_hour_qty
+FROM detall.v_person_ordered p
+LEFT JOIN wt_agg wa ON wa.person_sk = p.person_sk
+WHERE p.person_nk IS NOT NULL
+  AND p.person_escuadrilla_fk = $3
+  AND (COALESCE(cardinality($4::text[]), 0) = 0 OR p.person_rol = ANY($4::text[]))
+ORDER BY p.order_position;

@@ -55,6 +55,7 @@ const Effort = lazy(() => import("@/features/effort/pages/Effort"));
 const HorasVueloPilotos = lazy(() => import("@/features/hours/pages/HorasVueloPilotos"));
 const TomasAproximacionesPilotos = lazy(() => import("@/features/hours/pages/TomasAproximacionesPilotos"));
 const ProyectilesDotaciones = lazy(() => import("@/features/hours/pages/ProyectilesDotaciones"));
+const HorasVueloDotaciones = lazy(() => import("@/features/hours/pages/HorasVueloDotaciones"));
 
 function FullPageLoader() {
     return (
@@ -95,6 +96,7 @@ function AppContent() {
                         <Route path="pilotos/tomas-aproximaciones" element={<TomasAproximacionesPilotos />} />
                         <Route path="pilotos/adiestramiento" element={<AdiestramientoPilotos />} />
                         <Route path="pilotos/instruccion" element={<InstruccionPilotos />} />
+                        <Route path="dotaciones/horas-vuelo" element={<HorasVueloDotaciones />} />
                         <Route path="dotaciones/proyectiles" element={<ProyectilesDotaciones />} />
                         <Route path="dotaciones/adiestramiento" element={<AdiestramientoDotaciones />} />
                         <Route path="dotaciones/instruccion" element={<InstruccionDotaciones />} />

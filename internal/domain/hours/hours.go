@@ -389,6 +389,45 @@ func (s *Service) CtaHours(ctx context.Context, esc int32, req Request) (CtaResu
 	}, nil
 }
 
+func (s *Service) WtHours(ctx context.Context, esc int32, req Request) (WtResult, error) {
+	// Mismo anclaje del rango "histórico" que NH90PeriodHours.
+	historicStart := defaultHistoricStart
+	if d, err := s.q.EscuadrillaCreationDate(ctx, esc); err != nil {
+		return WtResult{}, err
+	} else if d.Valid {
+		historicStart = d.Time
+	}
+	r, err := resolveRange(req, time.Time{}, historicStart)
+	if err != nil {
+		return WtResult{}, err
+	}
+	rows, err := s.q.WtHours(ctx, queries.WtHoursParams{
+		FlightDate:          pgtype.Date{Time: r.from, Valid: true},
+		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
+		PersonEscuadrillaFk: esc,
+		Column4:             req.PersonRoles,
+	})
+	if err != nil {
+		return WtResult{}, err
+	}
+	tripulantes := make([]WtTripulante, 0, len(rows))
+	for _, row := range rows {
+		nk := ""
+		if row.PersonNk != nil {
+			nk = *row.PersonNk
+		}
+		tripulantes = append(tripulantes, WtTripulante{
+			PersonNk:  nk,
+			WtHourQty: numericToFloat(row.WtHourQty),
+		})
+	}
+	return WtResult{
+		StartDate:   r.from.Format("2006-01-02"),
+		EndDate:     r.to.Format("2006-01-02"),
+		Tripulantes: tripulantes,
+	}, nil
+}
+
 // ============================================================
 // Handlers
 // ============================================================
@@ -404,6 +443,7 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.GET("/hours/ift", h.IftHours, auth.RequireAuth(authSvc))
 	g.GET("/hours/instructor", h.InstructorHours, auth.RequireAuth(authSvc))
 	g.GET("/hours/cta", h.CtaHours, auth.RequireAuth(authSvc))
+	g.GET("/hours/wt", h.WtHours, auth.RequireAuth(authSvc))
 }
 
 func (h *Handlers) NH90PeriodHours(c echo.Context) error {
@@ -512,6 +552,24 @@ func (h *Handlers) CtaHours(c echo.Context) error {
 		IncludePrevious: c.QueryParam("include_previous") == "true",
 	}
 	res, err := h.svc.CtaHours(c.Request().Context(), int32(u.EscuadrillaID), req)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+func (h *Handlers) WtHours(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	req := Request{
+		TimeRange:       c.QueryParam("time_range"),
+		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
+		CustomStartDate: c.QueryParam("custom_start_date"),
+		CustomEndDate:   c.QueryParam("custom_end_date"),
+	}
+	res, err := h.svc.WtHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
