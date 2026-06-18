@@ -53,23 +53,25 @@ person_hour_agg AS (
 ),
 real_agg AS (
     SELECT
-        extra_model_real_hours_person_fk AS person_sk,
-        SUM(extra_model_real_hours_day)::numeric        AS day,
-        SUM(extra_model_real_hours_conv_night)::numeric AS night,
-        SUM(extra_model_real_hours_gvn)::numeric        AS gvn
-    FROM operations.extra_model_real_hour
-    WHERE $5::bool OR (extra_model_real_hours_date >= $1 AND extra_model_real_hours_date <= $2)
-    GROUP BY extra_model_real_hours_person_fk
+        extra_model_hours_person_fk AS person_sk,
+        SUM(extra_model_hours_day)::numeric        AS day,
+        SUM(extra_model_hours_conv_night)::numeric AS night,
+        SUM(extra_model_hours_gvn)::numeric        AS gvn
+    FROM operations.extra_model_hour
+    WHERE extra_model_hours_is_real
+      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
+    GROUP BY extra_model_hours_person_fk
 ),
 sim_agg AS (
     SELECT
-        extra_model_sim_hours_person_fk AS person_sk,
-        SUM(extra_model_sim_hours_day)::numeric        AS day,
-        SUM(extra_model_sim_hours_conv_night)::numeric AS night,
-        SUM(extra_model_sim_hours_gvn)::numeric        AS gvn
-    FROM operations.extra_model_sim_hour
-    WHERE $5::bool OR (extra_model_sim_hours_date >= $1 AND extra_model_sim_hours_date <= $2)
-    GROUP BY extra_model_sim_hours_person_fk
+        extra_model_hours_person_fk AS person_sk,
+        SUM(extra_model_hours_day)::numeric        AS day,
+        SUM(extra_model_hours_conv_night)::numeric AS night,
+        SUM(extra_model_hours_gvn)::numeric        AS gvn
+    FROM operations.extra_model_hour
+    WHERE NOT extra_model_hours_is_real
+      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
+    GROUP BY extra_model_hours_person_fk
 ),
 -- Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
 -- activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
@@ -250,9 +252,9 @@ ORDER BY p.order_position;
 --   1) Vuelos en Aether: SUM(operations.flight.flight_total_hours) de los vuelos
 --      en los que la persona figura como CTA (flight_person_cta_fk), acotados por
 --      el rango $1/$2.
---   2) operations.extra_model_real_hour.extra_model_real_hours_cta: horas
+--   2) operations.extra_model_hour.extra_model_hours_cta (is_real=TRUE): horas
 --      CTA reales registradas con el modelo de aeronave anterior (rango $1/$2).
---   3) operations.extra_model_sim_hour.extra_model_sim_hours_cta: horas CTA
+--   3) operations.extra_model_hour.extra_model_hours_cta (is_real=FALSE): horas CTA
 --      en simulador registradas con el modelo anterior (rango $1/$2).
 --   4) SOLO en modo "Totales" ($5=true): operations.extra_hour.extra_hours_cta,
 --      el arrastre vitalicio de horas CTA por persona (sin fecha ni escuadrilla).
@@ -273,18 +275,20 @@ WITH flight_cta AS (
     GROUP BY f.flight_person_cta_fk
 ),
 real_cta AS (
-    SELECT extra_model_real_hours_person_fk AS person_sk,
-           SUM(extra_model_real_hours_cta)::numeric AS cta
-    FROM operations.extra_model_real_hour
-    WHERE $5::bool OR (extra_model_real_hours_date >= $1 AND extra_model_real_hours_date <= $2)
-    GROUP BY extra_model_real_hours_person_fk
+    SELECT extra_model_hours_person_fk AS person_sk,
+           SUM(extra_model_hours_cta)::numeric AS cta
+    FROM operations.extra_model_hour
+    WHERE extra_model_hours_is_real
+      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
+    GROUP BY extra_model_hours_person_fk
 ),
 sim_cta AS (
-    SELECT extra_model_sim_hours_person_fk AS person_sk,
-           SUM(extra_model_sim_hours_cta)::numeric AS cta
-    FROM operations.extra_model_sim_hour
-    WHERE $5::bool OR (extra_model_sim_hours_date >= $1 AND extra_model_sim_hours_date <= $2)
-    GROUP BY extra_model_sim_hours_person_fk
+    SELECT extra_model_hours_person_fk AS person_sk,
+           SUM(extra_model_hours_cta)::numeric AS cta
+    FROM operations.extra_model_hour
+    WHERE NOT extra_model_hours_is_real
+      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
+    GROUP BY extra_model_hours_person_fk
 ),
 prev_cta AS (
     SELECT extra_hours_person_fk AS person_sk,

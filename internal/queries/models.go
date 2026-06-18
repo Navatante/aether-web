@@ -316,26 +316,16 @@ type OperationsExtraHour struct {
 	ExtraHoursRemarks   *string        `json:"extra_hours_remarks"`
 }
 
-type OperationsExtraModelRealHour struct {
-	ExtraModelRealHoursSk        int32          `json:"extra_model_real_hours_sk"`
-	ExtraModelRealHoursDate      pgtype.Date    `json:"extra_model_real_hours_date"`
-	ExtraModelRealHoursPersonFk  int32          `json:"extra_model_real_hours_person_fk"`
-	ExtraModelRealHoursCta       pgtype.Numeric `json:"extra_model_real_hours_cta"`
-	ExtraModelRealHoursDay       pgtype.Numeric `json:"extra_model_real_hours_day"`
-	ExtraModelRealHoursConvNight pgtype.Numeric `json:"extra_model_real_hours_conv_night"`
-	ExtraModelRealHoursGvn       pgtype.Numeric `json:"extra_model_real_hours_gvn"`
-	ExtraModelRealHoursInst      pgtype.Numeric `json:"extra_model_real_hours_inst"`
-}
-
-type OperationsExtraModelSimHour struct {
-	ExtraModelSimHoursSk        int32          `json:"extra_model_sim_hours_sk"`
-	ExtraModelSimHoursDate      pgtype.Date    `json:"extra_model_sim_hours_date"`
-	ExtraModelSimHoursPersonFk  int32          `json:"extra_model_sim_hours_person_fk"`
-	ExtraModelSimHoursCta       pgtype.Numeric `json:"extra_model_sim_hours_cta"`
-	ExtraModelSimHoursDay       pgtype.Numeric `json:"extra_model_sim_hours_day"`
-	ExtraModelSimHoursConvNight pgtype.Numeric `json:"extra_model_sim_hours_conv_night"`
-	ExtraModelSimHoursGvn       pgtype.Numeric `json:"extra_model_sim_hours_gvn"`
-	ExtraModelSimHoursInst      pgtype.Numeric `json:"extra_model_sim_hours_inst"`
+type OperationsExtraModelHour struct {
+	ExtraModelHoursSk        int32          `json:"extra_model_hours_sk"`
+	ExtraModelHoursDate      pgtype.Date    `json:"extra_model_hours_date"`
+	ExtraModelHoursPersonFk  int32          `json:"extra_model_hours_person_fk"`
+	ExtraModelHoursIsReal    bool           `json:"extra_model_hours_is_real"`
+	ExtraModelHoursCta       pgtype.Numeric `json:"extra_model_hours_cta"`
+	ExtraModelHoursDay       pgtype.Numeric `json:"extra_model_hours_day"`
+	ExtraModelHoursConvNight pgtype.Numeric `json:"extra_model_hours_conv_night"`
+	ExtraModelHoursGvn       pgtype.Numeric `json:"extra_model_hours_gvn"`
+	ExtraModelHoursInst      pgtype.Numeric `json:"extra_model_hours_inst"`
 }
 
 type OperationsFlight struct {

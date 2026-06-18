@@ -82,9 +82,9 @@ type Querier interface {
 	//   1) Vuelos en Aether: SUM(operations.flight.flight_total_hours) de los vuelos
 	//      en los que la persona figura como CTA (flight_person_cta_fk), acotados por
 	//      el rango $1/$2.
-	//   2) operations.extra_model_real_hour.extra_model_real_hours_cta: horas
+	//   2) operations.extra_model_hour.extra_model_hours_cta (is_real=TRUE): horas
 	//      CTA reales registradas con el modelo de aeronave anterior (rango $1/$2).
-	//   3) operations.extra_model_sim_hour.extra_model_sim_hours_cta: horas CTA
+	//   3) operations.extra_model_hour.extra_model_hours_cta (is_real=FALSE): horas CTA
 	//      en simulador registradas con el modelo anterior (rango $1/$2).
 	//   4) SOLO en modo "Totales" ($5=true): operations.extra_hour.extra_hours_cta,
 	//      el arrastre vitalicio de horas CTA por persona (sin fecha ni escuadrilla).
