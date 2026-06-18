@@ -1,10 +1,10 @@
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiMutation } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
 import { useEscuadrilla, PermissionLevel, useUser } from '@/providers';
 import type { GroundSchoolItem } from '@/types/generated/groundschool';
 import {
-    Search, ChevronLeft, ChevronRight, RefreshCw, Trash2,
+    ChevronLeft, ChevronRight, RefreshCw, Trash2,
 } from 'lucide-react';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -36,6 +36,16 @@ const GroundSchool = () => {
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState((prev) => ({ ...prev, ...newParams }));
     };
+
+    // Búsqueda en vivo con debounce (300ms): busca por ID al dejar de teclear
+    // (1 petición por pausa, no por pulsación) y vuelve a la 1ª página.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const sk = searchInput.trim() ? parseInt(searchInput, 10) : null;
+            setParams({ ground_school_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
+        }, 300);
+        return () => clearTimeout(t);
+    }, [searchInput]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.ground_school_sk != null) query.ground_school_sk = params.ground_school_sk;
@@ -109,15 +119,6 @@ const GroundSchool = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-3 items-center">
-                            <ActionButton
-                                variant="refresh"
-                                icon={Search}
-                                label="Buscar"
-                                onClick={() => setParams({
-                                    ground_school_sk: searchInput ? parseInt(searchInput, 10) : null,
-                                    offset: 0,
-                                })}
-                            />
                             <ActionButton
                                 variant="refresh"
                                 icon={RefreshCw}

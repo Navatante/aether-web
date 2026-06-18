@@ -5,6 +5,12 @@
 -- invariante (en 0004) y schema floan (fuera de alcance).
 -- ============================================================
 
+-- ===== EXTENSIONS =====
+-- unaccent: búsquedas que ignoran acentos (p. ej. horas extra por persona).
+-- Es "trusted" (PG13+), así que no requiere superusuario. Se referencia
+-- schema-qualified como public.unaccent(...) en las queries.
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
+
 -- ===== SCHEMAS =====
 CREATE SCHEMA IF NOT EXISTS detall;
 CREATE SCHEMA IF NOT EXISTS operations;

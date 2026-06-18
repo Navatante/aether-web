@@ -29,7 +29,7 @@ type Request struct {
 	PersonRoles     []string // CSV recibido en query, ya partido
 	CustomStartDate string   // YYYY-MM-DD
 	CustomEndDate   string   // YYYY-MM-DD
-	IncludeExtra bool     // modo "Totales": suma operations.extra_hour (arrastre)
+	IncludeExtra    bool     // modo "Totales": suma operations.extra_hour (arrastre)
 }
 
 // ============================================================
@@ -456,7 +456,7 @@ func (h *Handlers) NH90PeriodHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludeExtra: c.QueryParam("include_extra") == "true",
+		IncludeExtra:    c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.NH90PeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -475,7 +475,7 @@ func (h *Handlers) FormationPeriodHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludeExtra: c.QueryParam("include_extra") == "true",
+		IncludeExtra:    c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.FormationPeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -512,7 +512,7 @@ func (h *Handlers) IftHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludeExtra: c.QueryParam("include_extra") == "true",
+		IncludeExtra:    c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.IftHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -549,7 +549,7 @@ func (h *Handlers) CtaHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludeExtra: c.QueryParam("include_extra") == "true",
+		IncludeExtra:    c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.CtaHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {

@@ -1,4 +1,4 @@
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { ComisionData } from "@/types/comisions";
@@ -49,6 +49,16 @@ const Comisiones = () => {
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState(prev => ({ ...prev, ...newParams }));
     };
+
+    // Búsqueda en vivo con debounce (300ms): busca por ID al dejar de teclear
+    // (1 petición por pausa, no por pulsación) y vuelve a la 1ª página.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const sk = searchQuery.trim() ? parseInt(searchQuery, 10) : null;
+            setParams({ comision_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
+        }, 300);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.comision_sk != null) query.comision_sk = params.comision_sk;
@@ -166,15 +176,6 @@ const Comisiones = () => {
                                     placeholder="Buscar por ID..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            setParams({
-                                                comision_sk: searchQuery ? parseInt(searchQuery, 10) : null,
-                                                offset: 0
-                                            });
-                                        }
-                                    }}
                                     className="bg-card border-input border focus:border-ring focus:outline-none transition-all placeholder:text-muted-foreground text-foreground w-full pl-10 pr-4 py-2.5 rounded-xl"
                                     aria-label="Buscar comisión"
                                 />
@@ -182,18 +183,6 @@ const Comisiones = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-3 items-center">
-                            <ActionButton
-                                variant="refresh"
-                                icon={Search}
-                                label="Buscar"
-                                onClick={() => {
-                                    setParams({
-                                        comision_sk: searchQuery ? parseInt(searchQuery) : null,
-                                        offset: 0
-                                    });
-                                }}
-                            />
-
                             <ActionButton
                                 variant="refresh"
                                 icon={RefreshCw}

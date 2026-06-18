@@ -64,6 +64,9 @@ type Querier interface {
 	AvailabilityPersons(ctx context.Context, personEscuadrillaFk int32) ([]AvailabilityPersonsRow, error)
 	CountComisiones(ctx context.Context, arg CountComisionesParams) (int32, error)
 	CountEvents(ctx context.Context) (int32, error)
+	// Número de personas (no de registros) que tienen horas extra, con el mismo
+	// filtro de nombre que ListExtraHourPersonTotals.
+	CountExtraHourPersons(ctx context.Context, arg CountExtraHourPersonsParams) (int32, error)
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
 	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
@@ -102,6 +105,7 @@ type Querier interface {
 	// Desasigna una capba de la escuadrilla.
 	DeleteEscuadrillaCapba(ctx context.Context, arg DeleteEscuadrillaCapbaParams) (int64, error)
 	DeleteEvent(ctx context.Context, eventSk int32) (int64, error)
+	DeleteExtraHour(ctx context.Context, arg DeleteExtraHourParams) (int64, error)
 	DeleteFestivo(ctx context.Context, festivoSk int32) (int64, error)
 	// =============== DELETE (cascade en BD elimina hijos) ===============
 	DeleteFlight(ctx context.Context, arg DeleteFlightParams) (int64, error)
@@ -273,6 +277,23 @@ type Querier interface {
 	InsertCupoHour(ctx context.Context, arg InsertCupoHourParams) error
 	// Devuelve el sk para que el frontend pueda redirigir / seleccionar.
 	InsertEvent(ctx context.Context, arg InsertEventParams) (int32, error)
+	// ============================================================
+	// Horas extra (operations.extra_hour)
+	//
+	// Arrastre de horas por persona (CTA, día, noche convencional, GVN,
+	// instrumentos) + observaciones. Una persona puede tener varias filas, que se
+	// suman en los cálculos de horas (queries/hours.sql) y en la vista agrupada de
+	// abajo (ListExtraHourPersonTotals).
+	//
+	// RLS por código: operations.extra_hour NO tiene escuadrilla_fk (es
+	// person-centric), así que el aislamiento se hace vía la escuadrilla de la
+	// persona (detall.person.person_escuadrilla_fk = $N). Todas las sentencias de
+	// abajo lo aplican, por lo que quedan acotadas a personas de la escuadrilla
+	// de la sesión.
+	// ============================================================
+	// Inserta solo si la persona pertenece a la escuadrilla de la sesión ($8); si
+	// no, no inserta ninguna fila (RETURNING vacío → ErrNoRows en el service).
+	InsertExtraHour(ctx context.Context, arg InsertExtraHourParams) (int32, error)
 	InsertFestivo(ctx context.Context, arg InsertFestivoParams) (int32, error)
 	// ============================================================
 	// Flights (Hito 4, lote 7)
@@ -352,6 +373,14 @@ type Querier interface {
 	//   $3 = date_from (pgtype.Date.Valid=false → sin filtro)
 	//   $4 = date_to   (idem)
 	ListComisiones(ctx context.Context, arg ListComisionesParams) ([]ListComisionesRow, error)
+	// Detalle: registros individuales de UNA persona ($2), acotado a la escuadrilla
+	// de la sesión ($1). Sin paginar (cada persona tiene pocos registros).
+	ListExtraHourByPerson(ctx context.Context, arg ListExtraHourByPersonParams) ([]ListExtraHourByPersonRow, error)
+	// Vista agrupada: una fila por persona con el conteo de registros y la SUMA de
+	// cada métrica. Ordenado por el orden canónico de personas
+	// (detall.v_person_ordered.order_position: rango, antigüedad, escalafón…).
+	// Paginado por persona. $2 = filtro opcional por nombre/NK (cadena vacía = sin filtro).
+	ListExtraHourPersonTotals(ctx context.Context, arg ListExtraHourPersonTotalsParams) ([]ListExtraHourPersonTotalsRow, error)
 	// ============================================================
 	// Festivos (Hito 4, lote 2)
 	// Catálogo global (sin escuadrilla_fk en la tabla).
@@ -530,6 +559,9 @@ type Querier interface {
 	// Actualiza la capacidad operativa de una asignación de la escuadrilla.
 	UpdateEscuadrillaCapba(ctx context.Context, arg UpdateEscuadrillaCapbaParams) (int64, error)
 	UpdateEvent(ctx context.Context, arg UpdateEventParams) (int64, error)
+	// Actualiza solo las horas y observaciones (la persona del registro no cambia).
+	// Acotado a registros de personas de la escuadrilla de la sesión ($8).
+	UpdateExtraHour(ctx context.Context, arg UpdateExtraHourParams) (int64, error)
 	UpdateFestivo(ctx context.Context, arg UpdateFestivoParams) (int64, error)
 	UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) (int64, error)
 	UpdatePerson(ctx context.Context, arg UpdatePersonParams) (int64, error)

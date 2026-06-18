@@ -106,7 +106,7 @@ const mainNavItems: NavItemType[] = [
 ]
 
 const middleNavItems: NavItemType[] = [
-    { title: "Horas previas", href: "/horasPrevias", icon: ClipboardClock },
+    { title: "Horas extra otros modelos", href: "/horasExtraOtrosModelos", icon: ClipboardClock },
     { title: "Papeletas", href: "/papeletas", icon: TicketsIcon },
     {
         title: "Calificaciones",

@@ -1,4 +1,4 @@
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { transformFlightsFromDB } from "../utils/transformFlightsFromDB";
@@ -7,7 +7,7 @@ import { FlightData, CrewMember } from "@/types/flights";
 import type { FlightItem } from "@/types/generated/flights";
 import {
     User, ChevronDown, ChevronUp, Users, MapPin, Shield, Layers,
-    Search, ChevronLeft, ChevronRight, RefreshCw, Trash2
+    ChevronLeft, ChevronRight, RefreshCw, Trash2
 } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
@@ -78,6 +78,16 @@ const Flights = () => {
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState(prev => ({ ...prev, ...newParams }));
     };
+
+    // Búsqueda en vivo con debounce (300ms): busca por ID al dejar de teclear
+    // (1 petición por pausa, no por pulsación) y vuelve a la 1ª página.
+    useEffect(() => {
+        const t = setTimeout(() => {
+            const sk = searchQuery.trim() ? parseInt(searchQuery, 10) : null;
+            setParams({ flight_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
+        }, 300);
+        return () => clearTimeout(t);
+    }, [searchQuery]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.flight_sk != null) query.flight_sk = params.flight_sk;
@@ -327,18 +337,6 @@ const Flights = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-3 items-center">
-                            <ActionButton
-                                variant="refresh"
-                                icon={Search}
-                                label="Buscar"
-                                onClick={() => {
-                                    setParams({
-                                        flight_sk: searchQuery ? parseInt(searchQuery) : null,
-                                        offset: 0
-                                    });
-                                }}
-                            />
-
                             <ActionButton
                                 variant="refresh"
                                 icon={RefreshCw}
