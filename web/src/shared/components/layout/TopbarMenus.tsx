@@ -1,10 +1,9 @@
 import {
-    BookOpen,
+    BookOpen, BookOpenText,
     CalendarPlus,
     FileBarChart,
-    FileText,
+    FileText, Helicopter,
     Luggage,
-    Plane,
     Presentation,
     UserMinus,
 } from "lucide-react"
@@ -67,7 +66,7 @@ export function TopbarMenus() {
                             {canAccessOperacional && (
                                 <>
                                     <MenubarItem onSelect={() => setRegisterFlightOpen(true)}>
-                                        <Plane className="mr-2 h-4 w-4" />
+                                        <Helicopter className="mr-2 h-4 w-4" />
                                         Vuelo
                                     </MenubarItem>
                                     <MenubarItem onSelect={() => setRegisterGroundSchoolOpen(true)}>
@@ -79,7 +78,7 @@ export function TopbarMenus() {
                                         Horas extra otros modelos
                                     </MenubarItem>
                                     <MenubarItem onSelect={() => setRegisterExtraModelHoursOpen(true)}>
-                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        <BookOpenText className="mr-2 h-4 w-4" />
                                         Horas extra NH-90
                                     </MenubarItem>
                                     <MenubarSeparator />

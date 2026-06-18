@@ -14,9 +14,8 @@ import {
     UserRoundCog,
     UserRoundCheck,
     School,
-    ClipboardClock,
     Fuel,
-    LucideIcon,
+    LucideIcon, BookOpen,
 } from "lucide-react"
 import {
     Sidebar,
@@ -108,7 +107,7 @@ const mainNavItems: NavItemType[] = [
 const middleNavItems: NavItemType[] = [
     {
         title: "Horas extra",
-        icon: ClipboardClock,
+        icon: BookOpen,
         subItems: [
             {title: "Otros modelos", href: "/horasExtraOtrosModelos"},
             {title: "NH-90", href: "/horasExtraModelo"},
