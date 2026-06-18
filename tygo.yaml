@@ -17,6 +17,11 @@ packages:
     include_files: ["dto.go"]
     frontmatter: |
       // Código generado por tygo desde internal/domain/extrahours/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/extramodelhours"
+    output_path: "web/src/types/generated/extramodelhours.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/extramodelhours/dto.go. NO EDITAR.
   - path: "github.com/14esc/aether-web/internal/domain/comisiones"
     output_path: "web/src/types/generated/comisiones.ts"
     include_files: ["dto.go"]

@@ -326,6 +326,7 @@ type OperationsExtraModelHour struct {
 	ExtraModelHoursConvNight pgtype.Numeric `json:"extra_model_hours_conv_night"`
 	ExtraModelHoursGvn       pgtype.Numeric `json:"extra_model_hours_gvn"`
 	ExtraModelHoursInst      pgtype.Numeric `json:"extra_model_hours_inst"`
+	ExtraModelHoursRemarks   *string        `json:"extra_model_hours_remarks"`
 }
 
 type OperationsFlight struct {

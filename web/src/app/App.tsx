@@ -31,6 +31,7 @@ import { lazy, Suspense } from "react";
 import { Flights } from "@/features/flights";
 import { GroundSchool } from "@/features/groundschool";
 import { HorasExtraOtrosModelos } from "@/features/extrahoursOtrosModelos";
+import { HorasExtraModelo } from "@/features/extrahoursModelo";
 import { Personnel } from "@/features/personnel";
 import { Papeletas } from "@/features/papeletas";
 import { Comisiones, DiasDeComision } from "@/features/comisiones";
@@ -108,6 +109,7 @@ function AppContent() {
                         <Route path="flights" element={<Flights />} />
                         <Route path="ground-school" element={<GroundSchool />} />
                         <Route path="horasExtraOtrosModelos" element={<HorasExtraOtrosModelos />} />
+                        <Route path="horasExtraModelo" element={<HorasExtraModelo />} />
                         <Route path="personnel" element={<Personnel />} />
                         <Route path="papeletas" element={<Papeletas />} />
                         <Route path="calificaciones/modelRatings" element={<ModelRatings />} />

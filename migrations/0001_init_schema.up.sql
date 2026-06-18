@@ -319,7 +319,8 @@ CREATE TABLE operations.extra_model_hour (
     extra_model_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_day >= 0),
     extra_model_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_conv_night >= 0),
     extra_model_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_gvn >= 0),
-    extra_model_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_inst >= 0)
+    extra_model_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_inst >= 0),
+    extra_model_hours_remarks     VARCHAR(200)
 );
 
 CREATE TABLE operations.ground_school (

@@ -23,6 +23,7 @@ import {useState} from "react"
 import { RegisterFlightDialog } from "@/features/flights"
 import { RegisterGroundSchoolDialog } from "@/features/groundschool"
 import { RegisterExtraHoursOtrosModelosDialog } from "@/features/extrahoursOtrosModelos"
+import { RegisterExtraModelHoursDialog } from "@/features/extrahoursModelo"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
@@ -33,6 +34,7 @@ export function TopbarMenus() {
     const [registerFlightOpen, setRegisterFlightOpen] = useState(false)
     const [registerGroundSchoolOpen, setRegisterGroundSchoolOpen] = useState(false)
     const [registerExtraHoursOtrosModelosOpen, setRegisterExtraHoursOtrosModelosOpen] = useState(false)
+    const [registerExtraModelHoursOpen, setRegisterExtraModelHoursOpen] = useState(false)
     const [registerComisionOpen, setRegisterComisionOpen] = useState(false)
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
@@ -75,6 +77,10 @@ export function TopbarMenus() {
                                     <MenubarItem onSelect={() => setRegisterExtraHoursOtrosModelosOpen(true)}>
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Horas extra otros modelos
+                                    </MenubarItem>
+                                    <MenubarItem onSelect={() => setRegisterExtraModelHoursOpen(true)}>
+                                        <BookOpen className="mr-2 h-4 w-4" />
+                                        Horas extra NH-90
                                     </MenubarItem>
                                     <MenubarSeparator />
                                 </>
@@ -163,6 +169,15 @@ export function TopbarMenus() {
                 <RegisterExtraHoursOtrosModelosDialog
                     open={registerExtraHoursOtrosModelosOpen}
                     onOpenChange={setRegisterExtraHoursOtrosModelosOpen}
+                    mode="create"
+                />
+            )}
+
+            {/* Dialog Horas extra NH-90 (OPERACIONAL) */}
+            {canAccessOperacional && (
+                <RegisterExtraModelHoursDialog
+                    open={registerExtraModelHoursOpen}
+                    onOpenChange={setRegisterExtraModelHoursOpen}
                     mode="create"
                 />
             )}

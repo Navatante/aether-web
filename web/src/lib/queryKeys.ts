@@ -68,6 +68,14 @@ export const queryKeys = {
             ['extraHoursOtrosModelos', escuadrillaId, 'byPerson', personSk] as const,
     },
 
+    extraModelHours: {
+        all: (escuadrillaId: number) => ['extraModelHours', escuadrillaId] as const,
+        list: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['extraModelHours', escuadrillaId, 'list', params] as const,
+        byPerson: (escuadrillaId: number, personSk: number) =>
+            ['extraModelHours', escuadrillaId, 'byPerson', personSk] as const,
+    },
+
     personnel: {
         all: (escuadrillaId: number) => ['personnel', escuadrillaId] as const,
         list: (escuadrillaId: number, params: Record<string, unknown>) =>
