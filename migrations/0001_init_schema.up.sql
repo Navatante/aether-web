@@ -222,6 +222,13 @@ CREATE TABLE detall.person (
     person_current_flag       BOOLEAN      NOT NULL DEFAULT TRUE,
     person_permission_level   VARCHAR(50)  NOT NULL DEFAULT 'Común',
     person_password_hash      VARCHAR(255),
+    -- Marca "debe cambiar la contraseña": toda alta de persona y todo reseteo
+    -- del Superusuario dejan la contraseña en el valor por defecto ('aether') y
+    -- ponen este flag a TRUE; el siguiente login fuerza el cambio (enforzado en
+    -- backend vía RequireAuth y espejado en el frontend). El usuario lo limpia
+    -- al cambiar su contraseña. DEFAULT false: las filas del seed/bootstrap no
+    -- quedan forzadas; solo las nuevas altas ponen TRUE explícito.
+    person_password_must_change BOOLEAN    NOT NULL DEFAULT false,
     person_escuadrilla_fk     INTEGER      NOT NULL,
     CONSTRAINT chk_person_permission_level CHECK (
         person_permission_level IN ('Común', 'Operacional', 'Administrativo', 'Seguridad', 'Superusuario')

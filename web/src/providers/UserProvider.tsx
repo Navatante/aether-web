@@ -38,6 +38,7 @@ export interface UserSessionInfo {
     escuadrillaCode: string;
     escuadrillaName: string;
     permissionLevel: string;
+    mustChangePassword: boolean;
 }
 
 export interface UserState {
@@ -49,6 +50,7 @@ export interface UserState {
     escuadrillaId: number | null;
     escuadrillaCode: string | null;
     escuadrillaName: string | null;
+    mustChangePassword: boolean;
     loading: boolean;
     error: Error | null;
 }
@@ -77,6 +79,7 @@ const initialState: UserState = {
     escuadrillaId: null,
     escuadrillaCode: null,
     escuadrillaName: null,
+    mustChangePassword: false,
     loading: true,
     error: null,
 };
@@ -119,6 +122,7 @@ function applyUser(u: UserSessionInfo): Partial<UserState> {
         escuadrillaId: u.escuadrillaId,
         escuadrillaCode: u.escuadrillaCode,
         escuadrillaName: u.escuadrillaName,
+        mustChangePassword: u.mustChangePassword,
         loading: false,
         error: null,
     };
@@ -221,6 +225,7 @@ export function useUserData(): UserState {
         escuadrillaId: ctx.escuadrillaId,
         escuadrillaCode: ctx.escuadrillaCode,
         escuadrillaName: ctx.escuadrillaName,
+        mustChangePassword: ctx.mustChangePassword,
         loading: ctx.loading,
         error: ctx.error,
     };

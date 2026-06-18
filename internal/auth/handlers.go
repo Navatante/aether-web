@@ -38,6 +38,7 @@ func (h *Handlers) Register(g *echo.Group) {
 	g.POST("/auth/login", h.Login, loginLimiter)
 	g.POST("/auth/logout", h.Logout)
 	g.GET("/auth/me", h.Me, RequireAuth(h.svc))
+	g.POST("/auth/change-password", h.ChangePassword, RequireAuth(h.svc))
 }
 
 type loginReq struct {
@@ -46,31 +47,38 @@ type loginReq struct {
 }
 
 type userDTO struct {
-	ID              int     `json:"id"`
-	Username        string  `json:"username"`
-	Name            string  `json:"name"`
-	LastName1       string  `json:"lastName1"`
-	LastName2       string  `json:"lastName2"`
-	Nk              *string `json:"nk"`
-	EscuadrillaID   int     `json:"escuadrillaId"`
-	EscuadrillaCode string  `json:"escuadrillaCode"`
-	EscuadrillaName string  `json:"escuadrillaName"`
-	PermissionLevel string  `json:"permissionLevel"`
+	ID                 int     `json:"id"`
+	Username           string  `json:"username"`
+	Name               string  `json:"name"`
+	LastName1          string  `json:"lastName1"`
+	LastName2          string  `json:"lastName2"`
+	Nk                 *string `json:"nk"`
+	EscuadrillaID      int     `json:"escuadrillaId"`
+	EscuadrillaCode    string  `json:"escuadrillaCode"`
+	EscuadrillaName    string  `json:"escuadrillaName"`
+	PermissionLevel    string  `json:"permissionLevel"`
+	MustChangePassword bool    `json:"mustChangePassword"`
 }
 
 func toDTO(u *User) userDTO {
 	return userDTO{
-		ID:              u.ID,
-		Username:        u.Username,
-		Name:            u.Name,
-		LastName1:       u.LastName1,
-		LastName2:       u.LastName2,
-		Nk:              u.Nk,
-		EscuadrillaID:   u.EscuadrillaID,
-		EscuadrillaCode: u.EscuadrillaCode,
-		EscuadrillaName: u.EscuadrillaName,
-		PermissionLevel: u.PermissionLevel,
+		ID:                 u.ID,
+		Username:           u.Username,
+		Name:               u.Name,
+		LastName1:          u.LastName1,
+		LastName2:          u.LastName2,
+		Nk:                 u.Nk,
+		EscuadrillaID:      u.EscuadrillaID,
+		EscuadrillaCode:    u.EscuadrillaCode,
+		EscuadrillaName:    u.EscuadrillaName,
+		PermissionLevel:    u.PermissionLevel,
+		MustChangePassword: u.MustChangePassword,
 	}
+}
+
+type changePasswordReq struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
 }
 
 func (h *Handlers) Login(c echo.Context) error {
@@ -110,6 +118,29 @@ func (h *Handlers) Me(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "no session")
 	}
 	return c.JSON(http.StatusOK, toDTO(user))
+}
+
+func (h *Handlers) ChangePassword(c echo.Context) error {
+	user := CurrentUser(c)
+	if user == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, "no session")
+	}
+	var req changePasswordReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	err := h.svc.ChangeOwnPassword(c.Request().Context(), int32(user.ID), user.Username, c.RealIP(), req.CurrentPassword, req.NewPassword)
+	switch {
+	case errors.Is(err, ErrPasswordTooShort):
+		return echo.NewHTTPError(http.StatusBadRequest, "la contraseña debe tener al menos 8 caracteres")
+	case errors.Is(err, ErrPasswordIsDefault):
+		return echo.NewHTTPError(http.StatusBadRequest, "la contraseña no puede ser la contraseña por defecto")
+	case errors.Is(err, ErrPasswordMismatch), errors.Is(err, ErrPasswordNotSet):
+		return echo.NewHTTPError(http.StatusUnauthorized, "la contraseña actual no es correcta")
+	case err != nil:
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
 }
 
 func (h *Handlers) setSessionCookie(c echo.Context, token string) {

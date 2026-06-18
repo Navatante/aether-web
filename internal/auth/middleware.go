@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 )
@@ -43,6 +44,13 @@ func RequireAuth(svc *Service) echo.MiddlewareFunc {
 				}
 				return echo.NewHTTPError(http.StatusInternalServerError, "session validation failed")
 			}
+			// Garantía real del cambio forzado: mientras la cuenta tenga la
+			// contraseña por defecto (must_change), la sesión solo sirve para
+			// leer el propio estado y cambiar la contraseña. La redirección del
+			// frontend es solo cosmética.
+			if user.MustChangePassword && !isMustChangeAllowed(c.Path()) {
+				return echo.NewHTTPError(http.StatusForbidden, "password change required")
+			}
 			c.Set(ctxUserKey, user)
 			return next(c)
 		}
@@ -74,6 +82,14 @@ func RequirePermission(levels ...string) echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+// isMustChangeAllowed indica si la ruta puede usarse mientras la cuenta está
+// pendiente de cambiar la contraseña por defecto: solo leer el propio estado
+// (/auth/me) y cambiar la contraseña (/auth/change-password).
+func isMustChangeAllowed(path string) bool {
+	return strings.HasSuffix(path, "/auth/me") ||
+		strings.HasSuffix(path, "/auth/change-password")
 }
 
 // CurrentUser devuelve el User inyectado por RequireAuth, o nil si no hay.

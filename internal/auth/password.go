@@ -24,7 +24,33 @@ var (
 	ErrInvalidHash         = errors.New("auth: hash con formato inválido")
 	ErrIncompatibleVersion = errors.New("auth: versión argon2 incompatible")
 	ErrPasswordMismatch    = errors.New("auth: contraseña incorrecta")
+	ErrPasswordTooShort    = errors.New("auth: la contraseña debe tener al menos 8 caracteres")
+	ErrPasswordIsDefault   = errors.New("auth: la contraseña no puede ser la contraseña por defecto")
 )
+
+// DefaultPassword es la contraseña que reciben las altas y los reseteos del
+// Superusuario. Es de conocimiento general (se comunica verbalmente); por eso
+// toda cuenta con esta contraseña queda marcada con person_password_must_change
+// y se fuerza el cambio en el siguiente login. NUNCA debe usarse para decidir
+// si hay que forzar el cambio (eso lo gobierna la columna booleana), solo como
+// valor inicial conveniente.
+const DefaultPassword = "aether"
+
+// minPasswordLen es la longitud mínima exigida a una contraseña elegida por el
+// usuario (no aplica al DefaultPassword, que es transitorio y forzado a cambio).
+const minPasswordLen = 8
+
+// ValidatePassword aplica la política mínima a una contraseña NUEVA elegida por
+// el usuario: longitud mínima y que no sea la contraseña por defecto.
+func ValidatePassword(password string) error {
+	if len(password) < minPasswordLen {
+		return ErrPasswordTooShort
+	}
+	if password == DefaultPassword {
+		return ErrPasswordIsDefault
+	}
+	return nil
+}
 
 // HashPassword devuelve un PHC string argon2id.
 // Formato: $argon2id$v=19$m=65536,t=3,p=2$<salt-b64>$<hash-b64>

@@ -3,7 +3,7 @@
 -- name: GetLoginPerson :one
 SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
        p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-       p.person_permission_level, p.person_password_hash
+       p.person_permission_level, p.person_password_hash, p.person_password_must_change
 FROM detall.person p
 JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
 WHERE p.person_user = $1 AND p.person_current_flag = TRUE;
@@ -28,10 +28,22 @@ WHERE s.token_hash = $1
   AND p.person_current_flag = TRUE
 RETURNING p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
           p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-          p.person_permission_level;
+          p.person_permission_level, p.person_password_must_change;
 
 -- name: SetPersonPassword :execrows
 UPDATE detall.person SET person_password_hash = $1 WHERE person_user = $2;
+
+-- name: GetPersonPasswordHashBySk :one
+-- Hash de la persona de la sesión, para verificar la contraseña actual en el
+-- autoservicio de cambio. Person-centric (por person_sk de la propia sesión).
+SELECT person_password_hash FROM detall.person WHERE person_sk = $1;
+
+-- name: ChangeOwnPasswordBySk :execrows
+-- Cambio de contraseña por el propio usuario de sesión: fija el hash y limpia
+-- el flag de "debe cambiar". Person-centric (por person_sk de la propia sesión).
+UPDATE detall.person
+SET person_password_hash = $1, person_password_must_change = false
+WHERE person_sk = $2;
 
 -- name: SetPersonPermissionLevelByUser :execrows
 -- Usado por cmd/bootstrap para fijar el nivel (p. ej. crear el primer Superusuario).

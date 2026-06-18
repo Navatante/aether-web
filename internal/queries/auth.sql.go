@@ -11,6 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const changeOwnPasswordBySk = `-- name: ChangeOwnPasswordBySk :execrows
+UPDATE detall.person
+SET person_password_hash = $1, person_password_must_change = false
+WHERE person_sk = $2
+`
+
+type ChangeOwnPasswordBySkParams struct {
+	PersonPasswordHash *string `json:"person_password_hash"`
+	PersonSk           int32   `json:"person_sk"`
+}
+
+// Cambio de contraseña por el propio usuario de sesión: fija el hash y limpia
+// el flag de "debe cambiar". Person-centric (por person_sk de la propia sesión).
+func (q *Queries) ChangeOwnPasswordBySk(ctx context.Context, arg ChangeOwnPasswordBySkParams) (int64, error) {
+	result, err := q.db.Exec(ctx, changeOwnPasswordBySk, arg.PersonPasswordHash, arg.PersonSk)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO detall.session (token_hash, person_fk, ip_address, expires_at)
 VALUES ($1, $2, NULLIF($3::varchar, ''), $4)
@@ -46,24 +67,25 @@ const getLoginPerson = `-- name: GetLoginPerson :one
 
 SELECT p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
        p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-       p.person_permission_level, p.person_password_hash
+       p.person_permission_level, p.person_password_hash, p.person_password_must_change
 FROM detall.person p
 JOIN detall.escuadrilla e ON e.escuadrilla_sk = p.person_escuadrilla_fk
 WHERE p.person_user = $1 AND p.person_current_flag = TRUE
 `
 
 type GetLoginPersonRow struct {
-	PersonSk              int32   `json:"person_sk"`
-	PersonUser            string  `json:"person_user"`
-	PersonName            string  `json:"person_name"`
-	PersonLastName1       string  `json:"person_last_name_1"`
-	PersonLastName2       string  `json:"person_last_name_2"`
-	PersonNk              *string `json:"person_nk"`
-	PersonEscuadrillaFk   int32   `json:"person_escuadrilla_fk"`
-	EscuadrillaCode       string  `json:"escuadrilla_code"`
-	EscuadrillaName       string  `json:"escuadrilla_name"`
-	PersonPermissionLevel string  `json:"person_permission_level"`
-	PersonPasswordHash    *string `json:"person_password_hash"`
+	PersonSk                 int32   `json:"person_sk"`
+	PersonUser               string  `json:"person_user"`
+	PersonName               string  `json:"person_name"`
+	PersonLastName1          string  `json:"person_last_name_1"`
+	PersonLastName2          string  `json:"person_last_name_2"`
+	PersonNk                 *string `json:"person_nk"`
+	PersonEscuadrillaFk      int32   `json:"person_escuadrilla_fk"`
+	EscuadrillaCode          string  `json:"escuadrilla_code"`
+	EscuadrillaName          string  `json:"escuadrilla_name"`
+	PersonPermissionLevel    string  `json:"person_permission_level"`
+	PersonPasswordHash       *string `json:"person_password_hash"`
+	PersonPasswordMustChange bool    `json:"person_password_must_change"`
 }
 
 // Queries de autenticación y sesiones (internal/auth).
@@ -82,8 +104,22 @@ func (q *Queries) GetLoginPerson(ctx context.Context, personUser string) (GetLog
 		&i.EscuadrillaName,
 		&i.PersonPermissionLevel,
 		&i.PersonPasswordHash,
+		&i.PersonPasswordMustChange,
 	)
 	return i, err
+}
+
+const getPersonPasswordHashBySk = `-- name: GetPersonPasswordHashBySk :one
+SELECT person_password_hash FROM detall.person WHERE person_sk = $1
+`
+
+// Hash de la persona de la sesión, para verificar la contraseña actual en el
+// autoservicio de cambio. Person-centric (por person_sk de la propia sesión).
+func (q *Queries) GetPersonPasswordHashBySk(ctx context.Context, personSk int32) (*string, error) {
+	row := q.db.QueryRow(ctx, getPersonPasswordHashBySk, personSk)
+	var person_password_hash *string
+	err := row.Scan(&person_password_hash)
+	return person_password_hash, err
 }
 
 const purgeExpiredSessions = `-- name: PurgeExpiredSessions :execrows
@@ -144,20 +180,21 @@ WHERE s.token_hash = $1
   AND p.person_current_flag = TRUE
 RETURNING p.person_sk, p.person_user, p.person_name, p.person_last_name_1, p.person_last_name_2,
           p.person_nk, p.person_escuadrilla_fk, e.escuadrilla_code, e.escuadrilla_name,
-          p.person_permission_level
+          p.person_permission_level, p.person_password_must_change
 `
 
 type TouchSessionAndGetUserRow struct {
-	PersonSk              int32   `json:"person_sk"`
-	PersonUser            string  `json:"person_user"`
-	PersonName            string  `json:"person_name"`
-	PersonLastName1       string  `json:"person_last_name_1"`
-	PersonLastName2       string  `json:"person_last_name_2"`
-	PersonNk              *string `json:"person_nk"`
-	PersonEscuadrillaFk   int32   `json:"person_escuadrilla_fk"`
-	EscuadrillaCode       string  `json:"escuadrilla_code"`
-	EscuadrillaName       string  `json:"escuadrilla_name"`
-	PersonPermissionLevel string  `json:"person_permission_level"`
+	PersonSk                 int32   `json:"person_sk"`
+	PersonUser               string  `json:"person_user"`
+	PersonName               string  `json:"person_name"`
+	PersonLastName1          string  `json:"person_last_name_1"`
+	PersonLastName2          string  `json:"person_last_name_2"`
+	PersonNk                 *string `json:"person_nk"`
+	PersonEscuadrillaFk      int32   `json:"person_escuadrilla_fk"`
+	EscuadrillaCode          string  `json:"escuadrilla_code"`
+	EscuadrillaName          string  `json:"escuadrilla_name"`
+	PersonPermissionLevel    string  `json:"person_permission_level"`
+	PersonPasswordMustChange bool    `json:"person_password_must_change"`
 }
 
 // Valida la sesión, actualiza last_seen_at y devuelve el usuario en un solo
@@ -176,6 +213,7 @@ func (q *Queries) TouchSessionAndGetUser(ctx context.Context, tokenHash []byte) 
 		&i.EscuadrillaCode,
 		&i.EscuadrillaName,
 		&i.PersonPermissionLevel,
+		&i.PersonPasswordMustChange,
 	)
 	return i, err
 }

@@ -1,9 +1,11 @@
+import { useState } from "react"
 import { TopbarMenus } from "./TopbarMenus"
 import { ModeToggle } from "@/components/theme/mode-toggle"
 import OutlineGradientButton from "@/shared/components/common/OutlineGradientButton"
 import { SuperuserButton } from "@/features/superuser"
+import { ChangePasswordDialog } from "@/features/auth"
 import { useUser, useUserData, PermissionLevel } from "@/providers"
-import { LogOut } from "lucide-react"
+import { KeyRound, LogOut } from "lucide-react"
 import {
   Sheet,
   SheetClose,
@@ -19,8 +21,12 @@ import { Button } from "@/components/ui/button"
 export function Topbar() {
   const { nk, escuadrillaId, permissionLevel } = useUserData();
   const { logout } = useUser();
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [crewPanelOpen, setCrewPanelOpen] = useState(false);
 
   return (
+    <>
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center gap-4">
           <div className="flex flex-1 items-center gap-4 px-4">
@@ -41,7 +47,7 @@ export function Topbar() {
                 </div>
 
               {nk !== null && (
-                  <Sheet>
+                  <Sheet open={crewPanelOpen} onOpenChange={setCrewPanelOpen}>
                     <SheetTrigger asChild>
                       <div>
                         <OutlineGradientButton
@@ -78,6 +84,19 @@ export function Topbar() {
                                 <div className="font-medium">Preferencias</div>
                                 <div className="text-sm text-muted-foreground">Personaliza tu experiencia</div>
                               </button>
+                              <button
+                                  className="flex w-full items-start gap-3 text-left p-3 rounded-lg hover:bg-accent transition-colors"
+                                  onClick={() => {
+                                    setCrewPanelOpen(false)
+                                    setChangePasswordOpen(true)
+                                  }}
+                              >
+                                <KeyRound className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <div className="font-medium">Cambiar contraseña</div>
+                                  <div className="text-sm text-muted-foreground">Actualiza tu contraseña de acceso</div>
+                                </div>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -107,5 +126,6 @@ export function Topbar() {
           </div>
         </div>
       </header>
+    </>
   )
 }

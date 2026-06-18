@@ -22,22 +22,22 @@ export function useSuperuser(enabled: boolean) {
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const selected = persons.find((p) => p.id === selectedId) ?? null;
 
-    const [password, setPassword] = useState("");
     const [level, setLevel] = useState("");
 
     // Al cambiar de persona: reinicia el formulario al estado actual de esa persona.
     useEffect(() => {
         setLevel(selected?.permissionLevel ?? "");
-        setPassword("");
     }, [selectedId, selected?.permissionLevel]);
 
-    const passwordMut = useApiMutation<void, { id: number; password: string }>(
+    // Reseteo: el backend deja la contraseña en el valor por defecto ('aether')
+    // y fuerza el cambio en el siguiente login. No se envía contraseña.
+    const passwordMut = useApiMutation<void, { id: number }>(
         "PUT",
         (v) => `/superuser/persons/${v.id}/password`,
         {
-            successMessage: "Contraseña actualizada",
+            successMessage: "Contraseña reseteada a 'aether'",
             invalidateKeys: [personsKey],
-            onSuccess: () => setPassword(""),
+            body: () => undefined,
         },
     );
 
@@ -50,8 +50,8 @@ export function useSuperuser(enabled: boolean) {
         },
     );
 
-    const submitPassword = () => {
-        if (selected && password) passwordMut.mutate({ id: selected.id, password });
+    const resetPassword = () => {
+        if (selected) passwordMut.mutate({ id: selected.id });
     };
     const submitLevel = () => {
         if (selected && level) levelMut.mutate({ id: selected.id, permissionLevel: level });
@@ -63,11 +63,9 @@ export function useSuperuser(enabled: boolean) {
         selectedId,
         setSelectedId,
         selected,
-        password,
-        setPassword,
         level,
         setLevel,
-        submitPassword,
+        resetPassword,
         submitLevel,
         savingPassword: passwordMut.isPending,
         savingLevel: levelMut.isPending,

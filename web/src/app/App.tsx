@@ -21,6 +21,7 @@ import { Loader2 } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { Toaster, toast } from "sonner";
 import Login from "@/features/auth/Login";
+import { ForcedPasswordChange } from "@/features/auth";
 import "./App.css";
 
 import { lazy, Suspense } from "react";
@@ -73,11 +74,17 @@ function FullPageLoader() {
 
 /** Bloquea acceso si no hay sesión; redirige a /login conservando la URL destino. */
 function ProtectedRoute() {
-    const { isAuthenticated, loading } = useUser();
+    const { isAuthenticated, loading, mustChangePassword } = useUser();
     const location = useLocation();
     if (loading) return <FullPageLoader />;
     if (!isAuthenticated) {
         return <Navigate to="/login" replace state={{ from: location }} />;
+    }
+    // Cambio de contraseña forzado (cuenta con la contraseña por defecto): se
+    // bloquea el acceso a la app hasta cambiarla. El backend además devuelve 403
+    // en cualquier otra ruta, así que esto es solo la cara visible.
+    if (mustChangePassword) {
+        return <ForcedPasswordChange />;
     }
     return <Outlet />;
 }

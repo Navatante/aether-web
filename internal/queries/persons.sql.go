@@ -97,13 +97,13 @@ INSERT INTO detall.person (
     person_name, person_last_name_1, person_last_name_2, person_phone, person_dni,
     person_localidad, person_division, person_rol, person_a_emp, person_f_emb,
     person_birthdate, person_num_escalafon, person_current_flag, person_permission_level,
-    person_escuadrilla_fk
+    person_escuadrilla_fk, person_password_hash, person_password_must_change
 ) VALUES (
     $1, $2, $3, $4, $5,
     $6, $7, $8, $9, $10,
     $11, $12, $13, $14, $15,
     $16, $17, TRUE, 'Común',
-    $18
+    $18, $19, TRUE
 )
 RETURNING person_sk
 `
@@ -127,11 +127,14 @@ type InsertPersonParams struct {
 	PersonBirthdate     pgtype.Date `json:"person_birthdate"`
 	PersonNumEscalafon  int32       `json:"person_num_escalafon"`
 	PersonEscuadrillaFk int32       `json:"person_escuadrilla_fk"`
+	PersonPasswordHash  *string     `json:"person_password_hash"`
 }
 
 // Defaults: current_flag=TRUE, permission_level='Común' (¡con acento!).
 // Bug fix vs Rust: el INSERT original omitía person_localidad (NOT NULL),
 // por lo que cualquier add_person fallaba si la BD seguía el esquema.
+// person_password_hash + person_password_must_change: el alta deja la
+// contraseña por defecto ('aether', hasheada en Go) y fuerza el cambio.
 func (q *Queries) InsertPerson(ctx context.Context, arg InsertPersonParams) (int32, error) {
 	row := q.db.QueryRow(ctx, insertPerson,
 		arg.PersonNk,
@@ -152,6 +155,7 @@ func (q *Queries) InsertPerson(ctx context.Context, arg InsertPersonParams) (int
 		arg.PersonBirthdate,
 		arg.PersonNumEscalafon,
 		arg.PersonEscuadrillaFk,
+		arg.PersonPasswordHash,
 	)
 	var person_sk int32
 	err := row.Scan(&person_sk)
@@ -344,7 +348,7 @@ func (q *Queries) SetPersonCurrentFlag(ctx context.Context, arg SetPersonCurrent
 }
 
 const setPersonPasswordBySk = `-- name: SetPersonPasswordBySk :execrows
-UPDATE detall.person SET person_password_hash = $1
+UPDATE detall.person SET person_password_hash = $1, person_password_must_change = TRUE
 WHERE person_sk = $2 AND person_escuadrilla_fk = $3
 `
 
@@ -354,6 +358,8 @@ type SetPersonPasswordBySkParams struct {
 	PersonEscuadrillaFk int32   `json:"person_escuadrilla_fk"`
 }
 
+// Reseteo del Superusuario: fija el hash (por defecto 'aether') y fuerza el
+// cambio en el siguiente login. Acotado a la escuadrilla del superusuario.
 func (q *Queries) SetPersonPasswordBySk(ctx context.Context, arg SetPersonPasswordBySkParams) (int64, error) {
 	result, err := q.db.Exec(ctx, setPersonPasswordBySk, arg.PersonPasswordHash, arg.PersonSk, arg.PersonEscuadrillaFk)
 	if err != nil {

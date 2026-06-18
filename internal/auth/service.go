@@ -24,25 +24,27 @@ var (
 
 // User es el sujeto autenticado. Lo pone el middleware en echo.Context.
 type User struct {
-	ID              int
-	Username        string
-	Name            string
-	LastName1       string
-	LastName2       string
-	Nk              *string // indicativo (person_nk), nullable
-	EscuadrillaID   int
-	EscuadrillaCode string
-	EscuadrillaName string
-	PermissionLevel string
+	ID                 int
+	Username           string
+	Name               string
+	LastName1          string
+	LastName2          string
+	Nk                 *string // indicativo (person_nk), nullable
+	EscuadrillaID      int
+	EscuadrillaCode    string
+	EscuadrillaName    string
+	PermissionLevel    string
+	MustChangePassword bool // debe cambiar la contraseña antes de operar
 }
 
 type Service struct {
+	pool       *pgxpool.Pool
 	q          *queries.Queries
 	sessionTTL time.Duration
 }
 
 func NewService(pool *pgxpool.Pool, sessionTTL time.Duration) *Service {
-	return &Service{q: queries.New(pool), sessionTTL: sessionTTL}
+	return &Service{pool: pool, q: queries.New(pool), sessionTTL: sessionTTL}
 }
 
 // Login verifica credenciales y crea una sesión. Devuelve el token claro
@@ -78,16 +80,17 @@ func (s *Service) Login(ctx context.Context, username, password, ipAddress strin
 	}
 
 	u := User{
-		ID:              int(row.PersonSk),
-		Username:        row.PersonUser,
-		Name:            row.PersonName,
-		LastName1:       row.PersonLastName1,
-		LastName2:       row.PersonLastName2,
-		Nk:              row.PersonNk,
-		EscuadrillaID:   int(row.PersonEscuadrillaFk),
-		EscuadrillaCode: row.EscuadrillaCode,
-		EscuadrillaName: row.EscuadrillaName,
-		PermissionLevel: row.PersonPermissionLevel,
+		ID:                 int(row.PersonSk),
+		Username:           row.PersonUser,
+		Name:               row.PersonName,
+		LastName1:          row.PersonLastName1,
+		LastName2:          row.PersonLastName2,
+		Nk:                 row.PersonNk,
+		EscuadrillaID:      int(row.PersonEscuadrillaFk),
+		EscuadrillaCode:    row.EscuadrillaCode,
+		EscuadrillaName:    row.EscuadrillaName,
+		PermissionLevel:    row.PersonPermissionLevel,
+		MustChangePassword: row.PersonPasswordMustChange,
 	}
 	return token, &u, nil
 }
@@ -114,16 +117,17 @@ func (s *Service) Validate(ctx context.Context, token string) (*User, error) {
 		return nil, fmt.Errorf("touch session: %w", err)
 	}
 	return &User{
-		ID:              int(row.PersonSk),
-		Username:        row.PersonUser,
-		Name:            row.PersonName,
-		LastName1:       row.PersonLastName1,
-		LastName2:       row.PersonLastName2,
-		Nk:              row.PersonNk,
-		EscuadrillaID:   int(row.PersonEscuadrillaFk),
-		EscuadrillaCode: row.EscuadrillaCode,
-		EscuadrillaName: row.EscuadrillaName,
-		PermissionLevel: row.PersonPermissionLevel,
+		ID:                 int(row.PersonSk),
+		Username:           row.PersonUser,
+		Name:               row.PersonName,
+		LastName1:          row.PersonLastName1,
+		LastName2:          row.PersonLastName2,
+		Nk:                 row.PersonNk,
+		EscuadrillaID:      int(row.PersonEscuadrillaFk),
+		EscuadrillaCode:    row.EscuadrillaCode,
+		EscuadrillaName:    row.EscuadrillaName,
+		PermissionLevel:    row.PersonPermissionLevel,
+		MustChangePassword: row.PersonPasswordMustChange,
 	}, nil
 }
 
@@ -138,6 +142,52 @@ func (s *Service) SetPassword(ctx context.Context, username, password string) (i
 		PersonPasswordHash: &hash,
 		PersonUser:         username,
 	})
+}
+
+// ChangeOwnPassword cambia la contraseña del propio usuario de sesión: verifica
+// la contraseña actual, aplica la política a la nueva y la persiste limpiando el
+// flag person_password_must_change. La escritura va dentro de una transacción
+// con las GUCs de auditoría fijadas para que tr_audit_person registre al actor.
+func (s *Service) ChangeOwnPassword(ctx context.Context, personSk int32, username, ip, current, newPassword string) error {
+	if err := ValidatePassword(newPassword); err != nil {
+		return err
+	}
+	stored, err := s.q.GetPersonPasswordHashBySk(ctx, personSk)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrUnknownUser
+		}
+		return fmt.Errorf("load password hash: %w", err)
+	}
+	if stored == nil || *stored == "" {
+		return ErrPasswordNotSet
+	}
+	if err := VerifyPassword(current, *stored); err != nil {
+		return err
+	}
+	hash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+	if _, err := tx.Exec(ctx, "SELECT set_config('aether.user_id', $1, true)", username); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, "SELECT set_config('aether.ip_address', $1, true)", ip); err != nil {
+		return err
+	}
+	if _, err := queries.New(tx).ChangeOwnPasswordBySk(ctx, queries.ChangeOwnPasswordBySkParams{
+		PersonPasswordHash: &hash,
+		PersonSk:           personSk,
+	}); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 // SetPermissionLevel fija el nivel de permiso de un usuario existente.

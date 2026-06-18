@@ -54,6 +54,7 @@ import (
 // escuadrilla_fk a la query y bórrala de este mapa.
 var exemptBaseline = map[string]string{
 	"AddDepartureArrivalPlace":       "placecatalog",
+	"ChangeOwnPasswordBySk":          "auth",
 	"CountEvents":                    "events",
 	"CreateSession":                  "auth",
 	"DeleteComisionLugar":            "placecatalog",
@@ -80,6 +81,7 @@ var exemptBaseline = map[string]string{
 	"FlightProjectiles":              "flightchild",
 	"FlightWtHours":                  "flightchild",
 	"GetEventsAll":                   "events",
+	"GetPersonPasswordHashBySk":      "auth",
 	"InsertApproach":                 "flightchild",
 	"InsertCapbaHour":                "flightchild",
 	"InsertComisionLugar":            "placecatalog",

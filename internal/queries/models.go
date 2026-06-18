@@ -101,28 +101,29 @@ type DetallNotcrewRatingType struct {
 }
 
 type DetallPerson struct {
-	PersonSk              int32       `json:"person_sk"`
-	PersonNk              *string     `json:"person_nk"`
-	PersonUser            string      `json:"person_user"`
-	PersonRank            string      `json:"person_rank"`
-	PersonCuerpo          string      `json:"person_cuerpo"`
-	PersonEspecialidad    string      `json:"person_especialidad"`
-	PersonName            string      `json:"person_name"`
-	PersonLastName1       string      `json:"person_last_name_1"`
-	PersonLastName2       string      `json:"person_last_name_2"`
-	PersonPhone           string      `json:"person_phone"`
-	PersonDni             *string     `json:"person_dni"`
-	PersonLocalidad       string      `json:"person_localidad"`
-	PersonDivision        string      `json:"person_division"`
-	PersonRol             string      `json:"person_rol"`
-	PersonAEmp            pgtype.Date `json:"person_a_emp"`
-	PersonFEmb            pgtype.Date `json:"person_f_emb"`
-	PersonBirthdate       pgtype.Date `json:"person_birthdate"`
-	PersonNumEscalafon    int32       `json:"person_num_escalafon"`
-	PersonCurrentFlag     bool        `json:"person_current_flag"`
-	PersonPermissionLevel string      `json:"person_permission_level"`
-	PersonPasswordHash    *string     `json:"person_password_hash"`
-	PersonEscuadrillaFk   int32       `json:"person_escuadrilla_fk"`
+	PersonSk                 int32       `json:"person_sk"`
+	PersonNk                 *string     `json:"person_nk"`
+	PersonUser               string      `json:"person_user"`
+	PersonRank               string      `json:"person_rank"`
+	PersonCuerpo             string      `json:"person_cuerpo"`
+	PersonEspecialidad       string      `json:"person_especialidad"`
+	PersonName               string      `json:"person_name"`
+	PersonLastName1          string      `json:"person_last_name_1"`
+	PersonLastName2          string      `json:"person_last_name_2"`
+	PersonPhone              string      `json:"person_phone"`
+	PersonDni                *string     `json:"person_dni"`
+	PersonLocalidad          string      `json:"person_localidad"`
+	PersonDivision           string      `json:"person_division"`
+	PersonRol                string      `json:"person_rol"`
+	PersonAEmp               pgtype.Date `json:"person_a_emp"`
+	PersonFEmb               pgtype.Date `json:"person_f_emb"`
+	PersonBirthdate          pgtype.Date `json:"person_birthdate"`
+	PersonNumEscalafon       int32       `json:"person_num_escalafon"`
+	PersonCurrentFlag        bool        `json:"person_current_flag"`
+	PersonPermissionLevel    string      `json:"person_permission_level"`
+	PersonPasswordHash       *string     `json:"person_password_hash"`
+	PersonEscuadrillaFk      int32       `json:"person_escuadrilla_fk"`
+	PersonPasswordMustChange bool        `json:"person_password_must_change"`
 }
 
 type DetallPersonComision struct {

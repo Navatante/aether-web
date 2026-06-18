@@ -18,8 +18,18 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSuperuser } from "../hooks/useSuperuser";
 import { ASSIGNABLE_LEVELS } from "../superuser";
@@ -115,26 +125,39 @@ export function SuperuserButton() {
                             </div>
                         </div>
 
-                        {/* Contraseña */}
+                        {/* Contraseña: reseteo al valor por defecto */}
                         <div className="space-y-2">
-                            <Label htmlFor="su-password">Nueva contraseña</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="su-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    value={su.password}
-                                    onChange={(e) => su.setPassword(e.target.value)}
-                                    disabled={!su.selected}
-                                    placeholder="Contraseña inicial o reseteo"
-                                />
-                                <Button
-                                    onClick={su.submitPassword}
-                                    disabled={!su.selected || !su.password || su.savingPassword}
-                                >
-                                    Establecer
-                                </Button>
-                            </div>
+                            <Label>Contraseña</Label>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        disabled={!su.selected || su.savingPassword}
+                                    >
+                                        Resetear contraseña
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Resetear la contraseña?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            La contraseña de{" "}
+                                            <span className="text-foreground font-medium">
+                                                {su.selected?.nombreCompleto}
+                                            </span>{" "}
+                                            quedará en <span className="font-mono">aether</span> y se le
+                                            forzará el cambio en su próximo inicio de sesión.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={su.resetPassword}>
+                                            Resetear
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
 

@@ -97,10 +97,6 @@ type SuperuserPersonItem struct {
 	TienePassword   bool   `json:"tienePassword"`
 }
 
-type SetPasswordReq struct {
-	Password string `json:"password"`
-}
-
 type SetPermissionLevelReq struct {
 	PermissionLevel string `json:"permissionLevel"`
 }
@@ -112,7 +108,6 @@ var (
 	ErrDuplicate     = errors.New("persons: duplicate person_user, person_nk or person_dni")
 	ErrInvalidInput  = errors.New("persons: invalid input")
 	ErrInvalidLevel  = errors.New("persons: nivel de permiso inválido")
-	ErrEmptyPassword = errors.New("persons: la contraseña no puede estar vacía")
 	ErrLastSuperuser = errors.New("persons: no se puede quitar el último Superusuario")
 )
 
@@ -219,6 +214,13 @@ func (s *Service) Create(ctx context.Context, esc int32, userID, ip string, req 
 	if err != nil {
 		return 0, ErrInvalidInput
 	}
+	// El alta deja la contraseña por defecto ('aether') hasheada; el INSERT
+	// marca person_password_must_change = TRUE, así la persona puede entrar de
+	// inmediato pero se le fuerza el cambio en el primer login.
+	defaultHash, err := auth.HashPassword(auth.DefaultPassword)
+	if err != nil {
+		return 0, err
+	}
 	var id int32
 	err = s.withAudit(ctx, userID, ip, func(q *queries.Queries) error {
 		var e error
@@ -241,6 +243,7 @@ func (s *Service) Create(ctx context.Context, esc int32, userID, ip string, req 
 			PersonBirthdate:     birth,
 			PersonNumEscalafon:  req.PersonNumEscalafon,
 			PersonEscuadrillaFk: esc,
+			PersonPasswordHash:  &defaultHash,
 		})
 		return e
 	})
@@ -372,11 +375,12 @@ func (s *Service) ListForSuperuser(ctx context.Context, esc int32) ([]SuperuserP
 	return out, nil
 }
 
-func (s *Service) SetPassword(ctx context.Context, esc, id int32, userID, ip, password string) error {
-	if password == "" {
-		return ErrEmptyPassword
-	}
-	hash, err := auth.HashPassword(password)
+// ResetPasswordToDefault deja la contraseña de la persona en el valor por
+// defecto ('aether') y fuerza el cambio en el siguiente login (la query pone
+// person_password_must_change = TRUE). No recibe la contraseña del cliente: el
+// Superusuario nunca maneja contraseñas en claro. Acotado a su escuadrilla.
+func (s *Service) ResetPasswordToDefault(ctx context.Context, esc, id int32, userID, ip string) error {
+	hash, err := auth.HashPassword(auth.DefaultPassword)
 	if err != nil {
 		return err
 	}
@@ -596,14 +600,10 @@ func (h *Handlers) SuperuserSetPassword(c echo.Context) error {
 	if herr != nil {
 		return herr
 	}
-	var req SetPasswordReq
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
-	}
-	err := h.svc.SetPassword(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP(), req.Password)
+	// Acción de reseteo: deja la contraseña en el valor por defecto y fuerza el
+	// cambio. No se acepta contraseña del cliente.
+	err := h.svc.ResetPasswordToDefault(c.Request().Context(), int32(user.EscuadrillaID), id, user.Username, c.RealIP())
 	switch {
-	case errors.Is(err, ErrEmptyPassword):
-		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrNotFound):
 		return echo.NewHTTPError(http.StatusNotFound, err.Error())
 	case err != nil:

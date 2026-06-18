@@ -62,6 +62,9 @@ type Querier interface {
 	// por mes/año recibido como parámetro.
 	// ============================================================
 	AvailabilityPersons(ctx context.Context, personEscuadrillaFk int32) ([]AvailabilityPersonsRow, error)
+	// Cambio de contraseña por el propio usuario de sesión: fija el hash y limpia
+	// el flag de "debe cambiar". Person-centric (por person_sk de la propia sesión).
+	ChangeOwnPasswordBySk(ctx context.Context, arg ChangeOwnPasswordBySkParams) (int64, error)
 	CountComisiones(ctx context.Context, arg CountComisionesParams) (int32, error)
 	CountEvents(ctx context.Context) (int32, error)
 	// Número de personas (no de registros) que tienen horas extra, con el mismo
@@ -228,6 +231,9 @@ type Querier interface {
 	GetEventsAll(ctx context.Context) ([]OperationsEvent, error)
 	// Queries de autenticación y sesiones (internal/auth).
 	GetLoginPerson(ctx context.Context, personUser string) (GetLoginPersonRow, error)
+	// Hash de la persona de la sesión, para verificar la contraseña actual en el
+	// autoservicio de cambio. Person-centric (por person_sk de la propia sesión).
+	GetPersonPasswordHashBySk(ctx context.Context, personSk int32) (*string, error)
 	GetPersonPermissionLevelInEscuadrilla(ctx context.Context, arg GetPersonPermissionLevelInEscuadrillaParams) (string, error)
 	GetStaticAdministrativosStats(ctx context.Context, personEscuadrillaFk int32) (GetStaticAdministrativosStatsRow, error)
 	// Airflow medio: por persona (rol piloto/dotación), si días sin volar >= 60 → 0,
@@ -344,6 +350,8 @@ type Querier interface {
 	// Defaults: current_flag=TRUE, permission_level='Común' (¡con acento!).
 	// Bug fix vs Rust: el INSERT original omitía person_localidad (NOT NULL),
 	// por lo que cualquier add_person fallaba si la BD seguía el esquema.
+	// person_password_hash + person_password_must_change: el alta deja la
+	// contraseña por defecto ('aether', hasheada en Go) y fuerza el cambio.
 	InsertPerson(ctx context.Context, arg InsertPersonParams) (int32, error)
 	InsertPersonHour(ctx context.Context, arg InsertPersonHourParams) error
 	InsertPersonToComision(ctx context.Context, arg InsertPersonToComisionParams) error
@@ -568,6 +576,8 @@ type Querier interface {
 	// Una sola query para alta/baja con verificación del estado deseado.
 	SetPersonCurrentFlag(ctx context.Context, arg SetPersonCurrentFlagParams) (int64, error)
 	SetPersonPassword(ctx context.Context, arg SetPersonPasswordParams) (int64, error)
+	// Reseteo del Superusuario: fija el hash (por defecto 'aether') y fuerza el
+	// cambio en el siguiente login. Acotado a la escuadrilla del superusuario.
 	SetPersonPasswordBySk(ctx context.Context, arg SetPersonPasswordBySkParams) (int64, error)
 	SetPersonPermissionLevel(ctx context.Context, arg SetPersonPermissionLevelParams) (int64, error)
 	// Usado por cmd/bootstrap para fijar el nivel (p. ej. crear el primer Superusuario).
