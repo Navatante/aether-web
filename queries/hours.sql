@@ -76,10 +76,11 @@ sim_agg AS (
 prev_agg AS (
     SELECT
         extra_hours_person_fk AS person_sk,
-        CASE WHEN $5::bool THEN extra_hours_day        ELSE 0 END::numeric AS day,
-        CASE WHEN $5::bool THEN extra_hours_conv_night ELSE 0 END::numeric AS night,
-        CASE WHEN $5::bool THEN extra_hours_gvn        ELSE 0 END::numeric AS gvn
+        SUM(CASE WHEN $5::bool THEN extra_hours_day        ELSE 0 END)::numeric AS day,
+        SUM(CASE WHEN $5::bool THEN extra_hours_conv_night ELSE 0 END)::numeric AS night,
+        SUM(CASE WHEN $5::bool THEN extra_hours_gvn        ELSE 0 END)::numeric AS gvn
     FROM operations.extra_hour
+    GROUP BY extra_hours_person_fk
 )
 SELECT
     p.person_nk,
@@ -198,8 +199,9 @@ WITH ift_agg AS (
 prev_inst AS (
     SELECT
         extra_hours_person_fk AS person_sk,
-        CASE WHEN $5::bool THEN extra_hours_inst ELSE 0 END::numeric AS inst
+        SUM(CASE WHEN $5::bool THEN extra_hours_inst ELSE 0 END)::numeric AS inst
     FROM operations.extra_hour
+    GROUP BY extra_hours_person_fk
 )
 SELECT
     p.person_nk,
@@ -286,8 +288,9 @@ sim_cta AS (
 ),
 prev_cta AS (
     SELECT extra_hours_person_fk AS person_sk,
-           CASE WHEN $5::bool THEN extra_hours_cta ELSE 0 END::numeric AS cta
+           SUM(CASE WHEN $5::bool THEN extra_hours_cta ELSE 0 END)::numeric AS cta
     FROM operations.extra_hour
+    GROUP BY extra_hours_person_fk
 )
 SELECT
     p.person_nk,

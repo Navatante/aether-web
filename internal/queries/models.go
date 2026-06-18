@@ -313,6 +313,7 @@ type OperationsExtraHour struct {
 	ExtraHoursConvNight pgtype.Numeric `json:"extra_hours_conv_night"`
 	ExtraHoursGvn       pgtype.Numeric `json:"extra_hours_gvn"`
 	ExtraHoursInst      pgtype.Numeric `json:"extra_hours_inst"`
+	ExtraHoursRemarks   *string        `json:"extra_hours_remarks"`
 }
 
 type OperationsExtraModelRealHour struct {
