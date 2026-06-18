@@ -219,6 +219,7 @@ const HorasExtraModelo = () => {
                                                     <table className="w-full">
                                                         <thead>
                                                             <tr className="text-xs text-muted-foreground border-b border-details-border">
+                                                                <th className="text-left py-2 pr-4 font-medium">ID</th>
                                                                 <th className="text-left py-2 pr-4 font-medium">Fecha</th>
                                                                 <th className="text-center py-2 px-2 font-medium">Tipo</th>
                                                                 <th className="text-center py-2 px-2 font-medium">Día</th>
@@ -233,6 +234,7 @@ const HorasExtraModelo = () => {
                                                         <tbody>
                                                             {detail.map((rec) => (
                                                                 <tr key={rec.id} className="border-b border-details-border/50 last:border-0">
+                                                                    <td className="py-2 pr-4 text-sm text-muted-foreground">{rec.id}</td>
                                                                     <td className="py-2 pr-4 text-sm text-muted-foreground">{fmtFecha(rec.date)}</td>
                                                                     <td className="py-2 px-2 text-center">
                                                                         <span className={`px-2 py-0.5 rounded-full text-xs ${rec.isReal ? 'bg-success-muted text-success-muted-foreground' : 'bg-muted text-muted-foreground'}`}>
