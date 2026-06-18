@@ -305,6 +305,38 @@ type OperationsEventName struct {
 	EventNameValue string `json:"event_name_value"`
 }
 
+type OperationsExtraHour struct {
+	ExtraHoursSk        int32          `json:"extra_hours_sk"`
+	ExtraHoursPersonFk  int32          `json:"extra_hours_person_fk"`
+	ExtraHoursCta       pgtype.Numeric `json:"extra_hours_cta"`
+	ExtraHoursDay       pgtype.Numeric `json:"extra_hours_day"`
+	ExtraHoursConvNight pgtype.Numeric `json:"extra_hours_conv_night"`
+	ExtraHoursGvn       pgtype.Numeric `json:"extra_hours_gvn"`
+	ExtraHoursInst      pgtype.Numeric `json:"extra_hours_inst"`
+}
+
+type OperationsExtraModelRealHour struct {
+	ExtraModelRealHoursSk        int32          `json:"extra_model_real_hours_sk"`
+	ExtraModelRealHoursDate      pgtype.Date    `json:"extra_model_real_hours_date"`
+	ExtraModelRealHoursPersonFk  int32          `json:"extra_model_real_hours_person_fk"`
+	ExtraModelRealHoursCta       pgtype.Numeric `json:"extra_model_real_hours_cta"`
+	ExtraModelRealHoursDay       pgtype.Numeric `json:"extra_model_real_hours_day"`
+	ExtraModelRealHoursConvNight pgtype.Numeric `json:"extra_model_real_hours_conv_night"`
+	ExtraModelRealHoursGvn       pgtype.Numeric `json:"extra_model_real_hours_gvn"`
+	ExtraModelRealHoursInst      pgtype.Numeric `json:"extra_model_real_hours_inst"`
+}
+
+type OperationsExtraModelSimHour struct {
+	ExtraModelSimHoursSk        int32          `json:"extra_model_sim_hours_sk"`
+	ExtraModelSimHoursDate      pgtype.Date    `json:"extra_model_sim_hours_date"`
+	ExtraModelSimHoursPersonFk  int32          `json:"extra_model_sim_hours_person_fk"`
+	ExtraModelSimHoursCta       pgtype.Numeric `json:"extra_model_sim_hours_cta"`
+	ExtraModelSimHoursDay       pgtype.Numeric `json:"extra_model_sim_hours_day"`
+	ExtraModelSimHoursConvNight pgtype.Numeric `json:"extra_model_sim_hours_conv_night"`
+	ExtraModelSimHoursGvn       pgtype.Numeric `json:"extra_model_sim_hours_gvn"`
+	ExtraModelSimHoursInst      pgtype.Numeric `json:"extra_model_sim_hours_inst"`
+}
+
 type OperationsFlight struct {
 	FlightSk             int32          `json:"flight_sk"`
 	FlightDate           pgtype.Date    `json:"flight_date"`
@@ -467,38 +499,6 @@ type OperationsPersonHour struct {
 	PersonHourPersonFk int32          `json:"person_hour_person_fk"`
 	PersonHourPeriodFk int32          `json:"person_hour_period_fk"`
 	PersonHourHourQty  pgtype.Numeric `json:"person_hour_hour_qty"`
-}
-
-type OperationsPreviousHour struct {
-	PreviousHoursSk        int32          `json:"previous_hours_sk"`
-	PreviousHoursPersonFk  int32          `json:"previous_hours_person_fk"`
-	PreviousHoursCta       pgtype.Numeric `json:"previous_hours_cta"`
-	PreviousHoursDay       pgtype.Numeric `json:"previous_hours_day"`
-	PreviousHoursConvNight pgtype.Numeric `json:"previous_hours_conv_night"`
-	PreviousHoursGvn       pgtype.Numeric `json:"previous_hours_gvn"`
-	PreviousHoursInst      pgtype.Numeric `json:"previous_hours_inst"`
-}
-
-type OperationsPreviousModelRealHour struct {
-	PreviousModelRealHoursSk        int32          `json:"previous_model_real_hours_sk"`
-	PreviousModelRealHoursDate      pgtype.Date    `json:"previous_model_real_hours_date"`
-	PreviousModelRealHoursPersonFk  int32          `json:"previous_model_real_hours_person_fk"`
-	PreviousModelRealHoursCta       pgtype.Numeric `json:"previous_model_real_hours_cta"`
-	PreviousModelRealHoursDay       pgtype.Numeric `json:"previous_model_real_hours_day"`
-	PreviousModelRealHoursConvNight pgtype.Numeric `json:"previous_model_real_hours_conv_night"`
-	PreviousModelRealHoursGvn       pgtype.Numeric `json:"previous_model_real_hours_gvn"`
-	PreviousModelRealHoursInst      pgtype.Numeric `json:"previous_model_real_hours_inst"`
-}
-
-type OperationsPreviousModelSimHour struct {
-	PreviousModelSimHoursSk        int32          `json:"previous_model_sim_hours_sk"`
-	PreviousModelSimHoursDate      pgtype.Date    `json:"previous_model_sim_hours_date"`
-	PreviousModelSimHoursPersonFk  int32          `json:"previous_model_sim_hours_person_fk"`
-	PreviousModelSimHoursCta       pgtype.Numeric `json:"previous_model_sim_hours_cta"`
-	PreviousModelSimHoursDay       pgtype.Numeric `json:"previous_model_sim_hours_day"`
-	PreviousModelSimHoursConvNight pgtype.Numeric `json:"previous_model_sim_hours_conv_night"`
-	PreviousModelSimHoursGvn       pgtype.Numeric `json:"previous_model_sim_hours_gvn"`
-	PreviousModelSimHoursInst      pgtype.Numeric `json:"previous_model_sim_hours_inst"`
 }
 
 type OperationsProjectile struct {

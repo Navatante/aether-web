@@ -59,12 +59,12 @@ Charts con recharts alimentados por un endpoint de stats con rango de fechas. Se
 
 1. **Andamiaje genérico** `shared/components/charts/StatsChartCard.tsx`: `Card` + cabecera (`title`/`description`) + el triple estado **carga / error / vacío**. Agnóstico de recharts y del shape de datos; el chart concreto entra como `children`. Reutilízalo en **todo** chart de stats (no recrees el spinner / bloque de error / "sin datos" a mano).
 2. **Chart concreto** en `features/<feature>/components/<Nombre>Chart.tsx`: dueño de su `chartConfig`, leyenda, tooltip y los `<Bar>/<Line>/…`. Recibe `data` por props y **nada más** (sin fetching). Ej.: `NH90HoursChart`.
-3. **Hook de datos** en `features/<feature>/hooks/use<Nombre>.ts`: estado del rango + `useApiQuery` + derivados (memoizados). Parametriza por filtros (`personRol`, `includePrevious`, …) para reutilizar la misma vista con distintos datos. Ej.: `useHorasVuelo`.
+3. **Hook de datos** en `features/<feature>/hooks/use<Nombre>.ts`: estado del rango + `useApiQuery` + derivados (memoizados). Parametriza por filtros (`personRol`, `includeExtra`, …) para reutilizar la misma vista con distintos datos. Ej.: `useHorasVuelo`.
 
 La **página** queda como composición solo-render (~70 líneas):
 ```tsx
 const { loading, errorMsg, chartData, enrichedChartData, startDate, endDate, handleDateRangeChange }
-    = useHorasVuelo({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+    = useHorasVuelo({ personRol: 'Piloto', includeExtra: viewMode === 'totals' })
 // ...
 <SegmentedDateRangeAether onDataReceived={handleDateRangeChange} currentDateFrom={startDate} currentDateTo={endDate} />
 <StatsChartCard title="…" description="…" isLoading={loading} error={errorMsg} isEmpty={chartData.length === 0}>

@@ -12,7 +12,7 @@ export interface UseHorasFormacionOptions {
     initialTimeRange?: PredefinedRange
     /** Modo "Totales": cruza escuadrillas (persona que cambió de escuadrilla) y
      *  usa siempre el histórico, ignorando el rango del selector. */
-    includePrevious?: boolean
+    includeExtra?: boolean
 }
 
 export interface UseHorasFormacionResult {
@@ -32,7 +32,7 @@ export interface UseHorasFormacionResult {
  * La página solo renderiza el resultado.
  */
 export function useHorasFormacion(options: UseHorasFormacionOptions = {}): UseHorasFormacionResult {
-    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includePrevious = false } = options
+    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includeExtra = false } = options
     const { id: escId } = useEscuadrilla()
 
     // Solo el rango es estado mutable (lo cambia el selector). El estado inicial
@@ -44,11 +44,11 @@ export function useHorasFormacion(options: UseHorasFormacionOptions = {}): UseHo
     // El modo "Totales" cruza escuadrillas y solo tiene sentido con el histórico
     // completo, así que fuerza "historico" e ignora el rango del selector.
     const queryParams = useMemo<Record<string, string | undefined>>(() => {
-        if (includePrevious) {
-            return { person_rol: personRol, include_previous: 'true', time_range: 'historico' }
+        if (includeExtra) {
+            return { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
         }
         return { person_rol: personRol, ...rangeParams }
-    }, [personRol, includePrevious, rangeParams])
+    }, [personRol, includeExtra, rangeParams])
 
     const {
         data,

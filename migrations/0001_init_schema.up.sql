@@ -290,38 +290,38 @@ CREATE TABLE operations.flight (
     flight_total_hours      DECIMAL(4,1) NOT NULL CHECK (flight_total_hours > 0)
 );
 
-CREATE TABLE operations.previous_hour (
-    previous_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    previous_hours_person_fk   INTEGER       NOT NULL UNIQUE REFERENCES detall.person(person_sk),
-    previous_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_hours_cta >= 0),
-    previous_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_hours_day >= 0),
-    previous_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_hours_conv_night >= 0),
-    previous_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_hours_gvn >= 0),
-    previous_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_hours_inst >= 0)
+CREATE TABLE operations.extra_hour (
+    extra_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    extra_hours_person_fk   INTEGER       NOT NULL UNIQUE REFERENCES detall.person(person_sk),
+    extra_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_cta >= 0),
+    extra_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_day >= 0),
+    extra_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_conv_night >= 0),
+    extra_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_gvn >= 0),
+    extra_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_inst >= 0)
 );
 
-CREATE TABLE operations.previous_model_real_hour (
-    previous_model_real_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    previous_model_real_hours_date        DATE          NOT NULL,
-    previous_model_real_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
-    previous_model_real_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_real_hours_cta >= 0),
-    previous_model_real_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_real_hours_day >= 0),
-    previous_model_real_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_real_hours_conv_night >= 0),
-    previous_model_real_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_real_hours_gvn >= 0),
-    previous_model_real_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_real_hours_inst >= 0),
-    CONSTRAINT uq_previous_model_real_person UNIQUE (previous_model_real_hours_person_fk)
+CREATE TABLE operations.extra_model_real_hour (
+    extra_model_real_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    extra_model_real_hours_date        DATE          NOT NULL,
+    extra_model_real_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
+    extra_model_real_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_real_hours_cta >= 0),
+    extra_model_real_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_real_hours_day >= 0),
+    extra_model_real_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_real_hours_conv_night >= 0),
+    extra_model_real_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_real_hours_gvn >= 0),
+    extra_model_real_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_real_hours_inst >= 0),
+    CONSTRAINT uq_extra_model_real_person UNIQUE (extra_model_real_hours_person_fk)
 );
 
-CREATE TABLE operations.previous_model_sim_hour (
-    previous_model_sim_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    previous_model_sim_hours_date        DATE          NOT NULL,
-    previous_model_sim_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
-    previous_model_sim_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_sim_hours_cta >= 0),
-    previous_model_sim_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_sim_hours_day >= 0),
-    previous_model_sim_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_sim_hours_conv_night >= 0),
-    previous_model_sim_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_sim_hours_gvn >= 0),
-    previous_model_sim_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (previous_model_sim_hours_inst >= 0),
-    CONSTRAINT uq_previous_model_sim_person UNIQUE (previous_model_sim_hours_person_fk)
+CREATE TABLE operations.extra_model_sim_hour (
+    extra_model_sim_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    extra_model_sim_hours_date        DATE          NOT NULL,
+    extra_model_sim_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
+    extra_model_sim_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_sim_hours_cta >= 0),
+    extra_model_sim_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_sim_hours_day >= 0),
+    extra_model_sim_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_sim_hours_conv_night >= 0),
+    extra_model_sim_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_sim_hours_gvn >= 0),
+    extra_model_sim_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_sim_hours_inst >= 0),
+    CONSTRAINT uq_extra_model_sim_person UNIQUE (extra_model_sim_hours_person_fk)
 );
 
 CREATE TABLE operations.ground_school (

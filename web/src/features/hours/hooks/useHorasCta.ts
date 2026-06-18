@@ -10,9 +10,9 @@ export interface UseHorasCtaOptions {
     personRol?: string
     /** Rango predefinido inicial; debe coincidir con el default del selector. */
     initialTimeRange?: PredefinedRange
-    /** Modo "Totales": cruza escuadrillas, suma el arrastre (previous_hours_cta)
+    /** Modo "Totales": cruza escuadrillas, suma el arrastre (extra_hours_cta)
      *  y usa siempre el histórico, ignorando el rango del selector. */
-    includePrevious?: boolean
+    includeExtra?: boolean
 }
 
 export interface UseHorasCtaResult {
@@ -31,7 +31,7 @@ export interface UseHorasCtaResult {
  * rango, consulta a `/hours/cta` vía TanStack Query. La página solo renderiza.
  */
 export function useHorasCta(options: UseHorasCtaOptions = {}): UseHorasCtaResult {
-    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includePrevious = false } = options
+    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includeExtra = false } = options
     const { id: escId } = useEscuadrilla()
 
     // Solo el rango es estado mutable (lo cambia el selector). El estado inicial se
@@ -43,11 +43,11 @@ export function useHorasCta(options: UseHorasCtaOptions = {}): UseHorasCtaResult
     // El modo "Totales" cruza escuadrillas y solo tiene sentido con el histórico
     // completo, así que fuerza "historico" e ignora el rango del selector.
     const queryParams = useMemo<Record<string, string | undefined>>(() => {
-        if (includePrevious) {
-            return { person_rol: personRol, include_previous: 'true', time_range: 'historico' }
+        if (includeExtra) {
+            return { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
         }
         return { person_rol: personRol, ...rangeParams }
-    }, [personRol, includePrevious, rangeParams])
+    }, [personRol, includeExtra, rangeParams])
 
     const {
         data,

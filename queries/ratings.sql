@@ -113,15 +113,15 @@ WITH horas_vuelo AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmrh.previous_model_real_hours_person_fk,
-               (pmrh.previous_model_real_hours_day + pmrh.previous_model_real_hours_conv_night + pmrh.previous_model_real_hours_gvn)
-        FROM operations.previous_model_real_hour pmrh
-        WHERE pmrh.previous_model_real_hours_date >= CURRENT_DATE - 365
+        SELECT pmrh.extra_model_real_hours_person_fk,
+               (pmrh.extra_model_real_hours_day + pmrh.extra_model_real_hours_conv_night + pmrh.extra_model_real_hours_gvn)
+        FROM operations.extra_model_real_hour pmrh
+        WHERE pmrh.extra_model_real_hours_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmsh.previous_model_sim_hours_person_fk,
-               (pmsh.previous_model_sim_hours_day + pmsh.previous_model_sim_hours_conv_night + pmsh.previous_model_sim_hours_gvn)
-        FROM operations.previous_model_sim_hour pmsh
-        WHERE pmsh.previous_model_sim_hours_date >= CURRENT_DATE - 365
+        SELECT pmsh.extra_model_sim_hours_person_fk,
+               (pmsh.extra_model_sim_hours_day + pmsh.extra_model_sim_hours_conv_night + pmsh.extra_model_sim_hours_gvn)
+        FROM operations.extra_model_sim_hour pmsh
+        WHERE pmsh.extra_model_sim_hours_date >= CURRENT_DATE - 365
     ) th GROUP BY person_sk
 ),
 papeletas_validas AS (
@@ -230,15 +230,15 @@ horas_365 AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmrh.previous_model_real_hours_person_fk,
-            pmrh.previous_model_real_hours_day, pmrh.previous_model_real_hours_conv_night, pmrh.previous_model_real_hours_gvn
-        FROM operations.previous_model_real_hour pmrh
-        WHERE pmrh.previous_model_real_hours_date >= CURRENT_DATE - 365
+        SELECT pmrh.extra_model_real_hours_person_fk,
+            pmrh.extra_model_real_hours_day, pmrh.extra_model_real_hours_conv_night, pmrh.extra_model_real_hours_gvn
+        FROM operations.extra_model_real_hour pmrh
+        WHERE pmrh.extra_model_real_hours_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmsh.previous_model_sim_hours_person_fk,
-            pmsh.previous_model_sim_hours_day, pmsh.previous_model_sim_hours_conv_night, pmsh.previous_model_sim_hours_gvn
-        FROM operations.previous_model_sim_hour pmsh
-        WHERE pmsh.previous_model_sim_hours_date >= CURRENT_DATE - 365
+        SELECT pmsh.extra_model_sim_hours_person_fk,
+            pmsh.extra_model_sim_hours_day, pmsh.extra_model_sim_hours_conv_night, pmsh.extra_model_sim_hours_gvn
+        FROM operations.extra_model_sim_hour pmsh
+        WHERE pmsh.extra_model_sim_hours_date >= CURRENT_DATE - 365
     ) th GROUP BY person_sk
 ),
 horas_gvn_90 AS (
@@ -248,13 +248,13 @@ horas_gvn_90 AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 90 AND jph.person_hour_period_fk = 3
         UNION ALL
-        SELECT pmrh.previous_model_real_hours_person_fk, pmrh.previous_model_real_hours_gvn
-        FROM operations.previous_model_real_hour pmrh
-        WHERE pmrh.previous_model_real_hours_date >= CURRENT_DATE - 90
+        SELECT pmrh.extra_model_real_hours_person_fk, pmrh.extra_model_real_hours_gvn
+        FROM operations.extra_model_real_hour pmrh
+        WHERE pmrh.extra_model_real_hours_date >= CURRENT_DATE - 90
         UNION ALL
-        SELECT pmsh.previous_model_sim_hours_person_fk, pmsh.previous_model_sim_hours_gvn
-        FROM operations.previous_model_sim_hour pmsh
-        WHERE pmsh.previous_model_sim_hours_date >= CURRENT_DATE - 90
+        SELECT pmsh.extra_model_sim_hours_person_fk, pmsh.extra_model_sim_hours_gvn
+        FROM operations.extra_model_sim_hour pmsh
+        WHERE pmsh.extra_model_sim_hours_date >= CURRENT_DATE - 90
     ) th GROUP BY person_sk
 ),
 horas_ifr_365 AS (

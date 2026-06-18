@@ -25,14 +25,14 @@ export default function HorasVueloPilotos() {
         startDate,
         endDate,
         handleDateRangeChange,
-    } = useHorasVuelo({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+    } = useHorasVuelo({ personRol: 'Piloto', includeExtra: viewMode === 'totals' })
 
     const {
         loading: formacionLoading,
         errorMsg: formacionErrorMsg,
         chartData: formacionData,
         handleDateRangeChange: handleFormacionDateRangeChange,
-    } = useHorasFormacion({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+    } = useHorasFormacion({ personRol: 'Piloto', includeExtra: viewMode === 'totals' })
 
     const {
         loading: gvntypeLoading,
@@ -46,7 +46,7 @@ export default function HorasVueloPilotos() {
         errorMsg: iftErrorMsg,
         chartData: iftData,
         handleDateRangeChange: handleIftDateRangeChange,
-    } = useHorasIft({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+    } = useHorasIft({ personRol: 'Piloto', includeExtra: viewMode === 'totals' })
 
     const {
         loading: instructorLoading,
@@ -60,7 +60,7 @@ export default function HorasVueloPilotos() {
         errorMsg: ctaErrorMsg,
         chartData: ctaData,
         handleDateRangeChange: handleCtaDateRangeChange,
-    } = useHorasCta({ personRol: 'Piloto', includePrevious: viewMode === 'totals' })
+    } = useHorasCta({ personRol: 'Piloto', includeExtra: viewMode === 'totals' })
 
     return (
         <div className="h-full overflow-y-auto p-6 pb-8">
@@ -129,7 +129,7 @@ export default function HorasVueloPilotos() {
                 )}
 
                 {/* Horas de vuelo por instrumentos (operations.ift_hour). En Totales
-                    cruza escuadrillas y suma el arrastre (previous_hours_inst). */}
+                    cruza escuadrillas y suma el arrastre (extra_hours_inst). */}
                 <StatsChartCard
                     title={viewMode === 'totals' ? 'Horas de vuelo por Instrumentos (Totales)' : 'Horas de vuelo por Instrumentos'}
                     isLoading={iftLoading}
@@ -155,7 +155,7 @@ export default function HorasVueloPilotos() {
                 {/* Horas como Comandante de Aeronave (CTA). Suma vuelos en Aether
                     (como CTA) + horas CTA de modelos anteriores; ver la query
                     CtaHours. En Totales cruza escuadrillas y suma el arrastre
-                    (previous_hours_cta). */}
+                    (extra_hours_cta). */}
                 <StatsChartCard
                     title={viewMode === 'totals' ? 'Horas como Comandante de Aeronave (Totales)' : 'Horas como Comandante de Aeronave'}
                     isLoading={ctaLoading}

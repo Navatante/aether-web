@@ -463,15 +463,15 @@ TABLE_MAPPINGS = {
     },
 
     "fact_previous_hour": {
-        "target": "operations.previous_hour",
+        "target": "operations.extra_hour",
         "columns": {
-            "previous_hours_sk": "previous_hours_sk",
-            "previous_hours_person_fk": "previous_hours_person_fk",
-            "previous_hours_cta": "previous_hours_cta",
-            "previous_hours_day": "previous_hours_day",
-            "previous_hours_conv_night": "previous_hours_conv_night",
-            "previous_hours_gvn": "previous_hours_gvn",
-            "previous_hours_inst": "previous_hours_inst",
+            "previous_hours_sk": "extra_hours_sk",
+            "previous_hours_person_fk": "extra_hours_person_fk",
+            "previous_hours_cta": "extra_hours_cta",
+            "previous_hours_day": "extra_hours_day",
+            "previous_hours_conv_night": "extra_hours_conv_night",
+            "previous_hours_gvn": "extra_hours_gvn",
+            "previous_hours_inst": "extra_hours_inst",
         },
         "transforms": {
             "previous_hours_cta": _to_float,
@@ -484,15 +484,15 @@ TABLE_MAPPINGS = {
     },
 
     "fact_previous_model_hour": {
-        "target": "operations.previous_model_real_hour",
+        "target": "operations.extra_model_real_hour",
         "columns": {
-            "previous_model_hours_sk": "previous_model_real_hours_sk",
-            "previous_model_hours_person_fk": "previous_model_real_hours_person_fk",
-            "previous_model_hours_cta": "previous_model_real_hours_cta",
-            "previous_model_hours_day": "previous_model_real_hours_day",
-            "previous_model_hours_conv_night": "previous_model_real_hours_conv_night",
-            "previous_model_hours_gvn": "previous_model_real_hours_gvn",
-            "previous_model_hours_inst": "previous_model_real_hours_inst",
+            "previous_model_hours_sk": "extra_model_real_hours_sk",
+            "previous_model_hours_person_fk": "extra_model_real_hours_person_fk",
+            "previous_model_hours_cta": "extra_model_real_hours_cta",
+            "previous_model_hours_day": "extra_model_real_hours_day",
+            "previous_model_hours_conv_night": "extra_model_real_hours_conv_night",
+            "previous_model_hours_gvn": "extra_model_real_hours_gvn",
+            "previous_model_hours_inst": "extra_model_real_hours_inst",
         },
         "transforms": {
             "previous_model_hours_cta": _to_float,
@@ -502,7 +502,7 @@ TABLE_MAPPINGS = {
             "previous_model_hours_inst": _to_float,
         },
         "defaults": {
-            "previous_model_real_hours_date": datetime.strptime("1900-01-01", "%Y-%m-%d").date()
+            "extra_model_real_hours_date": datetime.strptime("1900-01-01", "%Y-%m-%d").date()
         },
         "identity_insert": True,
     },
@@ -698,8 +698,8 @@ SEQUENCES_TO_RESET = [
     ("operations.passenger_type", "passenger_type_sk"),
     ("operations.papeleta", "papeleta_sk"),
     ("operations.flight", "flight_sk"),
-    ("operations.previous_hour", "previous_hours_sk"),
-    ("operations.previous_model_real_hour", "previous_model_real_hours_sk"),
+    ("operations.extra_hour", "extra_hours_sk"),
+    ("operations.extra_model_real_hour", "extra_model_real_hours_sk"),
     ("operations.ground_school", "ground_school_sk"),
     ("operations.person_hour", "person_hour_sk"),
     ("operations.ift_hour", "ift_hour_sk"),

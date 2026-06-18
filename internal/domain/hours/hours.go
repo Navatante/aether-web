@@ -29,7 +29,7 @@ type Request struct {
 	PersonRoles     []string // CSV recibido en query, ya partido
 	CustomStartDate string   // YYYY-MM-DD
 	CustomEndDate   string   // YYYY-MM-DD
-	IncludePrevious bool     // modo "Totales": suma operations.previous_hour (arrastre)
+	IncludeExtra bool     // modo "Totales": suma operations.extra_hour (arrastre)
 }
 
 // ============================================================
@@ -158,7 +158,7 @@ func (s *Service) NH90PeriodHours(ctx context.Context, esc int32, req Request) (
 		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
 		PersonEscuadrillaFk: esc,
 		Column4:             req.PersonRoles,
-		Column5:             req.IncludePrevious,
+		Column5:             req.IncludeExtra,
 	})
 	if err != nil {
 		return Result{}, err
@@ -206,7 +206,7 @@ func (s *Service) FormationPeriodHours(ctx context.Context, esc int32, req Reque
 		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
 		PersonEscuadrillaFk: esc,
 		Column4:             req.PersonRoles,
-		Column5:             req.IncludePrevious,
+		Column5:             req.IncludeExtra,
 	})
 	if err != nil {
 		return FormationResult{}, err
@@ -287,7 +287,7 @@ func (s *Service) IftHours(ctx context.Context, esc int32, req Request) (IftResu
 		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
 		PersonEscuadrillaFk: esc,
 		Column4:             req.PersonRoles,
-		Column5:             req.IncludePrevious,
+		Column5:             req.IncludeExtra,
 	})
 	if err != nil {
 		return IftResult{}, err
@@ -366,7 +366,7 @@ func (s *Service) CtaHours(ctx context.Context, esc int32, req Request) (CtaResu
 		FlightDate_2:        pgtype.Date{Time: r.to, Valid: true},
 		PersonEscuadrillaFk: esc,
 		Column4:             req.PersonRoles,
-		Column5:             req.IncludePrevious,
+		Column5:             req.IncludeExtra,
 	})
 	if err != nil {
 		return CtaResult{}, err
@@ -456,7 +456,7 @@ func (h *Handlers) NH90PeriodHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludePrevious: c.QueryParam("include_previous") == "true",
+		IncludeExtra: c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.NH90PeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -475,7 +475,7 @@ func (h *Handlers) FormationPeriodHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludePrevious: c.QueryParam("include_previous") == "true",
+		IncludeExtra: c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.FormationPeriodHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -512,7 +512,7 @@ func (h *Handlers) IftHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludePrevious: c.QueryParam("include_previous") == "true",
+		IncludeExtra: c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.IftHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {
@@ -549,7 +549,7 @@ func (h *Handlers) CtaHours(c echo.Context) error {
 		PersonRoles:     splitCSV(c.QueryParam("person_rol")),
 		CustomStartDate: c.QueryParam("custom_start_date"),
 		CustomEndDate:   c.QueryParam("custom_end_date"),
-		IncludePrevious: c.QueryParam("include_previous") == "true",
+		IncludeExtra: c.QueryParam("include_extra") == "true",
 	}
 	res, err := h.svc.CtaHours(c.Request().Context(), int32(u.EscuadrillaID), req)
 	if err != nil {

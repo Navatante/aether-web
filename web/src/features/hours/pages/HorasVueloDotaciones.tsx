@@ -22,7 +22,7 @@ export default function HorasVueloDotaciones() {
         startDate,
         endDate,
         handleDateRangeChange,
-    } = useHorasVuelo({ personRol: DOTACION_ROLES, includePrevious: viewMode === 'totals' })
+    } = useHorasVuelo({ personRol: DOTACION_ROLES, includeExtra: viewMode === 'totals' })
 
     const {
         loading: wtLoading,

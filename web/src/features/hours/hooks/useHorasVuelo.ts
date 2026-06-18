@@ -10,8 +10,8 @@ export interface UseHorasVueloOptions {
     personRol?: string
     /** Rango predefinido inicial; debe coincidir con el default del selector. */
     initialTimeRange?: PredefinedRange
-    /** Modo "Totales": suma las horas de arrastre (operations.previous_hour). */
-    includePrevious?: boolean
+    /** Modo "Totales": suma las horas de arrastre (operations.extra_hour). */
+    includeExtra?: boolean
 }
 
 export interface UseHorasVueloResult {
@@ -33,7 +33,7 @@ export interface UseHorasVueloResult {
  * enriquecido de datos. La página solo renderiza el resultado.
  */
 export function useHorasVuelo(options: UseHorasVueloOptions = {}): UseHorasVueloResult {
-    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includePrevious = false } = options
+    const { personRol = 'Piloto', initialTimeRange = 'ultimos-30-dias', includeExtra = false } = options
     const { id: escId } = useEscuadrilla()
 
     // Solo el rango es estado mutable (lo cambia el selector). El resto de params
@@ -47,11 +47,11 @@ export function useHorasVuelo(options: UseHorasVueloOptions = {}): UseHorasVuelo
     // El modo "Totales" (arrastre vitalicio) solo tiene sentido con el rango completo,
     // así que fuerza "historico" e ignora el rango del selector.
     const queryParams = useMemo<Record<string, string | undefined>>(() => {
-        if (includePrevious) {
-            return { person_rol: personRol, include_previous: 'true', time_range: 'historico' }
+        if (includeExtra) {
+            return { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
         }
         return { person_rol: personRol, ...rangeParams }
-    }, [personRol, includePrevious, rangeParams])
+    }, [personRol, includeExtra, rangeParams])
 
     const {
         data,
