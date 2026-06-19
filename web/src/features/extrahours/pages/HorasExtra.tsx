@@ -146,7 +146,7 @@ const HorasExtra = () => {
         }
     };
 
-    const colSpan = 8;
+    const colSpan = 9;
     const detailCols = 8 + (canWrite ? 1 : 0); // columnas de la tabla de detalle (para el sub-header de modelo)
 
     return (
@@ -193,7 +193,7 @@ const HorasExtra = () => {
                 {/* Tabla agrupada por persona (totales de todos los modelos). Click → despliega registros. */}
                 <PageTableContainer className="flex-1 flex flex-col min-h-0">
                     <div className="overflow-x-auto flex-1">
-                        <table className="w-full min-w-[820px]" role="table">
+                        <table className="w-full min-w-[900px]" role="table">
                             <StickyTableHeader>
                                 <tr>
                                     <th className="text-left p-4 font-semibold text-table-header-foreground">Persona</th>
@@ -201,6 +201,7 @@ const HorasExtra = () => {
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">Día</th>
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">Noche</th>
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">GVN</th>
+                                    <th className="text-center p-4 font-semibold text-primary border-l border-border/60 bg-primary/5">Total</th>
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">Inst.</th>
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">HAC</th>
                                     <th className="text-center p-4 font-semibold text-table-header-foreground"></th>
@@ -229,6 +230,7 @@ const HorasExtra = () => {
                                             <td className="text-center p-4"><span className="text-sm text-foreground font-medium">{fmtHours(person.day)}</span></td>
                                             <td className="text-center p-4"><span className="text-sm text-foreground font-medium">{fmtHours(person.convNight)}</span></td>
                                             <td className="text-center p-4"><span className="text-sm text-foreground font-medium">{fmtHours(person.gvn)}</span></td>
+                                            <td className="text-center p-4 border-l border-border/60 bg-primary/5"><span className="text-sm text-primary font-semibold tabular-nums">{fmtHours(person.day + person.convNight + person.gvn)}</span></td>
                                             <td className="text-center p-4"><span className="text-sm text-foreground font-medium">{fmtHours(person.inst)}</span></td>
                                             <td className="text-center p-4"><span className="text-sm text-foreground font-medium">{fmtHours(person.cta)}</span></td>
                                             <td className="text-center p-4">
