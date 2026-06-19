@@ -146,7 +146,11 @@ export function SuperuserButton() {
                                             <span className="text-foreground font-medium">
                                                 {su.selected?.nombreCompleto}
                                             </span>{" "}
-                                            quedará en <span className="font-mono">aether</span> y se le
+                                            quedará en{" "}
+                                            <span className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono font-semibold">
+                                                aether
+                                            </span>{" "}
+                                            y se le
                                             forzará el cambio en su próximo inicio de sesión.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
