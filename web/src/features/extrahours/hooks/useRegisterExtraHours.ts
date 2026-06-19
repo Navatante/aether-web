@@ -49,10 +49,25 @@ export function useRegisterExtraHours({ mode, initial, onClose }: UseRegisterExt
     const { data: personArray, loading: personsLoading, error: personsError } = usePersonsNkLookup();
     const { data: modelArray, loading: modelsLoading } = useAircraftModels();
 
+    // Sub-form "nuevo modelo" embebido (mismo catálogo global que AircraftsTab).
+    const [addingModel, setAddingModel] = useState(false);
+    const [mType, setMType] = useState('');
+    const [mMake, setMMake] = useState('');
+    const [mModel, setMModel] = useState('');
+    const [mVariant, setMVariant] = useState('');
+    const [mMultiEngine, setMMultiEngine] = useState(false);
+    const [mMultiPilot, setMMultiPilot] = useState(false);
+
     const createMutation = useApiMutation<InsertResult, ExtraHoursPayload>(
         'POST', '/extra-hours',
         { invalidateKeys: [queryKeys.extraHours.all(escId ?? 0)] },
     );
+    const createModel = useApiMutation<{ aircraft_model_sk: number }, {
+        aircraft_type: string; make: string; model: string; variant: string;
+        is_multi_engine: boolean; is_multi_pilot: boolean;
+    }>('POST', '/lookups/aircraft-models', {
+        invalidateKeys: [queryKeys.lookups.aircraftModels(escId ?? 0)],
+    });
     const updateMutation = useApiMutation<void, ExtraHoursPayload & { id: number }>(
         'PUT', (v) => `/extra-hours/${v.id}`,
         {
@@ -66,6 +81,32 @@ export function useRegisterExtraHours({ mode, initial, onClose }: UseRegisterExt
     const canSubmit = person != null && !!date && model != null && !isSubmitting;
 
     const parseNum = (s: string) => parseFloat(s.replace(',', '.'));
+
+    const resetModelForm = () => {
+        setAddingModel(false); setMType(''); setMMake(''); setMModel('');
+        setMVariant(''); setMMultiEngine(false); setMMultiPilot(false);
+    };
+
+    const handleCreateModel = async () => {
+        if (!mType.trim()) { setError('El tipo es obligatorio.'); return; }
+        if (!mMake.trim()) { setError('El fabricante es obligatorio.'); return; }
+        if (!mModel.trim()) { setError('El modelo es obligatorio.'); return; }
+        if (!mVariant.trim()) { setError('La variante es obligatoria.'); return; }
+        setError(null);
+        try {
+            const created = await createModel.mutateAsync({
+                aircraft_type: mType.trim(), make: mMake.trim(),
+                model: mModel.trim(), variant: mVariant.trim(),
+                is_multi_engine: mMultiEngine, is_multi_pilot: mMultiPilot,
+            });
+            log.info(`Modelo '${mModel} ${mVariant}' añadido`);
+            setModel(created.aircraft_model_sk); // auto-selecciona el nuevo
+            resetModelForm();
+        } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
+            log.error(`Error añadiendo modelo: ${err}`);
+        }
+    };
 
     const handleSubmit = async () => {
         setError(null);
@@ -117,6 +158,12 @@ export function useRegisterExtraHours({ mode, initial, onClose }: UseRegisterExt
         // lookups
         personArray, personsLoading, personsError,
         modelArray, modelsLoading,
+        // sub-form "nuevo modelo"
+        addingModel, setAddingModel,
+        mType, setMType, mMake, setMMake, mModel, setMModel, mVariant, setMVariant,
+        mMultiEngine, setMMultiEngine, mMultiPilot, setMMultiPilot,
+        creatingModel: createModel.isPending,
+        handleCreateModel,
         // acciones
         handleSubmit,
     };

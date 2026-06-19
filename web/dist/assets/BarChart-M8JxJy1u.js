@@ -1,1 +1,0 @@
-import{r as a}from"./index-36sGNDH4.js";import{T as e,U as o}from"./chart-Def16GuN.js";var i=["axis","item"],s=a.forwardRef((r,t)=>a.createElement(e,{chartName:"BarChart",defaultTooltipEventType:"axis",validateTooltipEventTypes:i,tooltipPayloadSearcher:o,categoricalChartProps:r,ref:t}));export{s as B};

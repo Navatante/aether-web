@@ -2,11 +2,18 @@
 // La lógica vive en hooks/useRegisterExtraHours.
 
 import Select from 'react-select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Select as TypeSelect,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { DatePicker } from '@/shared/components/common';
 import { getSelectClassNames, menuPortalStyles } from '@/lib/reactSelectClassNames';
 import { useRegisterExtraHours } from '../../hooks/useRegisterExtraHours';
@@ -21,9 +28,9 @@ interface RegisterExtraHoursFormProps {
 // Campos de horas (key del estado, etiqueta visible).
 const HOUR_FIELDS = [
     { key: 'day', label: 'Día' },
-    { key: 'convNight', label: 'Noche convencional' },
+    { key: 'convNight', label: 'Noche' },
     { key: 'gvn', label: 'GVN' },
-    { key: 'inst', label: 'Inst.' },
+    { key: 'inst', label: 'Instrumental' },
     { key: 'cta', label: 'HAC' },
 ] as const;
 
@@ -35,6 +42,10 @@ export default function RegisterExtraHoursForm({ mode, initial, onClose }: Regis
         error, isSubmitting, canSubmit,
         personArray, personsLoading,
         modelArray, modelsLoading,
+        addingModel, setAddingModel,
+        mType, setMType, mMake, setMMake, mModel, setMModel, mVariant, setMVariant,
+        mMultiEngine, setMMultiEngine, mMultiPilot, setMMultiPilot,
+        creatingModel, handleCreateModel,
         handleSubmit,
     } = useRegisterExtraHours({ mode, initial, onClose });
 
@@ -84,23 +95,96 @@ export default function RegisterExtraHoursForm({ mode, initial, onClose }: Regis
                 )}
             </div>
 
-            {/* Modelo de aeronave */}
+            {/* Modelo de aeronave: selector del catálogo global + alta inline */}
             <div className="grid gap-2">
-                <Label className="text-foreground">Modelo de aeronave</Label>
-                <Select
-                    value={selectedModel}
-                    onChange={(opt) => setModel(opt ? opt.value : null)}
-                    options={modelOptions}
-                    placeholder={modelsLoading ? 'Cargando modelos...' : 'Seleccione un modelo'}
-                    isLoading={modelsLoading}
-                    isDisabled={modelsLoading}
-                    isSearchable
-                    classNames={getSelectClassNames(false, model != null)}
-                    classNamePrefix="react-select"
-                    menuPortalTarget={document.body}
-                    styles={menuPortalStyles}
-                    noOptionsMessage={() => 'Sin modelos'}
-                />
+                <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Modelo de aeronave</Label>
+                    {!addingModel && (
+                        <Button type="button" variant="ghost" size="sm"
+                            className="h-7 px-2 text-xs text-primary hover:text-primary"
+                            onClick={() => setAddingModel(true)}>
+                            <Plus className="w-3.5 h-3.5 mr-1" />Nuevo modelo
+                        </Button>
+                    )}
+                </div>
+                {addingModel ? (
+                    <div className="space-y-3 rounded-lg border bg-muted/40 p-3">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <Plus className="w-4 h-4 text-primary" />
+                            Nuevo modelo de aeronave
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="m_type">Tipo</Label>
+                                <TypeSelect value={mType} onValueChange={(value) => setMType(value ?? '')}>
+                                    <SelectTrigger id="m_type" className="w-full bg-background">
+                                        <SelectValue placeholder="Selecciona tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Helicóptero">Helicóptero</SelectItem>
+                                        <SelectItem value="Avión">Avión</SelectItem>
+                                    </SelectContent>
+                                </TypeSelect>
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="m_make">Fabricante</Label>
+                                <Input id="m_make" placeholder="Airbus Helicopters"
+                                    value={mMake} onChange={(e) => setMMake(e.target.value)}
+                                    maxLength={50} className="bg-background" />
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="m_model">Modelo</Label>
+                                <Input id="m_model" placeholder="NH90"
+                                    value={mModel} onChange={(e) => setMModel(e.target.value)}
+                                    maxLength={50} className="bg-background" />
+                            </div>
+                            <div className="grid gap-1.5">
+                                <Label htmlFor="m_variant">Variante</Label>
+                                <Input id="m_variant" placeholder="TTH"
+                                    value={mVariant} onChange={(e) => setMVariant(e.target.value)}
+                                    maxLength={50} className="bg-background" />
+                            </div>
+                        </div>
+                        <div className="flex gap-6">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={mMultiEngine}
+                                    onChange={(e) => setMMultiEngine(e.target.checked)}
+                                    className="w-4 h-4 accent-primary" />
+                                <span className="text-sm">Multimotor</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={mMultiPilot}
+                                    onChange={(e) => setMMultiPilot(e.target.checked)}
+                                    className="w-4 h-4 accent-primary" />
+                                <span className="text-sm">Multipiloto</span>
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-2 border-t border-border/60 pt-3">
+                            <Button type="button" variant="outline" size="sm"
+                                onClick={() => setAddingModel(false)}
+                                disabled={creatingModel}>Cancelar</Button>
+                            <Button type="button" size="sm"
+                                onClick={handleCreateModel} disabled={creatingModel}>
+                                {creatingModel && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Guardar modelo
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <Select
+                        value={selectedModel}
+                        onChange={(opt) => setModel(opt ? opt.value : null)}
+                        options={modelOptions}
+                        placeholder={modelsLoading ? 'Cargando modelos...' : 'Seleccione un modelo'}
+                        isLoading={modelsLoading}
+                        isDisabled={modelsLoading}
+                        isSearchable
+                        classNames={getSelectClassNames(false, model != null)}
+                        classNamePrefix="react-select"
+                        menuPortalTarget={document.body}
+                        styles={menuPortalStyles}
+                        noOptionsMessage={() => 'Sin modelos'}
+                    />
+                )}
             </div>
 
             {/* Fecha + Tipo */}
@@ -133,7 +217,7 @@ export default function RegisterExtraHoursForm({ mode, initial, onClose }: Regis
             </div>
 
             {/* Horas */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
                 {HOUR_FIELDS.map(({ key, label }) => {
                     const [value, setValue] = hourState[key];
                     return (
@@ -171,7 +255,7 @@ export default function RegisterExtraHoursForm({ mode, initial, onClose }: Regis
                 <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
                     Cancelar
                 </Button>
-                <Button onClick={handleSubmit} disabled={!canSubmit}>
+                <Button onClick={handleSubmit} disabled={!canSubmit || addingModel}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Guardar
                 </Button>
