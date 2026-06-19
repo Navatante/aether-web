@@ -46,6 +46,22 @@ const groupByModel = (records: ExtraHourItem[]): { modelSk: number; modelName: s
     return groups;
 };
 
+// Horas "totales" de un registro = día + noche convencional + GVN (no incluye
+// Inst. ni HAC, que son desgloses solapados).
+const recordTotal = (rec: ExtraHourItem): number => rec.day + rec.convNight + rec.gvn;
+
+// Totales de un grupo de modelo, separando simulador (isReal=false) de real.
+const modelTotals = (items: ExtraHourItem[]): { sim: number; real: number; total: number } => {
+    let sim = 0;
+    let real = 0;
+    for (const rec of items) {
+        const t = recordTotal(rec);
+        if (rec.isReal) real += t;
+        else sim += t;
+    }
+    return { sim, real, total: sim + real };
+};
+
 const HorasExtra = () => {
     const { hasPermission } = useUser();
     const { id: escId } = useEscuadrilla();
@@ -248,11 +264,33 @@ const HorasExtra = () => {
                                                             </tr>
                                                         </thead>
                                                         <tbody>
-                                                            {groupByModel(detail).map((group) => (
+                                                            {groupByModel(detail).map((group) => {
+                                                                const totals = modelTotals(group.items);
+                                                                return (
                                                                 <React.Fragment key={group.modelSk}>
                                                                     <tr className="bg-muted/40">
-                                                                        <td colSpan={detailCols} className="py-2 px-2 text-xs font-semibold uppercase tracking-wide text-foreground">
-                                                                            {group.modelName}
+                                                                        <td colSpan={detailCols} className="py-2 px-2">
+                                                                            <div className="flex items-center text-xs">
+                                                                                <span className="w-62 shrink-0 font-semibold uppercase tracking-wide text-foreground">
+                                                                                    {group.modelName}
+                                                                                </span>
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <span className="flex items-baseline justify-between gap-2">
+                                                                                        <span className="text-muted-foreground">Sim</span>
+                                                                                        <span className="font-semibold text-foreground tabular-nums">{totals.sim.toFixed(1)} h</span>
+                                                                                    </span>
+                                                                                    <span className="h-3 w-px bg-details-border" aria-hidden />
+                                                                                    <span className="flex items-baseline justify-between gap-2">
+                                                                                        <span className="text-muted-foreground">Real</span>
+                                                                                        <span className="font-semibold text-foreground tabular-nums">{totals.real.toFixed(1)} h</span>
+                                                                                    </span>
+                                                                                    <span className="h-3 w-px bg-details-border" aria-hidden />
+                                                                                    <span className="flex items-baseline justify-between gap-2">
+                                                                                        <span className="text-muted-foreground">Total</span>
+                                                                                        <span className="font-semibold text-primary tabular-nums">{totals.total.toFixed(1)} h</span>
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
                                                                         </td>
                                                                     </tr>
                                                                     {group.items.map((rec) => (
@@ -293,7 +331,8 @@ const HorasExtra = () => {
                                                                         </tr>
                                                                     ))}
                                                                 </React.Fragment>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </table>
                                                 )}
