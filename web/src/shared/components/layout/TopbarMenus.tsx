@@ -1,5 +1,5 @@
 import {
-    BookOpen, BookOpenText,
+    BookOpen,
     CalendarPlus,
     FileBarChart,
     FileText, Helicopter,
@@ -21,8 +21,7 @@ import {useState} from "react"
 
 import { RegisterFlightDialog } from "@/features/flights"
 import { RegisterGroundSchoolDialog } from "@/features/groundschool"
-import { RegisterExtraHoursOtrosModelosDialog } from "@/features/extrahoursOtrosModelos"
-import { RegisterExtraModelHoursDialog } from "@/features/extrahoursModelo"
+import { RegisterExtraHoursDialog } from "@/features/extrahours"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
@@ -32,8 +31,7 @@ export function TopbarMenus() {
     // === ESTADOS DE DIALOGS ===
     const [registerFlightOpen, setRegisterFlightOpen] = useState(false)
     const [registerGroundSchoolOpen, setRegisterGroundSchoolOpen] = useState(false)
-    const [registerExtraHoursOtrosModelosOpen, setRegisterExtraHoursOtrosModelosOpen] = useState(false)
-    const [registerExtraModelHoursOpen, setRegisterExtraModelHoursOpen] = useState(false)
+    const [registerExtraHoursOpen, setRegisterExtraHoursOpen] = useState(false)
     const [registerComisionOpen, setRegisterComisionOpen] = useState(false)
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
@@ -73,13 +71,9 @@ export function TopbarMenus() {
                                         <Presentation className="mr-2 h-4 w-4" />
                                         Ground School
                                     </MenubarItem>
-                                    <MenubarItem onSelect={() => setRegisterExtraHoursOtrosModelosOpen(true)}>
+                                    <MenubarItem onSelect={() => setRegisterExtraHoursOpen(true)}>
                                         <BookOpen className="mr-2 h-4 w-4" />
-                                        Horas extra otros modelos
-                                    </MenubarItem>
-                                    <MenubarItem onSelect={() => setRegisterExtraModelHoursOpen(true)}>
-                                        <BookOpenText className="mr-2 h-4 w-4" />
-                                        Horas extra NH-90
+                                        Horas extra
                                     </MenubarItem>
                                     <MenubarSeparator />
                                 </>
@@ -163,20 +157,11 @@ export function TopbarMenus() {
                 />
             )}
 
-            {/* Dialog Horas extra otros modelos (OPERACIONAL) */}
+            {/* Dialog Horas extra (OPERACIONAL) */}
             {canAccessOperacional && (
-                <RegisterExtraHoursOtrosModelosDialog
-                    open={registerExtraHoursOtrosModelosOpen}
-                    onOpenChange={setRegisterExtraHoursOtrosModelosOpen}
-                    mode="create"
-                />
-            )}
-
-            {/* Dialog Horas extra NH-90 (OPERACIONAL) */}
-            {canAccessOperacional && (
-                <RegisterExtraModelHoursDialog
-                    open={registerExtraModelHoursOpen}
-                    onOpenChange={setRegisterExtraModelHoursOpen}
+                <RegisterExtraHoursDialog
+                    open={registerExtraHoursOpen}
+                    onOpenChange={setRegisterExtraHoursOpen}
                     mode="create"
                 />
             )}

@@ -1,10 +1,13 @@
 -- ============================================================
--- Horas extra (operations.extra_hour)
+-- Horas extra (operations.extra_hour) — tabla unificada
 --
--- Arrastre de horas por persona (CTA, día, noche convencional, GVN,
--- instrumentos) + observaciones. Una persona puede tener varias filas, que se
--- suman en los cálculos de horas (queries/hours.sql) y en la vista agrupada de
--- abajo (ListExtraHourPersonTotals).
+-- Horas por persona (CTA, día, noche convencional, GVN, instrumentos) +
+-- observaciones, con fecha (extra_hours_date), discriminador real/simulador
+-- (extra_hours_is_real) y modelo de aeronave (extra_hours_model_fk →
+-- operations.aircraft_model). Una persona puede tener varias filas, que se
+-- suman en los cálculos de horas (queries/hours.sql) y en la vista agrupada
+-- (ListExtraHourPersonTotals). El detalle por persona se devuelve con el modelo
+-- para agruparlo en el frontend.
 --
 -- RLS por código: operations.extra_hour NO tiene escuadrilla_fk (es
 -- person-centric), así que el aislamiento se hace vía la escuadrilla de la
@@ -14,33 +17,37 @@
 -- ============================================================
 
 -- name: InsertExtraHour :one
--- Inserta solo si la persona pertenece a la escuadrilla de la sesión ($8); si
+-- Inserta solo si la persona pertenece a la escuadrilla de la sesión ($11); si
 -- no, no inserta ninguna fila (RETURNING vacío → ErrNoRows en el service).
 INSERT INTO operations.extra_hour (
-    extra_hours_person_fk, extra_hours_cta, extra_hours_day,
-    extra_hours_conv_night, extra_hours_gvn, extra_hours_inst, extra_hours_remarks
+    extra_hours_date, extra_hours_person_fk, extra_hours_model_fk, extra_hours_is_real,
+    extra_hours_cta, extra_hours_day, extra_hours_conv_night, extra_hours_gvn,
+    extra_hours_inst, extra_hours_remarks
 )
-SELECT $1, $2, $3, $4, $5, $6, $7
+SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 WHERE EXISTS (
     SELECT 1 FROM detall.person
-    WHERE person_sk = $1 AND person_escuadrilla_fk = $8
+    WHERE person_sk = $2 AND person_escuadrilla_fk = $11
 )
 RETURNING extra_hours_sk;
 
 -- name: UpdateExtraHour :execrows
--- Actualiza solo las horas y observaciones (la persona del registro no cambia).
--- Acotado a registros de personas de la escuadrilla de la sesión ($8).
+-- Actualiza fecha, modelo, tipo, horas y observaciones (la persona del registro
+-- no cambia). Acotado a registros de personas de la escuadrilla de la sesión ($11).
 UPDATE operations.extra_hour eh
-SET extra_hours_cta        = $2,
-    extra_hours_day        = $3,
-    extra_hours_conv_night = $4,
-    extra_hours_gvn        = $5,
-    extra_hours_inst       = $6,
-    extra_hours_remarks    = $7
+SET extra_hours_date        = $2,
+    extra_hours_model_fk    = $3,
+    extra_hours_is_real     = $4,
+    extra_hours_cta         = $5,
+    extra_hours_day         = $6,
+    extra_hours_conv_night  = $7,
+    extra_hours_gvn         = $8,
+    extra_hours_inst        = $9,
+    extra_hours_remarks     = $10
 FROM detall.person p
 WHERE eh.extra_hours_sk = $1
   AND p.person_sk = eh.extra_hours_person_fk
-  AND p.person_escuadrilla_fk = $8;
+  AND p.person_escuadrilla_fk = $11;
 
 -- name: DeleteExtraHour :execrows
 DELETE FROM operations.extra_hour eh
@@ -51,9 +58,10 @@ WHERE eh.extra_hours_sk = $1
 
 -- name: ListExtraHourPersonTotals :many
 -- Vista agrupada: una fila por persona con el conteo de registros y la SUMA de
--- cada métrica. Ordenado por el orden canónico de personas
--- (detall.v_person_ordered.order_position: rango, antigüedad, escalafón…).
--- Paginado por persona. $2 = filtro opcional por nombre/NK (cadena vacía = sin filtro).
+-- cada métrica (todos los modelos y tipos combinados). Ordenado por el orden
+-- canónico de personas (detall.v_person_ordered.order_position: rango,
+-- antigüedad, escalafón…). Paginado por persona. $2 = filtro opcional por
+-- nombre/NK (cadena vacía = sin filtro).
 SELECT
     p.person_sk,
     p.person_nk,
@@ -96,13 +104,19 @@ SELECT COUNT(*)::int FROM (
 
 -- name: ListExtraHourByPerson :many
 -- Detalle: registros individuales de UNA persona ($2), acotado a la escuadrilla
--- de la sesión ($1). Sin paginar (cada persona tiene pocos registros).
+-- de la sesión ($1). Devuelve fecha, tipo (real/sim) y el modelo (sk + nombre
+-- legible) para que el frontend agrupe por aircraft_model. Sin paginar (cada
+-- persona tiene pocos registros). Orden: por modelo, luego fecha desc.
 SELECT
     eh.extra_hours_sk,
     p.person_nk,
     BTRIM(p.person_rank || ' ' || p.person_name || ' ' || p.person_last_name_1 || ' ' ||
           COALESCE(p.person_last_name_2, ''))::text AS persona,
     eh.extra_hours_person_fk,
+    eh.extra_hours_date,
+    eh.extra_hours_is_real,
+    eh.extra_hours_model_fk,
+    BTRIM(am.aircraft_make || ' ' || am.aircraft_model || ' ' || am.aircraft_variant)::text AS model_name,
     eh.extra_hours_cta::float8        AS cta,
     eh.extra_hours_day::float8        AS day,
     eh.extra_hours_conv_night::float8 AS conv_night,
@@ -111,6 +125,7 @@ SELECT
     eh.extra_hours_remarks
 FROM operations.extra_hour eh
 JOIN detall.person p ON eh.extra_hours_person_fk = p.person_sk
+JOIN operations.aircraft_model am ON eh.extra_hours_model_fk = am.aircraft_model_sk
 WHERE p.person_escuadrilla_fk = $1
   AND eh.extra_hours_person_fk = $2
-ORDER BY eh.extra_hours_sk DESC;
+ORDER BY model_name, eh.extra_hours_date DESC, eh.extra_hours_sk DESC;

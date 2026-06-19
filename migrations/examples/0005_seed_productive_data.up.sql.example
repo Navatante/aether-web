@@ -11,7 +11,7 @@
 -- Tablas que rellena el 0005 real:
 --   operations.papeleta (adicionales, sin SK explícito)
 --   operations.crew_qualification
---   operations.extra_model_hour (real y simulador, vía extra_model_hours_is_real)
+--   operations.extra_hour (real y simulador vía extra_hours_is_real; modelo vía extra_hours_model_fk)
 --   detall.absence
 --   detall.comision
 --   detall.notcrew_qualification

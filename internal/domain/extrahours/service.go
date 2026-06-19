@@ -1,11 +1,12 @@
 // Package extrahours implementa el alta, edición, listado y borrado de
-// operations.extra_hour (horas de arrastre por persona).
+// operations.extra_hour (horas extra por persona, con fecha, tipo
+// real/simulador y modelo de aeronave). Unifica las antiguas tablas
+// extra_hour (arrastre "otros modelos") y extra_model_hour (modelo propio).
 //
 // La tabla es person-centric (sin escuadrilla_fk). El aislamiento por
 // escuadrilla se hace por código vía la escuadrilla de la persona
-// (detall.person.person_escuadrilla_fk); cada query lo aplica. La tabla no
-// tiene trigger de auditoría, así que no se setean los GUCs aether.user_id/
-// ip_address (a diferencia de flights/persons).
+// (detall.person.person_escuadrilla_fk); cada query lo aplica. No hay trigger
+// de auditoría, así que no se setean los GUCs aether.user_id/ip_address.
 package extrahours
 
 import (
@@ -13,6 +14,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -40,32 +42,43 @@ type Service struct {
 
 func NewService(pool *pgxpool.Pool) *Service { return &Service{pool: pool} }
 
-// validate comprueba que los campos numéricos no sean negativos (espeja los
-// CHECK (... >= 0) del esquema) y que haya persona.
-func validate(d ExtraHourFormData) error {
+// parseForm valida y normaliza los datos del formulario: persona, modelo, fecha
+// y horas no negativas (espeja los CHECK (... >= 0) del esquema).
+func parseForm(d ExtraHourFormData) (pgtype.Date, error) {
 	if d.Person <= 0 {
-		return fmt.Errorf("%w: persona requerida", ErrInvalidInput)
+		return pgtype.Date{}, fmt.Errorf("%w: persona requerida", ErrInvalidInput)
+	}
+	if d.Model <= 0 {
+		return pgtype.Date{}, fmt.Errorf("%w: modelo requerido", ErrInvalidInput)
+	}
+	t, err := time.ParseInLocation("2006-01-02", d.Date, time.UTC)
+	if err != nil {
+		return pgtype.Date{}, fmt.Errorf("%w: fecha: %v", ErrInvalidInput, err)
 	}
 	for name, v := range map[string]float64{
 		"cta": d.Cta, "día": d.Day, "noche": d.ConvNight, "gvn": d.Gvn, "instrumentos": d.Inst,
 	} {
 		if v < 0 {
-			return fmt.Errorf("%w: las horas de %s no pueden ser negativas", ErrInvalidInput, name)
+			return pgtype.Date{}, fmt.Errorf("%w: las horas de %s no pueden ser negativas", ErrInvalidInput, name)
 		}
 	}
-	return nil
+	return pgtype.Date{Time: t, Valid: true}, nil
 }
 
 // ===== INSERT =====
 
 func (s *Service) Insert(ctx context.Context, esc int32, d ExtraHourFormData) (InsertResult, error) {
-	if err := validate(d); err != nil {
+	date, err := parseForm(d)
+	if err != nil {
 		return InsertResult{}, err
 	}
 
 	q := queries.New(s.pool)
 	id, err := q.InsertExtraHour(ctx, queries.InsertExtraHourParams{
+		ExtraHoursDate:      date,
 		ExtraHoursPersonFk:  d.Person,
+		ExtraHoursModelFk:   d.Model,
+		ExtraHoursIsReal:    d.IsReal,
 		ExtraHoursCta:       numericFromFloat(d.Cta),
 		ExtraHoursDay:       numericFromFloat(d.Day),
 		ExtraHoursConvNight: numericFromFloat(d.ConvNight),
@@ -75,7 +88,6 @@ func (s *Service) Insert(ctx context.Context, esc int32, d ExtraHourFormData) (I
 		PersonEscuadrillaFk: esc,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
-		// La persona no pertenece a la escuadrilla de la sesión.
 		return InsertResult{}, fmt.Errorf("%w: persona no encontrada en la escuadrilla", ErrInvalidInput)
 	}
 	if err != nil {
@@ -87,13 +99,17 @@ func (s *Service) Insert(ctx context.Context, esc int32, d ExtraHourFormData) (I
 // ===== UPDATE =====
 
 func (s *Service) Update(ctx context.Context, esc int32, id int32, d ExtraHourFormData) error {
-	if err := validate(d); err != nil {
+	date, err := parseForm(d)
+	if err != nil {
 		return err
 	}
 
 	q := queries.New(s.pool)
 	n, err := q.UpdateExtraHour(ctx, queries.UpdateExtraHourParams{
 		ExtraHoursSk:        id,
+		ExtraHoursDate:      date,
+		ExtraHoursModelFk:   d.Model,
+		ExtraHoursIsReal:    d.IsReal,
 		ExtraHoursCta:       numericFromFloat(d.Cta),
 		ExtraHoursDay:       numericFromFloat(d.Day),
 		ExtraHoursConvNight: numericFromFloat(d.ConvNight),
@@ -191,6 +207,10 @@ func (s *Service) ListByPerson(ctx context.Context, esc int32, personSk int32) (
 		if r.PersonNk != nil {
 			nk = *r.PersonNk
 		}
+		date := ""
+		if r.ExtraHoursDate.Valid {
+			date = r.ExtraHoursDate.Time.Format("2006-01-02")
+		}
 		remarks := ""
 		if r.ExtraHoursRemarks != nil {
 			remarks = *r.ExtraHoursRemarks
@@ -200,6 +220,10 @@ func (s *Service) ListByPerson(ctx context.Context, esc int32, personSk int32) (
 			Persona:   r.Persona,
 			PersonaNk: nk,
 			PersonSk:  r.ExtraHoursPersonFk,
+			Date:      date,
+			IsReal:    r.ExtraHoursIsReal,
+			ModelSk:   r.ExtraHoursModelFk,
+			ModelName: r.ModelName,
 			Cta:       r.Cta,
 			Day:       r.Day,
 			ConvNight: r.ConvNight,

@@ -5,13 +5,17 @@
 // source: dto.go
 /*
 DTOs del dominio extrahours: el contrato JSON con el frontend.
-Una fila de operations.extra_hour = horas de arrastre de UNA persona (CTA,
-día, noche convencional, GVN, instrumentos) + observaciones. Una persona
-puede tener varias filas (se suman en los cálculos de horas).
+Una fila de operations.extra_hour = horas extra de UNA persona (CTA, día,
+noche convencional, GVN, instrumentos) + observaciones, con fecha, tipo
+real/simulador y modelo de aeronave. Una persona puede tener varias filas
+(se suman en la vista agrupada y en los cálculos de horas).
 */
 
 export interface ExtraHourFormData {
   person: number /* int32 */; // person_sk
+  date: string; // YYYY-MM-DD
+  model: number /* int32 */; // aircraft_model_sk
+  isReal: boolean; // true = real, false = simulador
   cta: number /* float64 */;
   day: number /* float64 */;
   convNight: number /* float64 */;
@@ -30,7 +34,8 @@ export interface ListQueryParams {
   Search: string;
 }
 /**
- * PersonTotalsResult es la vista agrupada: una fila por persona con sus totales.
+ * PersonTotalsResult es la vista agrupada: una fila por persona con sus totales
+ * (todos los modelos y tipos combinados).
  */
 export interface PersonTotalsResult {
   items: PersonTotalsItem[];
@@ -48,13 +53,18 @@ export interface PersonTotalsItem {
   inst: number /* float64 */;
 }
 /**
- * ExtraHourItem es un registro individual (detalle de una persona).
+ * ExtraHourItem es un registro individual (detalle de una persona). Incluye el
+ * modelo (sk + nombre legible) para que el frontend agrupe por aircraft_model.
  */
 export interface ExtraHourItem {
   id: number /* int32 */;
   persona: string;
   personaNk: string;
   personSk: number /* int32 */;
+  date: string; // YYYY-MM-DD
+  isReal: boolean;
+  modelSk: number /* int32 */;
+  modelName: string;
   cta: number /* float64 */;
   day: number /* float64 */;
   convNight: number /* float64 */;

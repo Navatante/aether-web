@@ -68,6 +68,7 @@ type DetallEscuadrilla struct {
 	EscuadrillaCode         string      `json:"escuadrilla_code"`
 	EscuadrillaName         string      `json:"escuadrilla_name"`
 	EscuadrillaCreationDate pgtype.Date `json:"escuadrilla_creation_date"`
+	EscuadrillaModelFk      *int32      `json:"escuadrilla_model_fk"`
 }
 
 type DetallEspecialidad struct {
@@ -313,26 +314,16 @@ type OperationsEventName struct {
 
 type OperationsExtraHour struct {
 	ExtraHoursSk        int32          `json:"extra_hours_sk"`
+	ExtraHoursDate      pgtype.Date    `json:"extra_hours_date"`
 	ExtraHoursPersonFk  int32          `json:"extra_hours_person_fk"`
+	ExtraHoursModelFk   int32          `json:"extra_hours_model_fk"`
+	ExtraHoursIsReal    bool           `json:"extra_hours_is_real"`
 	ExtraHoursCta       pgtype.Numeric `json:"extra_hours_cta"`
 	ExtraHoursDay       pgtype.Numeric `json:"extra_hours_day"`
 	ExtraHoursConvNight pgtype.Numeric `json:"extra_hours_conv_night"`
 	ExtraHoursGvn       pgtype.Numeric `json:"extra_hours_gvn"`
 	ExtraHoursInst      pgtype.Numeric `json:"extra_hours_inst"`
 	ExtraHoursRemarks   *string        `json:"extra_hours_remarks"`
-}
-
-type OperationsExtraModelHour struct {
-	ExtraModelHoursSk        int32          `json:"extra_model_hours_sk"`
-	ExtraModelHoursDate      pgtype.Date    `json:"extra_model_hours_date"`
-	ExtraModelHoursPersonFk  int32          `json:"extra_model_hours_person_fk"`
-	ExtraModelHoursIsReal    bool           `json:"extra_model_hours_is_real"`
-	ExtraModelHoursCta       pgtype.Numeric `json:"extra_model_hours_cta"`
-	ExtraModelHoursDay       pgtype.Numeric `json:"extra_model_hours_day"`
-	ExtraModelHoursConvNight pgtype.Numeric `json:"extra_model_hours_conv_night"`
-	ExtraModelHoursGvn       pgtype.Numeric `json:"extra_model_hours_gvn"`
-	ExtraModelHoursInst      pgtype.Numeric `json:"extra_model_hours_inst"`
-	ExtraModelHoursRemarks   *string        `json:"extra_model_hours_remarks"`
 }
 
 type OperationsFlight struct {

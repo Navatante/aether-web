@@ -61,20 +61,12 @@ export const queryKeys = {
             ['groundSchool', escuadrillaId, 'list', params] as const,
     },
 
-    extraHoursOtrosModelos: {
-        all: (escuadrillaId: number) => ['extraHoursOtrosModelos', escuadrillaId] as const,
+    extraHours: {
+        all: (escuadrillaId: number) => ['extraHours', escuadrillaId] as const,
         list: (escuadrillaId: number, params: Record<string, unknown>) =>
-            ['extraHoursOtrosModelos', escuadrillaId, 'list', params] as const,
+            ['extraHours', escuadrillaId, 'list', params] as const,
         byPerson: (escuadrillaId: number, personSk: number) =>
-            ['extraHoursOtrosModelos', escuadrillaId, 'byPerson', personSk] as const,
-    },
-
-    extraModelHours: {
-        all: (escuadrillaId: number) => ['extraModelHours', escuadrillaId] as const,
-        list: (escuadrillaId: number, params: Record<string, unknown>) =>
-            ['extraModelHours', escuadrillaId, 'list', params] as const,
-        byPerson: (escuadrillaId: number, personSk: number) =>
-            ['extraModelHours', escuadrillaId, 'byPerson', personSk] as const,
+            ['extraHours', escuadrillaId, 'byPerson', personSk] as const,
     },
 
     personnel: {

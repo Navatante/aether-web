@@ -7,9 +7,16 @@
 --
 -- RLS explícita: $3 = escuadrilla_fk.
 -- $4 = roles permitidos (array vacío = todos los roles).
--- $5 = incluir horas de arrastre (operations.extra_hour): modo "Totales".
---      extra_hour es acumulado vitalicio por persona (sin filtro de fecha) y
---      son horas reales, por lo que solo suman a la parte real (y al total).
+-- $5 = modo "Totales": incluye TODAS las horas extra (operations.extra_hour),
+--      de cualquier modelo y sin filtro de fecha. En modo por escuadrilla
+--      ($5=false) las horas extra se acotan al modelo de la escuadrilla
+--      (detall.escuadrilla.escuadrilla_model_fk) y al rango de fechas.
+--
+-- Horas extra unificadas (operations.extra_hour): cada fila lleva fecha, tipo
+-- real/sim (extra_hours_is_real) y modelo (extra_hours_model_fk). La distinción
+-- "modelo propio (NH-90) vs otros modelos" se hace comparando con el
+-- escuadrilla_model_fk de la sesión ($3). Las del modelo propio cuentan en la
+-- vista por periodo; el resto (arrastre de otros modelos) solo en "Totales".
 --
 -- Cambio de escuadrilla (el pasado se queda donde se voló): el roster siempre
 -- se filtra por person_escuadrilla_fk actual ($3), así que una persona que se
@@ -20,8 +27,8 @@
 --     (sin filtro de flight_escuadrilla_fk) → su histórico completo. Es una
 --     exención acotada a la RLS-por-código: solo expone datos propios de
 --     personas del roster actual, nunca de terceros.
--- extra_model_* y extra_hour son person-centric (sin escuadrilla_fk) y no
--- se ven afectados por este filtro.
+-- operations.extra_hour es person-centric (sin escuadrilla_fk) y no se ve
+-- afectado por este filtro de flight_escuadrilla_fk.
 -- ============================================================
 
 -- name: EscuadrillaCreationDate :one
@@ -51,61 +58,55 @@ person_hour_agg AS (
       AND ($5::bool OR f.flight_escuadrilla_fk = $3)
     GROUP BY ph.person_hour_person_fk
 ),
+-- Horas extra reales por persona, sobre la tabla unificada operations.extra_hour.
+-- Por escuadrilla ($5=false): solo el modelo de la escuadrilla (NH-90) en rango
+-- de fechas. Totales ($5=true): todos los modelos (incluido el arrastre "otros
+-- modelos") sin filtro de fecha. La distinción real/sim sale de extra_hours_is_real.
 real_agg AS (
     SELECT
-        extra_model_hours_person_fk AS person_sk,
-        SUM(extra_model_hours_day)::numeric        AS day,
-        SUM(extra_model_hours_conv_night)::numeric AS night,
-        SUM(extra_model_hours_gvn)::numeric        AS gvn
-    FROM operations.extra_model_hour
-    WHERE extra_model_hours_is_real
-      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
-    GROUP BY extra_model_hours_person_fk
+        extra_hours_person_fk AS person_sk,
+        SUM(extra_hours_day)::numeric        AS day,
+        SUM(extra_hours_conv_night)::numeric AS night,
+        SUM(extra_hours_gvn)::numeric        AS gvn
+    FROM operations.extra_hour
+    WHERE extra_hours_is_real
+      AND ($5::bool OR (extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $3)
+                        AND extra_hours_date >= $1 AND extra_hours_date <= $2))
+    GROUP BY extra_hours_person_fk
 ),
 sim_agg AS (
     SELECT
-        extra_model_hours_person_fk AS person_sk,
-        SUM(extra_model_hours_day)::numeric        AS day,
-        SUM(extra_model_hours_conv_night)::numeric AS night,
-        SUM(extra_model_hours_gvn)::numeric        AS gvn
-    FROM operations.extra_model_hour
-    WHERE NOT extra_model_hours_is_real
-      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
-    GROUP BY extra_model_hours_person_fk
-),
--- Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
--- activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
-prev_agg AS (
-    SELECT
         extra_hours_person_fk AS person_sk,
-        SUM(CASE WHEN $5::bool THEN extra_hours_day        ELSE 0 END)::numeric AS day,
-        SUM(CASE WHEN $5::bool THEN extra_hours_conv_night ELSE 0 END)::numeric AS night,
-        SUM(CASE WHEN $5::bool THEN extra_hours_gvn        ELSE 0 END)::numeric AS gvn
+        SUM(extra_hours_day)::numeric        AS day,
+        SUM(extra_hours_conv_night)::numeric AS night,
+        SUM(extra_hours_gvn)::numeric        AS gvn
     FROM operations.extra_hour
+    WHERE NOT extra_hours_is_real
+      AND ($5::bool OR (extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $3)
+                        AND extra_hours_date >= $1 AND extra_hours_date <= $2))
     GROUP BY extra_hours_person_fk
 )
 SELECT
     p.person_nk,
     -- Días
-    ROUND(COALESCE(ph.real_day, 0)  + COALESCE(r.day,   0) + COALESCE(pv.day, 0), 1)::numeric AS real_day_hour_qty,
+    ROUND(COALESCE(ph.real_day, 0)  + COALESCE(r.day,   0), 1)::numeric AS real_day_hour_qty,
     ROUND(COALESCE(ph.sim_day,  0)  + COALESCE(s.day,   0), 1)::numeric AS sim_day_hour_qty,
     ROUND(COALESCE(ph.real_day, 0)  + COALESCE(ph.sim_day, 0)
-        + COALESCE(r.day, 0) + COALESCE(s.day, 0) + COALESCE(pv.day, 0), 1)::numeric          AS total_day_hour_qty,
+        + COALESCE(r.day, 0) + COALESCE(s.day, 0), 1)::numeric          AS total_day_hour_qty,
     -- Noche
-    ROUND(COALESCE(ph.real_night, 0) + COALESCE(r.night, 0) + COALESCE(pv.night, 0), 1)::numeric AS real_night_hour_qty,
+    ROUND(COALESCE(ph.real_night, 0) + COALESCE(r.night, 0), 1)::numeric AS real_night_hour_qty,
     ROUND(COALESCE(ph.sim_night,  0) + COALESCE(s.night, 0), 1)::numeric AS sim_night_hour_qty,
     ROUND(COALESCE(ph.real_night, 0) + COALESCE(ph.sim_night, 0)
-        + COALESCE(r.night, 0) + COALESCE(s.night, 0) + COALESCE(pv.night, 0), 1)::numeric      AS total_night_hour_qty,
+        + COALESCE(r.night, 0) + COALESCE(s.night, 0), 1)::numeric      AS total_night_hour_qty,
     -- GVN
-    ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(r.gvn, 0) + COALESCE(pv.gvn, 0), 1)::numeric    AS real_gvn_hour_qty,
+    ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(r.gvn, 0), 1)::numeric    AS real_gvn_hour_qty,
     ROUND(COALESCE(ph.sim_gvn,  0)  + COALESCE(s.gvn, 0), 1)::numeric    AS sim_gvn_hour_qty,
     ROUND(COALESCE(ph.real_gvn, 0)  + COALESCE(ph.sim_gvn, 0)
-        + COALESCE(r.gvn, 0) + COALESCE(s.gvn, 0) + COALESCE(pv.gvn, 0), 1)::numeric            AS total_gvn_hour_qty
+        + COALESCE(r.gvn, 0) + COALESCE(s.gvn, 0), 1)::numeric            AS total_gvn_hour_qty
 FROM detall.v_person_ordered p
 LEFT JOIN person_hour_agg ph ON ph.person_sk = p.person_sk
 LEFT JOIN real_agg        r  ON r.person_sk  = p.person_sk
 LEFT JOIN sim_agg         s  ON s.person_sk  = p.person_sk
-LEFT JOIN prev_agg        pv ON pv.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
   AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3
@@ -183,10 +184,13 @@ ORDER BY p.order_position;
 --
 -- RLS explícita: roster por person_escuadrilla_fk actual ($3).
 -- $5 = modo "Totales": cruza escuadrillas (para personas que cambiaron de
--- escuadrilla) y suma el arrastre vitalicio operations.extra_hour.extra_hours_inst.
--- Por escuadrilla ($5=false): solo vuelos de la actual (f.flight_escuadrilla_fk = $3)
--- y sin arrastre. Totales ($5=true): exención acotada a la RLS-por-código (solo
--- datos propios del roster). $1/$2 = rango. $4 = roles (vacío = todos).
+-- escuadrilla) y suma las horas inst extra de OTROS modelos
+-- (operations.extra_hour, extra_hours_model_fk distinto al de la escuadrilla).
+-- Las horas inst extra del modelo propio NO se cuentan en IFT (comportamiento
+-- previo). Por escuadrilla ($5=false): solo vuelos de la actual
+-- (f.flight_escuadrilla_fk = $3) y sin arrastre. Totales ($5=true): exención
+-- acotada a la RLS-por-código (solo datos propios del roster). $1/$2 = rango.
+-- $4 = roles (vacío = todos).
 WITH ift_agg AS (
     SELECT
         ih.ift_hour_person_fk AS person_sk,
@@ -198,11 +202,15 @@ WITH ift_agg AS (
       AND ($5::bool OR f.flight_escuadrilla_fk = $3)
     GROUP BY ih.ift_hour_person_fk
 ),
+-- Arrastre de instrumentos solo de "otros modelos" (modelo distinto al de la
+-- escuadrilla), sumado solo en modo "Totales" ($5). Las horas inst del modelo
+-- propio no se cuentan en IFT (se mantiene el comportamiento previo).
 prev_inst AS (
     SELECT
         extra_hours_person_fk AS person_sk,
         SUM(CASE WHEN $5::bool THEN extra_hours_inst ELSE 0 END)::numeric AS inst
     FROM operations.extra_hour
+    WHERE extra_hours_model_fk <> (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $3)
     GROUP BY extra_hours_person_fk
 )
 SELECT
@@ -252,17 +260,18 @@ ORDER BY p.order_position;
 --   1) Vuelos en Aether: SUM(operations.flight.flight_total_hours) de los vuelos
 --      en los que la persona figura como CTA (flight_person_cta_fk), acotados por
 --      el rango $1/$2.
---   2) operations.extra_model_hour.extra_model_hours_cta (is_real=TRUE): horas
---      CTA reales registradas con el modelo de aeronave anterior (rango $1/$2).
---   3) operations.extra_model_hour.extra_model_hours_cta (is_real=FALSE): horas CTA
---      en simulador registradas con el modelo anterior (rango $1/$2).
---   4) SOLO en modo "Totales" ($5=true): operations.extra_hour.extra_hours_cta,
---      el arrastre vitalicio de horas CTA por persona (sin fecha ni escuadrilla).
--- Las tablas extra_* son person-centric (sin escuadrilla_fk); el filtro de
--- roster por $3 las acota a personas propias.
+--   2) operations.extra_hour.extra_hours_cta (is_real=TRUE) del modelo de la
+--      escuadrilla: horas CTA reales del modelo propio (rango $1/$2).
+--   3) operations.extra_hour.extra_hours_cta (is_real=FALSE) del modelo de la
+--      escuadrilla: horas CTA en simulador del modelo propio (rango $1/$2).
+--   4) SOLO en modo "Totales" ($5=true): además, las horas CTA extra de
+--      cualquier otro modelo (arrastre de otros modelos), sin filtro de fecha.
+-- operations.extra_hour es person-centric (sin escuadrilla_fk); el filtro de
+-- roster por $3 lo acota a personas propias.
 -- $5 = modo "Totales": cruza escuadrillas en la parte de vuelos (para personas
--- que cambiaron de escuadrilla) y añade el arrastre (4). Por escuadrilla
--- ($5=false): solo vuelos de la actual (flight_escuadrilla_fk = $3), sin arrastre.
+-- que cambiaron de escuadrilla) y añade el arrastre de otros modelos (4). Por
+-- escuadrilla ($5=false): solo vuelos de la actual (flight_escuadrilla_fk = $3)
+-- y horas extra del modelo propio.
 -- Totales ($5=true): exención acotada a la RLS-por-código (solo datos propios del
 -- roster). $4 = roles permitidos (vacío = todos).
 WITH flight_cta AS (
@@ -274,37 +283,34 @@ WITH flight_cta AS (
       AND ($5::bool OR f.flight_escuadrilla_fk = $3)
     GROUP BY f.flight_person_cta_fk
 ),
+-- Horas CTA extra por persona, sobre la tabla unificada operations.extra_hour.
+-- Por escuadrilla ($5=false): solo el modelo de la escuadrilla en rango. Totales
+-- ($5=true): todos los modelos (incluido el arrastre "otros modelos") sin fecha.
 real_cta AS (
-    SELECT extra_model_hours_person_fk AS person_sk,
-           SUM(extra_model_hours_cta)::numeric AS cta
-    FROM operations.extra_model_hour
-    WHERE extra_model_hours_is_real
-      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
-    GROUP BY extra_model_hours_person_fk
+    SELECT extra_hours_person_fk AS person_sk,
+           SUM(extra_hours_cta)::numeric AS cta
+    FROM operations.extra_hour
+    WHERE extra_hours_is_real
+      AND ($5::bool OR (extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $3)
+                        AND extra_hours_date >= $1 AND extra_hours_date <= $2))
+    GROUP BY extra_hours_person_fk
 ),
 sim_cta AS (
-    SELECT extra_model_hours_person_fk AS person_sk,
-           SUM(extra_model_hours_cta)::numeric AS cta
-    FROM operations.extra_model_hour
-    WHERE NOT extra_model_hours_is_real
-      AND ($5::bool OR (extra_model_hours_date >= $1 AND extra_model_hours_date <= $2))
-    GROUP BY extra_model_hours_person_fk
-),
-prev_cta AS (
     SELECT extra_hours_person_fk AS person_sk,
-           SUM(CASE WHEN $5::bool THEN extra_hours_cta ELSE 0 END)::numeric AS cta
+           SUM(extra_hours_cta)::numeric AS cta
     FROM operations.extra_hour
+    WHERE NOT extra_hours_is_real
+      AND ($5::bool OR (extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $3)
+                        AND extra_hours_date >= $1 AND extra_hours_date <= $2))
     GROUP BY extra_hours_person_fk
 )
 SELECT
     p.person_nk,
-    ROUND(COALESCE(fc.cta, 0) + COALESCE(rc.cta, 0) + COALESCE(sc.cta, 0)
-        + COALESCE(pc.cta, 0), 1)::numeric AS cta_hour_qty
+    ROUND(COALESCE(fc.cta, 0) + COALESCE(rc.cta, 0) + COALESCE(sc.cta, 0), 1)::numeric AS cta_hour_qty
 FROM detall.v_person_ordered p
 LEFT JOIN flight_cta fc ON fc.person_sk = p.person_sk
 LEFT JOIN real_cta   rc ON rc.person_sk = p.person_sk
 LEFT JOIN sim_cta    sc ON sc.person_sk = p.person_sk
-LEFT JOIN prev_cta   pc ON pc.person_sk = p.person_sk
 WHERE p.person_nk IS NOT NULL
   AND p.person_current_flag = TRUE
   AND p.person_escuadrilla_fk = $3

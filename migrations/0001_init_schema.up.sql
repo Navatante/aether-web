@@ -51,7 +51,15 @@ CREATE TABLE detall.escuadrilla (
     escuadrilla_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     escuadrilla_code           VARCHAR(20)  NOT NULL UNIQUE,
     escuadrilla_name           VARCHAR(100) NOT NULL UNIQUE,
-    escuadrilla_creation_date  DATE         NOT NULL
+    escuadrilla_creation_date  DATE         NOT NULL,
+    -- Modelo de aeronave actual de la escuadrilla. Nullable solo por orden de
+    -- siembra: la escuadrilla se siembra (0002) antes de que el importador SQLite
+    -- cree el catálogo operations.aircraft_model; se rellena justo después
+    -- (migrationSQLiteToPostgres.py). Distingue, en los cálculos de horas, las
+    -- horas extra del modelo propio (cuentan siempre) de las de otros modelos
+    -- (solo en modo "Totales"). El FK se añade vía ALTER TABLE tras crear
+    -- operations.aircraft_model (definido más abajo en este script).
+    escuadrilla_model_fk       INTEGER
 );
 
 CREATE TABLE detall.comision_type (
@@ -261,6 +269,12 @@ CREATE TABLE operations.aircraft_model (
     CONSTRAINT uq_aircraft_model UNIQUE (aircraft_type, aircraft_make, aircraft_model, aircraft_variant)
 );
 
+-- FK diferido de detall.escuadrilla.escuadrilla_model_fk (la columna se declara
+-- arriba; el catálogo de modelos se crea aquí).
+ALTER TABLE detall.escuadrilla
+    ADD CONSTRAINT fk_escuadrilla_model
+    FOREIGN KEY (escuadrilla_model_fk) REFERENCES operations.aircraft_model(aircraft_model_sk);
+
 CREATE TABLE operations.aircraft (
     aircraft_sk              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     aircraft_model_fk        INTEGER     NOT NULL REFERENCES operations.aircraft_model(aircraft_model_sk),
@@ -313,9 +327,23 @@ CREATE TABLE operations.flight (
     flight_total_hours      DECIMAL(4,1) NOT NULL CHECK (flight_total_hours > 0)
 );
 
+-- Horas extra por persona, unificadas (antes operations.extra_hour +
+-- operations.extra_model_hour). Cada fila lleva fecha, discriminador real/sim
+-- (extra_hours_is_real) y el modelo de aeronave (extra_hours_model_fk). Sin
+-- UNIQUE: una persona puede tener varias filas (se suman en los cálculos de
+-- horas y en la vista agrupada). person-centric (sin escuadrilla_fk): el
+-- aislamiento se hace vía la escuadrilla de la persona.
+--
+-- En los cálculos de horas (queries/hours.sql) la distinción "horas del modelo
+-- propio vs otros modelos" se hace comparando extra_hours_model_fk con
+-- detall.escuadrilla.escuadrilla_model_fk: las del modelo propio cuentan en la
+-- vista por periodo (filtradas por fecha); el resto solo en modo "Totales".
 CREATE TABLE operations.extra_hour (
     extra_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    extra_hours_date        DATE          NOT NULL,
     extra_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
+    extra_hours_model_fk    INTEGER       NOT NULL REFERENCES operations.aircraft_model(aircraft_model_sk),
+    extra_hours_is_real     BOOLEAN       NOT NULL,
     extra_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_cta >= 0),
     extra_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_day >= 0),
     extra_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_conv_night >= 0),
@@ -323,22 +351,7 @@ CREATE TABLE operations.extra_hour (
     extra_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_hours_inst >= 0),
     extra_hours_remarks     VARCHAR(200)
 );
-
--- Horas del modelo de aeronave anterior, unificadas: extra_model_hours_is_real
--- discrimina real (TRUE) vs simulador (FALSE). Sin UNIQUE: una persona puede
--- tener varias filas de cada tipo (se suman en los cálculos de horas).
-CREATE TABLE operations.extra_model_hour (
-    extra_model_hours_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    extra_model_hours_date        DATE          NOT NULL,
-    extra_model_hours_person_fk   INTEGER       NOT NULL REFERENCES detall.person(person_sk),
-    extra_model_hours_is_real     BOOLEAN       NOT NULL,
-    extra_model_hours_cta         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_cta >= 0),
-    extra_model_hours_day         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_day >= 0),
-    extra_model_hours_conv_night  DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_conv_night >= 0),
-    extra_model_hours_gvn         DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_gvn >= 0),
-    extra_model_hours_inst        DECIMAL(8,1)  NOT NULL DEFAULT 0 CHECK (extra_model_hours_inst >= 0),
-    extra_model_hours_remarks     VARCHAR(200)
-);
+CREATE INDEX ix_extra_hours_model ON operations.extra_hour (extra_hours_model_fk);
 
 CREATE TABLE operations.ground_school (
     ground_school_sk              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

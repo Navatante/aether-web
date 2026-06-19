@@ -71,7 +71,6 @@ type Querier interface {
 	// Número de personas (no de registros) que tienen horas extra, con el mismo
 	// filtro de nombre que ListExtraHourPersonTotals.
 	CountExtraHourPersons(ctx context.Context, arg CountExtraHourPersonsParams) (int32, error)
-	CountExtraModelHourPersons(ctx context.Context, arg CountExtraModelHourPersonsParams) (int32, error)
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
 	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
@@ -87,19 +86,23 @@ type Querier interface {
 	//   1) Vuelos en Aether: SUM(operations.flight.flight_total_hours) de los vuelos
 	//      en los que la persona figura como CTA (flight_person_cta_fk), acotados por
 	//      el rango $1/$2.
-	//   2) operations.extra_model_hour.extra_model_hours_cta (is_real=TRUE): horas
-	//      CTA reales registradas con el modelo de aeronave anterior (rango $1/$2).
-	//   3) operations.extra_model_hour.extra_model_hours_cta (is_real=FALSE): horas CTA
-	//      en simulador registradas con el modelo anterior (rango $1/$2).
-	//   4) SOLO en modo "Totales" ($5=true): operations.extra_hour.extra_hours_cta,
-	//      el arrastre vitalicio de horas CTA por persona (sin fecha ni escuadrilla).
-	// Las tablas extra_* son person-centric (sin escuadrilla_fk); el filtro de
-	// roster por $3 las acota a personas propias.
+	//   2) operations.extra_hour.extra_hours_cta (is_real=TRUE) del modelo de la
+	//      escuadrilla: horas CTA reales del modelo propio (rango $1/$2).
+	//   3) operations.extra_hour.extra_hours_cta (is_real=FALSE) del modelo de la
+	//      escuadrilla: horas CTA en simulador del modelo propio (rango $1/$2).
+	//   4) SOLO en modo "Totales" ($5=true): además, las horas CTA extra de
+	//      cualquier otro modelo (arrastre de otros modelos), sin filtro de fecha.
+	// operations.extra_hour es person-centric (sin escuadrilla_fk); el filtro de
+	// roster por $3 lo acota a personas propias.
 	// $5 = modo "Totales": cruza escuadrillas en la parte de vuelos (para personas
-	// que cambiaron de escuadrilla) y añade el arrastre (4). Por escuadrilla
-	// ($5=false): solo vuelos de la actual (flight_escuadrilla_fk = $3), sin arrastre.
+	// que cambiaron de escuadrilla) y añade el arrastre de otros modelos (4). Por
+	// escuadrilla ($5=false): solo vuelos de la actual (flight_escuadrilla_fk = $3)
+	// y horas extra del modelo propio.
 	// Totales ($5=true): exención acotada a la RLS-por-código (solo datos propios del
 	// roster). $4 = roles permitidos (vacío = todos).
+	// Horas CTA extra por persona, sobre la tabla unificada operations.extra_hour.
+	// Por escuadrilla ($5=false): solo el modelo de la escuadrilla en rango. Totales
+	// ($5=true): todos los modelos (incluido el arrastre "otros modelos") sin fecha.
 	CtaHours(ctx context.Context, arg CtaHoursParams) ([]CtaHoursRow, error)
 	DeleteAbsence(ctx context.Context, arg DeleteAbsenceParams) (int64, error)
 	DeleteAircraft(ctx context.Context, arg DeleteAircraftParams) (int64, error)
@@ -111,7 +114,6 @@ type Querier interface {
 	DeleteEscuadrillaCapba(ctx context.Context, arg DeleteEscuadrillaCapbaParams) (int64, error)
 	DeleteEvent(ctx context.Context, eventSk int32) (int64, error)
 	DeleteExtraHour(ctx context.Context, arg DeleteExtraHourParams) (int64, error)
-	DeleteExtraModelHour(ctx context.Context, arg DeleteExtraModelHourParams) (int64, error)
 	DeleteFestivo(ctx context.Context, festivoSk int32) (int64, error)
 	// =============== DELETE (cascade en BD elimina hijos) ===============
 	DeleteFlight(ctx context.Context, arg DeleteFlightParams) (int64, error)
@@ -135,9 +137,16 @@ type Querier interface {
 	//
 	// RLS explícita: $3 = escuadrilla_fk.
 	// $4 = roles permitidos (array vacío = todos los roles).
-	// $5 = incluir horas de arrastre (operations.extra_hour): modo "Totales".
-	//      extra_hour es acumulado vitalicio por persona (sin filtro de fecha) y
-	//      son horas reales, por lo que solo suman a la parte real (y al total).
+	// $5 = modo "Totales": incluye TODAS las horas extra (operations.extra_hour),
+	//      de cualquier modelo y sin filtro de fecha. En modo por escuadrilla
+	//      ($5=false) las horas extra se acotan al modelo de la escuadrilla
+	//      (detall.escuadrilla.escuadrilla_model_fk) y al rango de fechas.
+	//
+	// Horas extra unificadas (operations.extra_hour): cada fila lleva fecha, tipo
+	// real/sim (extra_hours_is_real) y modelo (extra_hours_model_fk). La distinción
+	// "modelo propio (NH-90) vs otros modelos" se hace comparando con el
+	// escuadrilla_model_fk de la sesión ($3). Las del modelo propio cuentan en la
+	// vista por periodo; el resto (arrastre de otros modelos) solo en "Totales".
 	//
 	// Cambio de escuadrilla (el pasado se queda donde se voló): el roster siempre
 	// se filtra por person_escuadrilla_fk actual ($3), así que una persona que se
@@ -148,8 +157,8 @@ type Querier interface {
 	//     (sin filtro de flight_escuadrilla_fk) → su histórico completo. Es una
 	//     exención acotada a la RLS-por-código: solo expone datos propios de
 	//     personas del roster actual, nunca de terceros.
-	// extra_model_* y extra_hour son person-centric (sin escuadrilla_fk) y no
-	// se ven afectados por este filtro.
+	// operations.extra_hour es person-centric (sin escuadrilla_fk) y no se ve
+	// afectado por este filtro de flight_escuadrilla_fk.
 	// ============================================================
 	// Fecha de creación de la escuadrilla; ancla el inicio del rango "histórico"
 	// en hours.go (antes hardcodeado). $1 = escuadrilla_sk (de la sesión).
@@ -272,10 +281,16 @@ type Querier interface {
 	//
 	// RLS explícita: roster por person_escuadrilla_fk actual ($3).
 	// $5 = modo "Totales": cruza escuadrillas (para personas que cambiaron de
-	// escuadrilla) y suma el arrastre vitalicio operations.extra_hour.extra_hours_inst.
-	// Por escuadrilla ($5=false): solo vuelos de la actual (f.flight_escuadrilla_fk = $3)
-	// y sin arrastre. Totales ($5=true): exención acotada a la RLS-por-código (solo
-	// datos propios del roster). $1/$2 = rango. $4 = roles (vacío = todos).
+	// escuadrilla) y suma las horas inst extra de OTROS modelos
+	// (operations.extra_hour, extra_hours_model_fk distinto al de la escuadrilla).
+	// Las horas inst extra del modelo propio NO se cuentan en IFT (comportamiento
+	// previo). Por escuadrilla ($5=false): solo vuelos de la actual
+	// (f.flight_escuadrilla_fk = $3) y sin arrastre. Totales ($5=true): exención
+	// acotada a la RLS-por-código (solo datos propios del roster). $1/$2 = rango.
+	// $4 = roles (vacío = todos).
+	// Arrastre de instrumentos solo de "otros modelos" (modelo distinto al de la
+	// escuadrilla), sumado solo en modo "Totales" ($5). Las horas inst del modelo
+	// propio no se cuentan en IFT (se mantiene el comportamiento previo).
 	IftHours(ctx context.Context, arg IftHoursParams) ([]IftHoursRow, error)
 	InsertAbsence(ctx context.Context, arg InsertAbsenceParams) (int32, error)
 	// Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE
@@ -291,12 +306,15 @@ type Querier interface {
 	// Devuelve el sk para que el frontend pueda redirigir / seleccionar.
 	InsertEvent(ctx context.Context, arg InsertEventParams) (int32, error)
 	// ============================================================
-	// Horas extra (operations.extra_hour)
+	// Horas extra (operations.extra_hour) — tabla unificada
 	//
-	// Arrastre de horas por persona (CTA, día, noche convencional, GVN,
-	// instrumentos) + observaciones. Una persona puede tener varias filas, que se
-	// suman en los cálculos de horas (queries/hours.sql) y en la vista agrupada de
-	// abajo (ListExtraHourPersonTotals).
+	// Horas por persona (CTA, día, noche convencional, GVN, instrumentos) +
+	// observaciones, con fecha (extra_hours_date), discriminador real/simulador
+	// (extra_hours_is_real) y modelo de aeronave (extra_hours_model_fk →
+	// operations.aircraft_model). Una persona puede tener varias filas, que se
+	// suman en los cálculos de horas (queries/hours.sql) y en la vista agrupada
+	// (ListExtraHourPersonTotals). El detalle por persona se devuelve con el modelo
+	// para agruparlo en el frontend.
 	//
 	// RLS por código: operations.extra_hour NO tiene escuadrilla_fk (es
 	// person-centric), así que el aislamiento se hace vía la escuadrilla de la
@@ -304,23 +322,9 @@ type Querier interface {
 	// abajo lo aplican, por lo que quedan acotadas a personas de la escuadrilla
 	// de la sesión.
 	// ============================================================
-	// Inserta solo si la persona pertenece a la escuadrilla de la sesión ($8); si
+	// Inserta solo si la persona pertenece a la escuadrilla de la sesión ($11); si
 	// no, no inserta ninguna fila (RETURNING vacío → ErrNoRows en el service).
 	InsertExtraHour(ctx context.Context, arg InsertExtraHourParams) (int32, error)
-	// ============================================================
-	// Horas extra del modelo de aeronave anterior (operations.extra_model_hour)
-	//
-	// Horas por persona con fecha y discriminador real/simulador
-	// (extra_model_hours_is_real). Sin restricción de unicidad: una persona puede
-	// tener varias filas (se suman en los cálculos de horas y en la vista agrupada).
-	//
-	// RLS por código: la tabla es person-centric (sin escuadrilla_fk); el
-	// aislamiento se hace vía la escuadrilla de la persona
-	// (detall.person.person_escuadrilla_fk = $N) en cada sentencia.
-	// ============================================================
-	// Inserta solo si la persona pertenece a la escuadrilla de la sesión ($9); si
-	// no, no inserta ninguna fila (RETURNING vacío → ErrNoRows en el service).
-	InsertExtraModelHour(ctx context.Context, arg InsertExtraModelHourParams) (int32, error)
 	InsertFestivo(ctx context.Context, arg InsertFestivoParams) (int32, error)
 	// ============================================================
 	// Flights (Hito 4, lote 7)
@@ -403,21 +407,16 @@ type Querier interface {
 	//   $4 = date_to   (idem)
 	ListComisiones(ctx context.Context, arg ListComisionesParams) ([]ListComisionesRow, error)
 	// Detalle: registros individuales de UNA persona ($2), acotado a la escuadrilla
-	// de la sesión ($1). Sin paginar (cada persona tiene pocos registros).
+	// de la sesión ($1). Devuelve fecha, tipo (real/sim) y el modelo (sk + nombre
+	// legible) para que el frontend agrupe por aircraft_model. Sin paginar (cada
+	// persona tiene pocos registros). Orden: por modelo, luego fecha desc.
 	ListExtraHourByPerson(ctx context.Context, arg ListExtraHourByPersonParams) ([]ListExtraHourByPersonRow, error)
 	// Vista agrupada: una fila por persona con el conteo de registros y la SUMA de
-	// cada métrica. Ordenado por el orden canónico de personas
-	// (detall.v_person_ordered.order_position: rango, antigüedad, escalafón…).
-	// Paginado por persona. $2 = filtro opcional por nombre/NK (cadena vacía = sin filtro).
+	// cada métrica (todos los modelos y tipos combinados). Ordenado por el orden
+	// canónico de personas (detall.v_person_ordered.order_position: rango,
+	// antigüedad, escalafón…). Paginado por persona. $2 = filtro opcional por
+	// nombre/NK (cadena vacía = sin filtro).
 	ListExtraHourPersonTotals(ctx context.Context, arg ListExtraHourPersonTotalsParams) ([]ListExtraHourPersonTotalsRow, error)
-	// Detalle: registros individuales de UNA persona ($2), acotado a la escuadrilla
-	// de la sesión ($1). Sin paginar (cada persona tiene pocos registros).
-	ListExtraModelHourByPerson(ctx context.Context, arg ListExtraModelHourByPersonParams) ([]ListExtraModelHourByPersonRow, error)
-	// Vista agrupada: una fila por persona con el conteo de registros y la SUMA de
-	// cada métrica (real + simulador combinados). Ordenado por el orden canónico
-	// (detall.v_person_ordered.order_position). Paginado por persona. $2 = filtro
-	// opcional por nombre/NK (cadena vacía = sin filtro), ignorando acentos.
-	ListExtraModelHourPersonTotals(ctx context.Context, arg ListExtraModelHourPersonTotalsParams) ([]ListExtraModelHourPersonTotalsRow, error)
 	// ============================================================
 	// Festivos (Hito 4, lote 2)
 	// Catálogo global (sin escuadrilla_fk en la tabla).
@@ -525,8 +524,10 @@ type Querier interface {
 	LugarExistsByName(ctx context.Context, lower string) (bool, error)
 	LugarExistsByNameOther(ctx context.Context, arg LugarExistsByNameOtherParams) (bool, error)
 	LugarUsageCount(ctx context.Context, comisionLugarFk int32) (int32, error)
-	// Horas de arrastre vitalicias por persona (modo "Totales"). El flag $5 las
-	// activa; cuando es false, prev.* aporta 0 y la query equivale al modo NH90.
+	// Horas extra reales por persona, sobre la tabla unificada operations.extra_hour.
+	// Por escuadrilla ($5=false): solo el modelo de la escuadrilla (NH-90) en rango
+	// de fechas. Totales ($5=true): todos los modelos (incluido el arrastre "otros
+	// modelos") sin filtro de fecha. La distinción real/sim sale de extra_hours_is_real.
 	NH90PeriodHours(ctx context.Context, arg NH90PeriodHoursParams) ([]NH90PeriodHoursRow, error)
 	NotCrewQualificationsByPerson(ctx context.Context, personEscuadrillaFk int32) ([]NotCrewQualificationsByPersonRow, error)
 	NotCrewRatingsCatalog(ctx context.Context) ([]DetallNotcrewRatingType, error)
@@ -601,12 +602,9 @@ type Querier interface {
 	// Actualiza la capacidad operativa de una asignación de la escuadrilla.
 	UpdateEscuadrillaCapba(ctx context.Context, arg UpdateEscuadrillaCapbaParams) (int64, error)
 	UpdateEvent(ctx context.Context, arg UpdateEventParams) (int64, error)
-	// Actualiza solo las horas y observaciones (la persona del registro no cambia).
-	// Acotado a registros de personas de la escuadrilla de la sesión ($8).
+	// Actualiza fecha, modelo, tipo, horas y observaciones (la persona del registro
+	// no cambia). Acotado a registros de personas de la escuadrilla de la sesión ($11).
 	UpdateExtraHour(ctx context.Context, arg UpdateExtraHourParams) (int64, error)
-	// Actualiza fecha, tipo y horas (la persona del registro no cambia). Acotado a
-	// registros de personas de la escuadrilla de la sesión ($9).
-	UpdateExtraModelHour(ctx context.Context, arg UpdateExtraModelHourParams) (int64, error)
 	UpdateFestivo(ctx context.Context, arg UpdateFestivoParams) (int64, error)
 	UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) (int64, error)
 	UpdatePerson(ctx context.Context, arg UpdatePersonParams) (int64, error)

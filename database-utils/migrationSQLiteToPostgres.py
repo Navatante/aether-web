@@ -460,38 +460,25 @@ TABLE_MAPPINGS = {
         "identity_insert": True,
     },
 
-    "fact_previous_hour": {
+    # Tabla unificada operations.extra_hour. NOTA: fact_previous_hour (arrastre
+    # de carrera de "otros modelos") NO se importa: en el SQLite legado es un
+    # agregado sin fecha ni modelo, y la tabla unificada exige ambos
+    # (extra_hours_date NOT NULL, extra_hours_model_fk NOT NULL). Esas filas se
+    # insertan a mano tras crear la BD, con su fecha y modelo correctos.
+    "fact_previous_model_hour": {
+        # Horas del modelo propio (NH-90) del SQLite legado: apunta al modelo de
+        # la escuadrilla (NH-90). El SQLite no trae fecha → 1900-01-01 (fuera de
+        # cualquier rango de reporte; solo aparecen en "Totales"). Siempre REALES.
+        # extra_hours_model_fk se fija en main().
         "target": "operations.extra_hour",
         "columns": {
-            "previous_hours_sk": "extra_hours_sk",
-            "previous_hours_person_fk": "extra_hours_person_fk",
-            "previous_hours_cta": "extra_hours_cta",
-            "previous_hours_day": "extra_hours_day",
-            "previous_hours_conv_night": "extra_hours_conv_night",
-            "previous_hours_gvn": "extra_hours_gvn",
-            "previous_hours_inst": "extra_hours_inst",
-        },
-        "transforms": {
-            "previous_hours_cta": _to_float,
-            "previous_hours_day": _to_float,
-            "previous_hours_conv_night": _to_float,
-            "previous_hours_gvn": _to_float,
-            "previous_hours_inst": _to_float,
-        },
-        "identity_insert": True,
-    },
-
-    "fact_previous_model_hour": {
-        # Las horas de modelo del SQLite legado son siempre REALES → is_real=True.
-        "target": "operations.extra_model_hour",
-        "columns": {
-            "previous_model_hours_sk": "extra_model_hours_sk",
-            "previous_model_hours_person_fk": "extra_model_hours_person_fk",
-            "previous_model_hours_cta": "extra_model_hours_cta",
-            "previous_model_hours_day": "extra_model_hours_day",
-            "previous_model_hours_conv_night": "extra_model_hours_conv_night",
-            "previous_model_hours_gvn": "extra_model_hours_gvn",
-            "previous_model_hours_inst": "extra_model_hours_inst",
+            "previous_model_hours_sk": "extra_hours_sk",
+            "previous_model_hours_person_fk": "extra_hours_person_fk",
+            "previous_model_hours_cta": "extra_hours_cta",
+            "previous_model_hours_day": "extra_hours_day",
+            "previous_model_hours_conv_night": "extra_hours_conv_night",
+            "previous_model_hours_gvn": "extra_hours_gvn",
+            "previous_model_hours_inst": "extra_hours_inst",
         },
         "transforms": {
             "previous_model_hours_cta": _to_float,
@@ -501,8 +488,9 @@ TABLE_MAPPINGS = {
             "previous_model_hours_inst": _to_float,
         },
         "defaults": {
-            "extra_model_hours_date": datetime.strptime("1900-01-01", "%Y-%m-%d").date(),
-            "extra_model_hours_is_real": True,
+            "extra_hours_date": datetime.strptime("1900-01-01", "%Y-%m-%d").date(),
+            "extra_hours_is_real": True,
+            # extra_hours_model_fk → NH-90 (se fija en main()).
         },
         "identity_insert": True,
     },
@@ -678,7 +666,7 @@ MIGRATION_ORDER = [
     "dim_person", "dim_helo", "dim_event", "dim_period",
     "dim_ifr_app_type", "dim_landing_place", "dim_projectile_type",
     "dim_authority", "dim_passenger_type", "dim_papeleta",
-    "fact_flight", "fact_previous_hour", "fact_previous_model_hour", "fact_ground_school",
+    "fact_flight", "fact_previous_model_hour", "fact_ground_school",
     "junction_person_hour", "junction_ift_hour", "junction_instructor_hour",
     "junction_hdms_hour", "junction_formation_hour", "junction_wt_hour",
     "junction_app", "junction_landing", "junction_projectile",
@@ -699,7 +687,6 @@ SEQUENCES_TO_RESET = [
     ("operations.papeleta", "papeleta_sk"),
     ("operations.flight", "flight_sk"),
     ("operations.extra_hour", "extra_hours_sk"),
-    ("operations.extra_model_hour", "extra_model_hours_sk"),
     ("operations.ground_school", "ground_school_sk"),
     ("operations.person_hour", "person_hour_sk"),
     ("operations.ift_hour", "ift_hour_sk"),
@@ -929,7 +916,22 @@ def main() -> int:
 
         # El catálogo global de modelos no está en MIGRATION_ORDER (no viene del
         # SQLite): lo sembramos aquí y enlazamos dim_helo a su sk.
-        TABLE_MAPPINGS["dim_helo"]["defaults"]["aircraft_model_fk"] = ensure_aircraft_model(pg_conn)
+        nh90_model_sk = ensure_aircraft_model(pg_conn)
+        TABLE_MAPPINGS["dim_helo"]["defaults"]["aircraft_model_fk"] = nh90_model_sk
+
+        # Las horas extra del modelo propio (fact_previous_model_hour) apuntan al
+        # NH-90 en la tabla unificada (extra_hours_model_fk NOT NULL).
+        TABLE_MAPPINGS["fact_previous_model_hour"]["defaults"]["extra_hours_model_fk"] = nh90_model_sk
+
+        # Backfill del modelo actual de cada escuadrilla (la columna se siembra a
+        # NULL en 0002, antes de que exista el catálogo de modelos). En este
+        # entorno todas vuelan el NH-90.
+        with pg_conn.cursor() as cur:
+            cur.execute(
+                "UPDATE detall.escuadrilla SET escuadrilla_model_fk = %s "
+                "WHERE escuadrilla_model_fk IS NULL",
+                (nh90_model_sk,),
+            )
 
         for name in MIGRATION_ORDER:
             if name not in TABLE_MAPPINGS:

@@ -113,10 +113,11 @@ WITH horas_vuelo AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmh.extra_model_hours_person_fk,
-               (pmh.extra_model_hours_day + pmh.extra_model_hours_conv_night + pmh.extra_model_hours_gvn)
-        FROM operations.extra_model_hour pmh
-        WHERE pmh.extra_model_hours_date >= CURRENT_DATE - 365
+        SELECT pmh.extra_hours_person_fk,
+               (pmh.extra_hours_day + pmh.extra_hours_conv_night + pmh.extra_hours_gvn)
+        FROM operations.extra_hour pmh
+        WHERE pmh.extra_hours_date >= CURRENT_DATE - 365
+          AND pmh.extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $1)
     ) th GROUP BY person_sk
 ),
 papeletas_validas AS (
@@ -225,10 +226,11 @@ horas_365 AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 365
         UNION ALL
-        SELECT pmh.extra_model_hours_person_fk,
-            pmh.extra_model_hours_day, pmh.extra_model_hours_conv_night, pmh.extra_model_hours_gvn
-        FROM operations.extra_model_hour pmh
-        WHERE pmh.extra_model_hours_date >= CURRENT_DATE - 365
+        SELECT pmh.extra_hours_person_fk,
+            pmh.extra_hours_day, pmh.extra_hours_conv_night, pmh.extra_hours_gvn
+        FROM operations.extra_hour pmh
+        WHERE pmh.extra_hours_date >= CURRENT_DATE - 365
+          AND pmh.extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $1)
     ) th GROUP BY person_sk
 ),
 horas_gvn_90 AS (
@@ -238,9 +240,10 @@ horas_gvn_90 AS (
         JOIN operations.flight ff ON jph.person_hour_flight_fk = ff.flight_sk
         WHERE ff.flight_date >= CURRENT_DATE - 90 AND jph.person_hour_period_fk = 3
         UNION ALL
-        SELECT pmh.extra_model_hours_person_fk, pmh.extra_model_hours_gvn
-        FROM operations.extra_model_hour pmh
-        WHERE pmh.extra_model_hours_date >= CURRENT_DATE - 90
+        SELECT pmh.extra_hours_person_fk, pmh.extra_hours_gvn
+        FROM operations.extra_hour pmh
+        WHERE pmh.extra_hours_date >= CURRENT_DATE - 90
+          AND pmh.extra_hours_model_fk = (SELECT escuadrilla_model_fk FROM detall.escuadrilla WHERE escuadrilla_sk = $1)
     ) th GROUP BY person_sk
 ),
 horas_ifr_365 AS (
