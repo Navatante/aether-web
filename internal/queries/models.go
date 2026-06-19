@@ -122,8 +122,8 @@ type DetallPerson struct {
 	PersonCurrentFlag        bool        `json:"person_current_flag"`
 	PersonPermissionLevel    string      `json:"person_permission_level"`
 	PersonPasswordHash       *string     `json:"person_password_hash"`
-	PersonEscuadrillaFk      int32       `json:"person_escuadrilla_fk"`
 	PersonPasswordMustChange bool        `json:"person_password_must_change"`
+	PersonEscuadrillaFk      int32       `json:"person_escuadrilla_fk"`
 }
 
 type DetallPersonComision struct {
@@ -214,16 +214,21 @@ type FlightsafetyMedicalExamResult struct {
 
 type OperationsAircraft struct {
 	AircraftSk            int32  `json:"aircraft_sk"`
+	AircraftModelFk       int32  `json:"aircraft_model_fk"`
+	AircraftRegistration  string `json:"aircraft_registration"`
+	AircraftNumber        string `json:"aircraft_number"`
+	AircraftCurrentFlag   bool   `json:"aircraft_current_flag"`
+	AircraftEscuadrillaFk int32  `json:"aircraft_escuadrilla_fk"`
+}
+
+type OperationsAircraftModel struct {
+	AircraftModelSk       int32  `json:"aircraft_model_sk"`
 	AircraftType          string `json:"aircraft_type"`
 	AircraftMake          string `json:"aircraft_make"`
 	AircraftModel         string `json:"aircraft_model"`
 	AircraftVariant       string `json:"aircraft_variant"`
-	AircraftRegistration  string `json:"aircraft_registration"`
-	AircraftNumber        string `json:"aircraft_number"`
-	AircraftCurrentFlag   bool   `json:"aircraft_current_flag"`
 	AircraftIsMultiEngine bool   `json:"aircraft_is_multi_engine"`
 	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
-	AircraftEscuadrillaFk int32  `json:"aircraft_escuadrilla_fk"`
 }
 
 type OperationsApproach struct {

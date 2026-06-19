@@ -18,6 +18,7 @@ export const queryKeys = {
         all: (escuadrillaId: number) => ['lookups', escuadrillaId] as const,
         aircrafts: (escuadrillaId: number) => ['lookups', escuadrillaId, 'aircrafts'] as const,
         aircraftsManage: (escuadrillaId: number) => ['lookups', escuadrillaId, 'aircraftsManage'] as const,
+        aircraftModels: (escuadrillaId: number) => ['lookups', escuadrillaId, 'aircraftModels'] as const,
         eventsManage: (escuadrillaId: number) => ['lookups', escuadrillaId, 'eventsManage'] as const,
         departureArrivalPlaces: (escuadrillaId: number) => ['lookups', escuadrillaId, 'departureArrivalPlaces'] as const,
         eventsLookup: (escuadrillaId: number) => ['lookups', escuadrillaId, 'events'] as const,

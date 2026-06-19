@@ -17,6 +17,16 @@ export interface AircraftLookup {
     aircraft_number: string;
 }
 
+export interface AircraftModelLookup {
+    aircraft_model_sk: number;
+    aircraft_type: string;
+    aircraft_make: string;
+    aircraft_model: string;
+    aircraft_variant: string;
+    aircraft_is_multi_engine: boolean;
+    aircraft_is_multi_pilot: boolean;
+}
+
 export interface AircraftManageLookup {
     aircraft_sk: number;
     aircraft_registration: string;
@@ -147,6 +157,11 @@ export function useAircrafts() {
 /** Obtiene lista completa de aeronaves para gestión (matrícula, número, estado) */
 export function useAircraftsManage() {
     return useLookup<AircraftManageLookup>('aircrafts-manage', queryKeys.lookups.aircraftsManage);
+}
+
+/** Catálogo global de modelos de aeronave (selector del diálogo de aeronaves) */
+export function useAircraftModels() {
+    return useLookup<AircraftModelLookup>('aircraft-models', queryKeys.lookups.aircraftModels);
 }
 
 /** Obtiene lista completa de eventos para gestión (nombre y lugar separados) */

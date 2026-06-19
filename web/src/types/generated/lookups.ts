@@ -8,6 +8,18 @@ export interface Aircraft {
   aircraft_sk: number /* int32 */;
   aircraft_number: string;
 }
+/**
+ * AircraftModel es un modelo del catálogo global (selector + gestión).
+ */
+export interface AircraftModel {
+  aircraft_model_sk: number /* int32 */;
+  aircraft_type: string;
+  aircraft_make: string;
+  aircraft_model: string;
+  aircraft_variant: string;
+  aircraft_is_multi_engine: boolean;
+  aircraft_is_multi_pilot: boolean;
+}
 export interface AircraftManage {
   aircraft_sk: number /* int32 */;
   aircraft_registration: string;
@@ -115,12 +127,22 @@ export interface AddDepartureArrivalPlaceReq {
 export interface AddAircraftReq {
   registration: string;
   number: string;
+  aircraft_model_sk: number /* int32 */;
+}
+export interface AddAircraftModelReq {
   aircraft_type: string;
   make: string;
   model: string;
   variant: string;
   is_multi_engine: boolean;
   is_multi_pilot: boolean;
+}
+/**
+ * AddAircraftModelResp devuelve el sk del modelo creado para que la UI lo
+ * auto-seleccione en el selector tras crearlo.
+ */
+export interface AddAircraftModelResp {
+  aircraft_model_sk: number /* int32 */;
 }
 export interface UpdateAircraftCurrentFlagReq {
   current_flag: boolean;

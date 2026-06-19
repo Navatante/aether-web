@@ -8,6 +8,17 @@ type Aircraft struct {
 	AircraftNumber string `json:"aircraft_number"`
 }
 
+// AircraftModel es un modelo del catálogo global (selector + gestión).
+type AircraftModel struct {
+	AircraftModelSk       int32  `json:"aircraft_model_sk"`
+	AircraftType          string `json:"aircraft_type"`
+	AircraftMake          string `json:"aircraft_make"`
+	AircraftModel         string `json:"aircraft_model"`
+	AircraftVariant       string `json:"aircraft_variant"`
+	AircraftIsMultiEngine bool   `json:"aircraft_is_multi_engine"`
+	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
+}
+
 type AircraftManage struct {
 	AircraftSk            int32  `json:"aircraft_sk"`
 	AircraftRegistration  string `json:"aircraft_registration"`
@@ -128,14 +139,24 @@ type AddDepartureArrivalPlaceReq struct {
 }
 
 type AddAircraftReq struct {
-	Registration  string `json:"registration"`
-	Number        string `json:"number"`
+	Registration    string `json:"registration"`
+	Number          string `json:"number"`
+	AircraftModelSk int32  `json:"aircraft_model_sk"`
+}
+
+type AddAircraftModelReq struct {
 	AircraftType  string `json:"aircraft_type"`
 	Make          string `json:"make"`
 	Model         string `json:"model"`
 	Variant       string `json:"variant"`
 	IsMultiEngine bool   `json:"is_multi_engine"`
 	IsMultiPilot  bool   `json:"is_multi_pilot"`
+}
+
+// AddAircraftModelResp devuelve el sk del modelo creado para que la UI lo
+// auto-seleccione en el selector tras crearlo.
+type AddAircraftModelResp struct {
+	AircraftModelSk int32 `json:"aircraft_model_sk"`
 }
 
 type UpdateAircraftCurrentFlagReq struct {

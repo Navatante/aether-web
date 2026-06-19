@@ -34,8 +34,9 @@ var (
 	ErrInUse        = errors.New("lookups: referenced by other records")
 	ErrInvalidInput = errors.New("lookups: invalid input")
 	ErrUnknownName  = errors.New("lookups: unknown lookup name")
-	// Mensaje en claro: se muestra tal cual en el toast del frontend.
+	// Mensajes en claro: se muestran tal cual en el toast del frontend.
 	ErrCapbaAlreadyAssigned = errors.New("La capacidad básica ya está asignada a la escuadrilla")
+	ErrModelExists          = errors.New("Ese modelo de aeronave ya existe")
 )
 
 // ============================================================================
@@ -50,6 +51,23 @@ func (s *Service) Aircrafts(ctx context.Context, esc int32) ([]Aircraft, error) 
 	out := make([]Aircraft, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, Aircraft{AircraftSk: r.AircraftSk, AircraftNumber: r.AircraftNumber})
+	}
+	return out, nil
+}
+
+func (s *Service) AircraftModels(ctx context.Context) ([]AircraftModel, error) {
+	rows, err := s.q.LookupAircraftModels(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]AircraftModel, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, AircraftModel{
+			AircraftModelSk: r.AircraftModelSk, AircraftType: r.AircraftType,
+			AircraftMake: r.AircraftMake, AircraftModel: r.AircraftModel,
+			AircraftVariant: r.AircraftVariant, AircraftIsMultiEngine: r.AircraftIsMultiEngine,
+			AircraftIsMultiPilot: r.AircraftIsMultiPilot,
+		})
 	}
 	return out, nil
 }
@@ -360,24 +378,51 @@ func (s *Service) DeleteDepartureArrivalPlace(ctx context.Context, id int32) err
 	return nil
 }
 
-func (s *Service) AddAircraft(ctx context.Context, esc int32, req AddAircraftReq) error {
-	req.Registration = strings.ToUpper(strings.TrimSpace(req.Registration))
-	req.Number = strings.TrimSpace(req.Number)
+// AddAircraftModel crea un modelo nuevo en el catálogo global y devuelve su sk.
+// Un duplicado (misma tupla tipo/fabricante/modelo/variante) viola el UNIQUE y
+// se mapea a ErrUniqueName para que el usuario lo elija del selector existente.
+func (s *Service) AddAircraftModel(ctx context.Context, req AddAircraftModelReq) (int32, error) {
 	req.AircraftType = strings.TrimSpace(req.AircraftType)
 	req.Make = strings.TrimSpace(req.Make)
 	req.Model = strings.TrimSpace(req.Model)
 	req.Variant = strings.TrimSpace(req.Variant)
-	if req.Registration == "" || req.Number == "" || req.AircraftType == "" {
+	if req.AircraftType == "" || req.Make == "" || req.Model == "" || req.Variant == "" {
+		return 0, ErrInvalidInput
+	}
+	sk, err := s.q.InsertAircraftModel(ctx, queries.InsertAircraftModelParams{
+		AircraftType: req.AircraftType, AircraftMake: req.Make,
+		AircraftModel: req.Model, AircraftVariant: req.Variant,
+		AircraftIsMultiEngine: req.IsMultiEngine, AircraftIsMultiPilot: req.IsMultiPilot,
+	})
+	if err != nil {
+		if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return 0, ErrModelExists
+		}
+		return 0, err
+	}
+	return sk, nil
+}
+
+func (s *Service) AddAircraft(ctx context.Context, esc int32, req AddAircraftReq) error {
+	req.Registration = strings.ToUpper(strings.TrimSpace(req.Registration))
+	req.Number = strings.TrimSpace(req.Number)
+	if req.Registration == "" || req.Number == "" || req.AircraftModelSk <= 0 {
 		return ErrInvalidInput
 	}
 	err := s.q.AddAircraft(ctx, queries.AddAircraftParams{
-		AircraftType: req.AircraftType, AircraftMake: req.Make,
-		AircraftModel: req.Model, AircraftVariant: req.Variant,
-		AircraftRegistration: req.Registration, AircraftNumber: req.Number,
-		AircraftIsMultiEngine: req.IsMultiEngine, AircraftIsMultiPilot: req.IsMultiPilot,
+		AircraftModelFk:       req.AircraftModelSk,
+		AircraftRegistration:  req.Registration,
+		AircraftNumber:        req.Number,
 		AircraftEscuadrillaFk: esc,
 	})
-	return mapUniqueErr(err, "aircraft_registration")
+	if err != nil {
+		// FK inválida (modelo inexistente) → input inválido; matrícula duplicada → conflicto.
+		if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return ErrInvalidInput
+		}
+		return mapUniqueErr(err, "aircraft_registration")
+	}
+	return nil
 }
 
 func (s *Service) DeleteAircraft(ctx context.Context, esc int32, id int32) error {

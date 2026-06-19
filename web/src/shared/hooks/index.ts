@@ -6,6 +6,7 @@ export type { ConfirmationTarget } from './useConfirmationDialog'
 export {
     useAircrafts,
     useAircraftsManage,
+    useAircraftModels,
     useEventsManage,
     useDepartureArrivalPlaces,
     useEventsLookup,
@@ -33,6 +34,7 @@ export {
 export type {
     AircraftLookup,
     AircraftManageLookup,
+    AircraftModelLookup,
     EventManageLookup,
     DepartureArrivalPlaceLookup,
     EventLookup,

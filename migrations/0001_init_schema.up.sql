@@ -246,17 +246,27 @@ CREATE UNIQUE INDEX ix_person_person_nk
     ON detall.person (person_nk)
     WHERE person_nk IS NOT NULL;
 
-CREATE TABLE operations.aircraft (
-    aircraft_sk              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+-- Catálogo global de modelos de aeronave (datos doctrinales compartidos por
+-- todas las escuadrillas, mismo patrón que operations.capba): tipo, fabricante,
+-- modelo, variante y sus características. Las aeronaves físicas (matrículas)
+-- viven en operations.aircraft y referencian un modelo. SIN escuadrilla_fk.
+CREATE TABLE operations.aircraft_model (
+    aircraft_model_sk        INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     aircraft_type            VARCHAR(50) NOT NULL,
     aircraft_make            VARCHAR(50) NOT NULL,
     aircraft_model           VARCHAR(50) NOT NULL,
     aircraft_variant         VARCHAR(50) NOT NULL,
+    aircraft_is_multi_engine BOOLEAN     NOT NULL,
+    aircraft_is_multi_pilot  BOOLEAN     NOT NULL,
+    CONSTRAINT uq_aircraft_model UNIQUE (aircraft_type, aircraft_make, aircraft_model, aircraft_variant)
+);
+
+CREATE TABLE operations.aircraft (
+    aircraft_sk              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    aircraft_model_fk        INTEGER     NOT NULL REFERENCES operations.aircraft_model(aircraft_model_sk),
     aircraft_registration    VARCHAR(20) NOT NULL UNIQUE,
     aircraft_number          VARCHAR(20) NOT NULL,
     aircraft_current_flag    BOOLEAN     NOT NULL DEFAULT TRUE,
-    aircraft_is_multi_engine BOOLEAN     NOT NULL,
-    aircraft_is_multi_pilot  BOOLEAN     NOT NULL,
     aircraft_escuadrilla_fk  INTEGER     NOT NULL REFERENCES detall.escuadrilla(escuadrilla_sk)
 );
 
@@ -742,6 +752,7 @@ CREATE INDEX ix_flight_escuadrilla   ON operations.flight   (flight_escuadrilla_
 CREATE INDEX ix_papeleta_escuadrilla ON operations.papeleta (papeleta_escuadrilla_fk);
 CREATE INDEX ix_comision_escuadrilla ON detall.comision     (comision_escuadrilla_fk);
 CREATE INDEX ix_aircraft_escuadrilla ON operations.aircraft (aircraft_escuadrilla_fk);
+CREATE INDEX ix_aircraft_model        ON operations.aircraft (aircraft_model_fk);
 
 -- *_person_fk de fact tables cuyo UNIQUE empieza por flight_fk (PG no indexa FKs):
 -- sin esto, una consulta "todo lo de una persona" hace seq scan.

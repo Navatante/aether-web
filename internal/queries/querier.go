@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	// aircraft_model_fk lo elige el usuario en el selector de modelos del diálogo.
 	AddAircraft(ctx context.Context, arg AddAircraftParams) error
 	// ============================================================
 	// Ratings (Hito 4, lote 5)
@@ -277,6 +278,10 @@ type Querier interface {
 	// datos propios del roster). $1/$2 = rango. $4 = roles (vacío = todos).
 	IftHours(ctx context.Context, arg IftHoursParams) ([]IftHoursRow, error)
 	InsertAbsence(ctx context.Context, arg InsertAbsenceParams) (int32, error)
+	// Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE
+	// sobre (type, make, model, variant) rechaza duplicados → el service lo mapea
+	// a un error claro para el usuario.
+	InsertAircraftModel(ctx context.Context, arg InsertAircraftModelParams) (int32, error)
 	InsertApproach(ctx context.Context, arg InsertApproachParams) error
 	InsertCapbaHour(ctx context.Context, arg InsertCapbaHourParams) error
 	// =============== Comisión CRUD ===============
@@ -457,6 +462,9 @@ type Querier interface {
 	// ordenadas por la lógica de v_person_ordered (order_position). El hash de
 	// contraseña no está en la vista: se trae con un JOIN a detall.person.
 	ListPersonsForSuperuser(ctx context.Context, personEscuadrillaFk int32) ([]ListPersonsForSuperuserRow, error)
+	// Catálogo global de modelos de aeronave (selector + gestión en el diálogo).
+	// Datos doctrinales compartidos por todas las escuadrillas: sin escuadrilla_fk.
+	LookupAircraftModels(ctx context.Context) ([]OperationsAircraftModel, error)
 	// ============================================================
 	// Lookups (Hito 4, lote 1)
 	//
@@ -466,7 +474,7 @@ type Querier interface {
 	// =============== Reads: catálogos para selectores (sk + label) ===============
 	// get_aircrafts (frontend): selector de aeronaves activas.
 	LookupAircrafts(ctx context.Context, aircraftEscuadrillaFk int32) ([]LookupAircraftsRow, error)
-	// get_aircrafts_manage: vista completa para gestión.
+	// get_aircrafts_manage: vista completa para gestión (aeronave + su modelo).
 	LookupAircraftsManage(ctx context.Context, aircraftEscuadrillaFk int32) ([]LookupAircraftsManageRow, error)
 	LookupAuthorities(ctx context.Context) ([]LookupAuthoritiesRow, error)
 	// Catálogo global de capacidades básicas (capba + grupo). Datos doctrinales

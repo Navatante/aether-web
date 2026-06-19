@@ -336,13 +336,11 @@ TABLE_MAPPINGS = {
             "helo_current_flag": "aircraft_current_flag",
         },
         "transforms": {"helo_current_flag": _to_bool},
+        # aircraft_model_fk lo rellena main() vía ensure_aircraft_model(): todas
+        # las aeronaves del SQLite son del único modelo NH90 TTH, que vive ahora
+        # en el catálogo global operations.aircraft_model.
         "defaults": {
-            "aircraft_type": "Helicóptero",
-            "aircraft_make": "Airbus Helicopters",
-            "aircraft_model": "NH90",
-            "aircraft_variant": "TTH",
-            "aircraft_is_multi_engine": True,
-            "aircraft_is_multi_pilot": True,
+            "aircraft_model_fk": None,
             "aircraft_escuadrilla_fk": 14,
         },
         "identity_insert": True,
@@ -781,6 +779,30 @@ def migrate_table(sqlite_conn: sqlite3.Connection, pg_conn: psycopg.Connection,
     return len(pg_rows)
 
 
+def ensure_aircraft_model(pg_conn: psycopg.Connection) -> int:
+    """Inserta (idempotente) el modelo NH90 TTH en el catálogo global y devuelve
+    su sk. Todas las aeronaves migradas del SQLite son de este único modelo, así
+    que dim_helo las enlaza todas a él vía aircraft_model_fk."""
+    model = ("Helicóptero", "Airbus Helicopters", "NH90", "TTH")
+    with pg_conn.cursor() as cur:
+        cur.execute(
+            "INSERT INTO operations.aircraft_model "
+            "(aircraft_type, aircraft_make, aircraft_model, aircraft_variant, "
+            " aircraft_is_multi_engine, aircraft_is_multi_pilot) "
+            "VALUES (%s, %s, %s, %s, TRUE, TRUE) "
+            "ON CONFLICT (aircraft_type, aircraft_make, aircraft_model, aircraft_variant) "
+            "DO NOTHING",
+            model,
+        )
+        cur.execute(
+            "SELECT aircraft_model_sk FROM operations.aircraft_model "
+            "WHERE aircraft_type = %s AND aircraft_make = %s "
+            "  AND aircraft_model = %s AND aircraft_variant = %s",
+            model,
+        )
+        return cur.fetchone()[0]
+
+
 def truncate_targets(pg_conn: psycopg.Connection) -> None:
     """Vacía todas las tablas destino antes de cargar.
 
@@ -904,6 +926,10 @@ def main() -> int:
 
         if args.truncate:
             truncate_targets(pg_conn)
+
+        # El catálogo global de modelos no está en MIGRATION_ORDER (no viene del
+        # SQLite): lo sembramos aquí y enlazamos dim_helo a su sk.
+        TABLE_MAPPINGS["dim_helo"]["defaults"]["aircraft_model_fk"] = ensure_aircraft_model(pg_conn)
 
         for name in MIGRATION_ORDER:
             if name not in TABLE_MAPPINGS:

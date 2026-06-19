@@ -17,13 +17,22 @@ WHERE aircraft_current_flag = TRUE
 ORDER BY aircraft_number;
 
 -- name: LookupAircraftsManage :many
--- get_aircrafts_manage: vista completa para gestión.
-SELECT aircraft_sk, aircraft_registration, aircraft_number, aircraft_current_flag,
-       aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
+-- get_aircrafts_manage: vista completa para gestión (aeronave + su modelo).
+SELECT a.aircraft_sk, a.aircraft_registration, a.aircraft_number, a.aircraft_current_flag,
+       m.aircraft_type, m.aircraft_make, m.aircraft_model, m.aircraft_variant,
+       m.aircraft_is_multi_engine, m.aircraft_is_multi_pilot
+FROM operations.aircraft a
+JOIN operations.aircraft_model m ON m.aircraft_model_sk = a.aircraft_model_fk
+WHERE a.aircraft_escuadrilla_fk = $1
+ORDER BY a.aircraft_number;
+
+-- name: LookupAircraftModels :many
+-- Catálogo global de modelos de aeronave (selector + gestión en el diálogo).
+-- Datos doctrinales compartidos por todas las escuadrillas: sin escuadrilla_fk.
+SELECT aircraft_model_sk, aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
        aircraft_is_multi_engine, aircraft_is_multi_pilot
-FROM operations.aircraft
-WHERE aircraft_escuadrilla_fk = $1
-ORDER BY aircraft_number;
+FROM operations.aircraft_model
+ORDER BY aircraft_model, aircraft_variant;
 
 -- name: LookupDepartureArrivalPlaces :many
 SELECT departure_arrival_place_sk, departure_arrival_place_code, departure_arrival_place_name
@@ -209,12 +218,22 @@ VALUES ($1, $2);
 -- name: DeleteDepartureArrivalPlace :execrows
 DELETE FROM operations.departure_arrival_place WHERE departure_arrival_place_sk = $1;
 
--- name: AddAircraft :exec
-INSERT INTO operations.aircraft (
+-- name: InsertAircraftModel :one
+-- Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE
+-- sobre (type, make, model, variant) rechaza duplicados → el service lo mapea
+-- a un error claro para el usuario.
+INSERT INTO operations.aircraft_model (
     aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
-    aircraft_registration, aircraft_number, aircraft_current_flag,
-    aircraft_is_multi_engine, aircraft_is_multi_pilot, aircraft_escuadrilla_fk
-) VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9);
+    aircraft_is_multi_engine, aircraft_is_multi_pilot
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING aircraft_model_sk;
+
+-- name: AddAircraft :exec
+-- aircraft_model_fk lo elige el usuario en el selector de modelos del diálogo.
+INSERT INTO operations.aircraft (
+    aircraft_model_fk, aircraft_registration, aircraft_number,
+    aircraft_current_flag, aircraft_escuadrilla_fk
+) VALUES ($1, $2, $3, TRUE, $4);
 
 -- name: DeleteAircraft :execrows
 DELETE FROM operations.aircraft

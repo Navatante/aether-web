@@ -11,34 +11,24 @@ import (
 
 const addAircraft = `-- name: AddAircraft :exec
 INSERT INTO operations.aircraft (
-    aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
-    aircraft_registration, aircraft_number, aircraft_current_flag,
-    aircraft_is_multi_engine, aircraft_is_multi_pilot, aircraft_escuadrilla_fk
-) VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $8, $9)
+    aircraft_model_fk, aircraft_registration, aircraft_number,
+    aircraft_current_flag, aircraft_escuadrilla_fk
+) VALUES ($1, $2, $3, TRUE, $4)
 `
 
 type AddAircraftParams struct {
-	AircraftType          string `json:"aircraft_type"`
-	AircraftMake          string `json:"aircraft_make"`
-	AircraftModel         string `json:"aircraft_model"`
-	AircraftVariant       string `json:"aircraft_variant"`
+	AircraftModelFk       int32  `json:"aircraft_model_fk"`
 	AircraftRegistration  string `json:"aircraft_registration"`
 	AircraftNumber        string `json:"aircraft_number"`
-	AircraftIsMultiEngine bool   `json:"aircraft_is_multi_engine"`
-	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
 	AircraftEscuadrillaFk int32  `json:"aircraft_escuadrilla_fk"`
 }
 
+// aircraft_model_fk lo elige el usuario en el selector de modelos del diálogo.
 func (q *Queries) AddAircraft(ctx context.Context, arg AddAircraftParams) error {
 	_, err := q.db.Exec(ctx, addAircraft,
-		arg.AircraftType,
-		arg.AircraftMake,
-		arg.AircraftModel,
-		arg.AircraftVariant,
+		arg.AircraftModelFk,
 		arg.AircraftRegistration,
 		arg.AircraftNumber,
-		arg.AircraftIsMultiEngine,
-		arg.AircraftIsMultiPilot,
 		arg.AircraftEscuadrillaFk,
 	)
 	return err
@@ -141,6 +131,77 @@ func (q *Queries) DeleteEvent(ctx context.Context, eventSk int32) (int64, error)
 	return result.RowsAffected(), nil
 }
 
+const insertAircraftModel = `-- name: InsertAircraftModel :one
+INSERT INTO operations.aircraft_model (
+    aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
+    aircraft_is_multi_engine, aircraft_is_multi_pilot
+) VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING aircraft_model_sk
+`
+
+type InsertAircraftModelParams struct {
+	AircraftType          string `json:"aircraft_type"`
+	AircraftMake          string `json:"aircraft_make"`
+	AircraftModel         string `json:"aircraft_model"`
+	AircraftVariant       string `json:"aircraft_variant"`
+	AircraftIsMultiEngine bool   `json:"aircraft_is_multi_engine"`
+	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
+}
+
+// Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE
+// sobre (type, make, model, variant) rechaza duplicados → el service lo mapea
+// a un error claro para el usuario.
+func (q *Queries) InsertAircraftModel(ctx context.Context, arg InsertAircraftModelParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertAircraftModel,
+		arg.AircraftType,
+		arg.AircraftMake,
+		arg.AircraftModel,
+		arg.AircraftVariant,
+		arg.AircraftIsMultiEngine,
+		arg.AircraftIsMultiPilot,
+	)
+	var aircraft_model_sk int32
+	err := row.Scan(&aircraft_model_sk)
+	return aircraft_model_sk, err
+}
+
+const lookupAircraftModels = `-- name: LookupAircraftModels :many
+SELECT aircraft_model_sk, aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
+       aircraft_is_multi_engine, aircraft_is_multi_pilot
+FROM operations.aircraft_model
+ORDER BY aircraft_model, aircraft_variant
+`
+
+// Catálogo global de modelos de aeronave (selector + gestión en el diálogo).
+// Datos doctrinales compartidos por todas las escuadrillas: sin escuadrilla_fk.
+func (q *Queries) LookupAircraftModels(ctx context.Context) ([]OperationsAircraftModel, error) {
+	rows, err := q.db.Query(ctx, lookupAircraftModels)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OperationsAircraftModel
+	for rows.Next() {
+		var i OperationsAircraftModel
+		if err := rows.Scan(
+			&i.AircraftModelSk,
+			&i.AircraftType,
+			&i.AircraftMake,
+			&i.AircraftModel,
+			&i.AircraftVariant,
+			&i.AircraftIsMultiEngine,
+			&i.AircraftIsMultiPilot,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lookupAircrafts = `-- name: LookupAircrafts :many
 
 
@@ -186,12 +247,13 @@ func (q *Queries) LookupAircrafts(ctx context.Context, aircraftEscuadrillaFk int
 }
 
 const lookupAircraftsManage = `-- name: LookupAircraftsManage :many
-SELECT aircraft_sk, aircraft_registration, aircraft_number, aircraft_current_flag,
-       aircraft_type, aircraft_make, aircraft_model, aircraft_variant,
-       aircraft_is_multi_engine, aircraft_is_multi_pilot
-FROM operations.aircraft
-WHERE aircraft_escuadrilla_fk = $1
-ORDER BY aircraft_number
+SELECT a.aircraft_sk, a.aircraft_registration, a.aircraft_number, a.aircraft_current_flag,
+       m.aircraft_type, m.aircraft_make, m.aircraft_model, m.aircraft_variant,
+       m.aircraft_is_multi_engine, m.aircraft_is_multi_pilot
+FROM operations.aircraft a
+JOIN operations.aircraft_model m ON m.aircraft_model_sk = a.aircraft_model_fk
+WHERE a.aircraft_escuadrilla_fk = $1
+ORDER BY a.aircraft_number
 `
 
 type LookupAircraftsManageRow struct {
@@ -207,7 +269,7 @@ type LookupAircraftsManageRow struct {
 	AircraftIsMultiPilot  bool   `json:"aircraft_is_multi_pilot"`
 }
 
-// get_aircrafts_manage: vista completa para gestión.
+// get_aircrafts_manage: vista completa para gestión (aeronave + su modelo).
 func (q *Queries) LookupAircraftsManage(ctx context.Context, aircraftEscuadrillaFk int32) ([]LookupAircraftsManageRow, error) {
 	rows, err := q.db.Query(ctx, lookupAircraftsManage, aircraftEscuadrillaFk)
 	if err != nil {

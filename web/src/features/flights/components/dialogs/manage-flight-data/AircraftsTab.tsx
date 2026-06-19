@@ -1,4 +1,6 @@
 // Tab de aeronaves (CRUD + activar/desactivar via /lookups/aircrafts).
+// El modelo de la aeronave se elige de un selector (catálogo global
+// operations.aircraft_model); si no existe, se crea inline desde el mismo form.
 
 import React, { useState } from 'react';
 import { useLogger } from '@/lib/logger';
@@ -10,7 +12,15 @@ import { ActionButton, DetailsRow } from "@/shared/components/common";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { DialogFooter } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     Table,
     TableBody,
@@ -19,8 +29,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Trash2, Loader2, Helicopter, ChevronDown, ChevronRight } from "lucide-react";
-import { useAircraftsManage, type AircraftManageLookup } from "@/shared/hooks";
+import { Trash2, Loader2, Helicopter, ChevronDown, ChevronRight, Plus } from "lucide-react";
+import {
+    useAircraftsManage, type AircraftManageLookup,
+    useAircraftModels, type AircraftModelLookup,
+} from "@/shared/hooks";
 import { type DeleteTarget, EmptyState, ErrorBanner, LoadingState } from './shared';
 
 type AircraftFormMode = 'list' | 'add';
@@ -33,6 +46,7 @@ export function AircraftsTab({
     const log = useLogger('ManageFlightDataDialog.Aircrafts');
     const { id: escId } = useEscuadrilla();
     const { data: aircrafts, loading, error: fetchError } = useAircraftsManage();
+    const { data: models, loading: modelsLoading } = useAircraftModels();
 
     // Ambas mutaciones invalidan las dos queries de aeronaves: la de gestión
     // (esta lista) y la del selector del formulario de vuelo.
@@ -48,30 +62,47 @@ export function AircraftsTab({
     );
 
     const createAircraft = useApiMutation<void, {
-        registration: string; number: string; aircraft_type: string;
-        make: string; model: string; variant: string;
-        is_multi_engine: boolean; is_multi_pilot: boolean;
+        registration: string; number: string; aircraft_model_sk: number;
     }>('POST', '/lookups/aircrafts', { invalidateKeys });
+
+    const createModel = useApiMutation<{ aircraft_model_sk: number }, {
+        aircraft_type: string; make: string; model: string; variant: string;
+        is_multi_engine: boolean; is_multi_pilot: boolean;
+    }>('POST', '/lookups/aircraft-models', {
+        invalidateKeys: [queryKeys.lookups.aircraftModels(escId ?? 0)],
+    });
 
     const [mode, setMode] = useState<AircraftFormMode>('list');
     const [registration, setRegistration] = useState('');
     const [number, setNumber] = useState('');
-    const [aircraftType, setAircraftType] = useState('');
-    const [make, setMake] = useState('');
-    const [model, setModel] = useState('');
-    const [variant, setVariant] = useState('');
-    const [isMultiEngine, setIsMultiEngine] = useState(false);
-    const [isMultiPilot, setIsMultiPilot] = useState(false);
+    const [modelSk, setModelSk] = useState('');           // value del Select (sk como string)
     const [error, setError] = useState<string | null>(null);
     const [expandedSk, setExpandedSk] = useState<number | null>(null);
+
+    // Sub-form "nuevo modelo" embebido en el form de aeronave.
+    const [addingModel, setAddingModel] = useState(false);
+    const [mType, setMType] = useState('');
+    const [mMake, setMMake] = useState('');
+    const [mModel, setMModel] = useState('');
+    const [mVariant, setMVariant] = useState('');
+    const [mMultiEngine, setMMultiEngine] = useState(false);
+    const [mMultiPilot, setMMultiPilot] = useState(false);
 
     // Fila con toggle en curso: derivado del estado de la mutación (sin useState).
     const togglingSk = toggleFlag.isPending ? toggleFlag.variables?.aircraft_sk ?? null : null;
 
+    // Base UI Select muestra el `value` crudo (el sk); resolvemos la etiqueta
+    // (modelo + variante) del modelo seleccionado para pintarla en el trigger.
+    const selectedModel = (models ?? []).find((m) => String(m.aircraft_model_sk) === modelSk);
+
+    const resetModelForm = () => {
+        setAddingModel(false); setMType(''); setMMake(''); setMModel('');
+        setMVariant(''); setMMultiEngine(false); setMMultiPilot(false);
+    };
+
     const reset = () => {
-        setMode('list'); setRegistration(''); setNumber(''); setAircraftType('');
-        setMake(''); setModel(''); setVariant(''); setIsMultiEngine(false);
-        setIsMultiPilot(false); setError(null);
+        setMode('list'); setRegistration(''); setNumber(''); setModelSk('');
+        setError(null); resetModelForm();
     };
 
     const handleToggleFlag = async (a: AircraftManageLookup, nextFlag: boolean) => {
@@ -85,26 +116,39 @@ export function AircraftsTab({
         }
     };
 
+    const handleCreateModel = async () => {
+        if (!mType.trim()) { setError('El tipo es obligatorio'); return; }
+        if (!mMake.trim()) { setError('El fabricante es obligatorio'); return; }
+        if (!mModel.trim()) { setError('El modelo es obligatorio'); return; }
+        if (!mVariant.trim()) { setError('La variante es obligatoria'); return; }
+        setError(null);
+        try {
+            const created = await createModel.mutateAsync({
+                aircraft_type: mType.trim(), make: mMake.trim(),
+                model: mModel.trim(), variant: mVariant.trim(),
+                is_multi_engine: mMultiEngine, is_multi_pilot: mMultiPilot,
+            });
+            log.info(`Modelo '${mModel} ${mVariant}' añadido`);
+            setModelSk(String(created.aircraft_model_sk)); // auto-selecciona el nuevo
+            resetModelForm();
+        } catch (err) {
+            // El error HTTP ya lo notifica el toast de useApiMutation.
+            log.error(`Error añadiendo modelo: ${err}`);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!registration.trim()) { setError('La matrícula es obligatoria'); return; }
         if (!number.trim()) { setError('El número de cola es obligatorio'); return; }
-        if (!aircraftType.trim()) { setError('El tipo es obligatorio'); return; }
-        if (!make.trim()) { setError('El fabricante es obligatorio'); return; }
-        if (!model.trim()) { setError('El modelo es obligatorio'); return; }
-        if (!variant.trim()) { setError('La variante es obligatoria'); return; }
+        if (!modelSk) { setError('Selecciona un modelo de aeronave'); return; }
 
         setError(null);
         try {
             await createAircraft.mutateAsync({
                 registration: registration.trim().toUpperCase(),
                 number: number.trim(),
-                aircraft_type: aircraftType.trim(),
-                make: make.trim(),
-                model: model.trim(),
-                variant: variant.trim(),
-                is_multi_engine: isMultiEngine,
-                is_multi_pilot: isMultiPilot,
+                aircraft_model_sk: Number(modelSk),
             });
             log.info(`Aeronave '${registration}' añadida`);
             reset();
@@ -206,66 +250,144 @@ export function AircraftsTab({
                     </div>
                 </>
             ) : (
-                <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_registration">Matrícula</Label>
-                            <Input id="ac_registration" placeholder="HU.21-01"
-                                value={registration}
-                                onChange={(e) => setRegistration(e.target.value.toUpperCase())}
-                                maxLength={20} autoFocus />
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Identificación física de la aeronave */}
+                    <fieldset className="space-y-3">
+                        <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Identificación
+                        </legend>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="ac_registration">Matrícula</Label>
+                                <Input id="ac_registration" placeholder="HU.21-01"
+                                    value={registration}
+                                    onChange={(e) => setRegistration(e.target.value.toUpperCase())}
+                                    maxLength={20} autoFocus className="font-mono" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="ac_number">N.º de cola</Label>
+                                <Input id="ac_number" placeholder="01"
+                                    value={number} onChange={(e) => setNumber(e.target.value)}
+                                    maxLength={20} />
+                            </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_number">N.º de cola</Label>
-                            <Input id="ac_number" placeholder="01"
-                                value={number} onChange={(e) => setNumber(e.target.value)}
-                                maxLength={20} />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_type">Tipo</Label>
-                            <Input id="ac_type" placeholder="Helicóptero"
-                                value={aircraftType} onChange={(e) => setAircraftType(e.target.value)}
-                                maxLength={50} />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_make">Fabricante</Label>
-                            <Input id="ac_make" placeholder="Airbus"
-                                value={make} onChange={(e) => setMake(e.target.value)}
-                                maxLength={50} />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_model">Modelo</Label>
-                            <Input id="ac_model" placeholder="H215"
-                                value={model} onChange={(e) => setModel(e.target.value)}
-                                maxLength={50} />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label htmlFor="ac_variant">Variante</Label>
-                            <Input id="ac_variant" placeholder="Super Puma"
-                                value={variant} onChange={(e) => setVariant(e.target.value)}
-                                maxLength={50} />
-                        </div>
-                    </div>
+                    </fieldset>
 
-                    <div className="flex gap-6 pt-1">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={isMultiEngine}
-                                onChange={(e) => setIsMultiEngine(e.target.checked)}
-                                className="w-4 h-4 accent-primary" />
-                            <span className="text-sm">Multimotor</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={isMultiPilot}
-                                onChange={(e) => setIsMultiPilot(e.target.checked)}
-                                className="w-4 h-4 accent-primary" />
-                            <span className="text-sm">Multipiloto</span>
-                        </label>
-                    </div>
+                    {/* Modelo: selector del catálogo global + alta inline */}
+                    <fieldset className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <legend className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Modelo
+                            </legend>
+                            {!addingModel && (
+                                <Button type="button" variant="ghost" size="sm"
+                                    className="h-7 px-2 text-xs text-primary hover:text-primary"
+                                    onClick={() => { setAddingModel(true); setError(null); }}>
+                                    <Plus className="w-3.5 h-3.5 mr-1" />Nuevo modelo
+                                </Button>
+                            )}
+                        </div>
+                        {addingModel ? (
+                            <div className="space-y-3 rounded-lg border bg-muted/40 p-3">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                    <Plus className="w-4 h-4 text-primary" />
+                                    Nuevo modelo de aeronave
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="m_type">Tipo</Label>
+                                        <Select value={mType} onValueChange={(value) => setMType(value ?? '')}>
+                                            <SelectTrigger id="m_type" className="w-full bg-background">
+                                                <SelectValue placeholder="Selecciona tipo" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Helicóptero">Helicóptero</SelectItem>
+                                                <SelectItem value="Avión">Avión</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="m_make">Fabricante</Label>
+                                        <Input id="m_make" placeholder="Airbus Helicopters"
+                                            value={mMake} onChange={(e) => setMMake(e.target.value)}
+                                            maxLength={50} autoFocus className="bg-background" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="m_model">Modelo</Label>
+                                        <Input id="m_model" placeholder="NH90"
+                                            value={mModel} onChange={(e) => setMModel(e.target.value)}
+                                            maxLength={50} className="bg-background" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <Label htmlFor="m_variant">Variante</Label>
+                                        <Input id="m_variant" placeholder="TTH"
+                                            value={mVariant} onChange={(e) => setMVariant(e.target.value)}
+                                            maxLength={50} className="bg-background" />
+                                    </div>
+                                </div>
+                                <div className="flex gap-6">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={mMultiEngine}
+                                            onChange={(e) => setMMultiEngine(e.target.checked)}
+                                            className="w-4 h-4 accent-primary" />
+                                        <span className="text-sm">Multimotor</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" checked={mMultiPilot}
+                                            onChange={(e) => setMMultiPilot(e.target.checked)}
+                                            className="w-4 h-4 accent-primary" />
+                                        <span className="text-sm">Multipiloto</span>
+                                    </label>
+                                </div>
+                                <div className="flex justify-end gap-2 border-t border-border/60 pt-3">
+                                    <Button type="button" variant="outline" size="sm"
+                                        onClick={() => { resetModelForm(); setError(null); }}
+                                        disabled={createModel.isPending}>Cancelar</Button>
+                                    <Button type="button" size="sm"
+                                        onClick={handleCreateModel} disabled={createModel.isPending}>
+                                        {createModel.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Guardar modelo
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Select value={modelSk} onValueChange={(value) => setModelSk(value ?? '')} disabled={modelsLoading}>
+                                    <SelectTrigger id="ac_model" className="w-full">
+                                        <SelectValue>
+                                            {selectedModel
+                                                ? `${selectedModel.aircraft_model} ${selectedModel.aircraft_variant}`
+                                                : (modelsLoading ? 'Cargando...' : 'Selecciona un modelo')}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(models ?? []).map((m: AircraftModelLookup) => (
+                                            <SelectItem key={m.aircraft_model_sk} value={String(m.aircraft_model_sk)}>
+                                                {m.aircraft_model} {m.aircraft_variant}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {selectedModel && (
+                                    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                                        <span className="font-medium text-foreground">{selectedModel.aircraft_type}</span>
+                                        <span aria-hidden>·</span>
+                                        <span>{selectedModel.aircraft_make}</span>
+                                        {selectedModel.aircraft_is_multi_engine && (
+                                            <Badge variant="secondary" className="ml-auto">Multimotor</Badge>
+                                        )}
+                                        {selectedModel.aircraft_is_multi_pilot && (
+                                            <Badge variant="secondary" className={selectedModel.aircraft_is_multi_engine ? '' : 'ml-auto'}>Multipiloto</Badge>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </fieldset>
 
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button type="button" variant="outline" onClick={reset} disabled={createAircraft.isPending}>Cancelar</Button>
-                        <Button type="submit" disabled={createAircraft.isPending}>
-                            {createAircraft.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir
+                        <Button type="submit" disabled={createAircraft.isPending || addingModel}>
+                            {createAircraft.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Añadir aeronave
                         </Button>
                     </DialogFooter>
                 </form>

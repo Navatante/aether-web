@@ -35,6 +35,8 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.DELETE("/lookups/aircrafts/:id", h.DeleteAircraft, mw, operacional)
 	g.PATCH("/lookups/aircrafts/:id", h.UpdateAircraftCurrentFlag, mw, operacional)
 
+	g.POST("/lookups/aircraft-models", h.AddAircraftModel, mw, operacional)
+
 	// Asignaciones de capacidades básicas (capba) de la escuadrilla.
 	g.POST("/lookups/escuadrilla-capbas", h.AddEscuadrillaCapba, mw, operacional)
 	g.PATCH("/lookups/escuadrilla-capbas/:id", h.UpdateEscuadrillaCapba, mw, operacional)
@@ -88,6 +90,8 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.PersonsNk(ctx, esc)
 
 	// Lookups globales (sin escuadrilla)
+	case "aircraft-models":
+		data, err = h.svc.AircraftModels(ctx)
 	case "departure-arrival-places":
 		data, err = h.svc.DepartureArrivalPlaces(ctx)
 	case "events-manage":
@@ -167,6 +171,24 @@ func (h *Handlers) AddAircraft(c echo.Context) error {
 	return mapErrToHTTP(h.svc.AddAircraft(c.Request().Context(), int32(user.EscuadrillaID), req),
 		map[error]int{ErrUniqueCode: http.StatusConflict, ErrUniqueName: http.StatusConflict, ErrInvalidInput: http.StatusBadRequest},
 		http.StatusCreated)
+}
+
+func (h *Handlers) AddAircraftModel(c echo.Context) error {
+	var req AddAircraftModelReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	sk, err := h.svc.AddAircraftModel(c.Request().Context(), req)
+	if errors.Is(err, ErrModelExists) {
+		return echo.NewHTTPError(http.StatusConflict, err.Error())
+	}
+	if errors.Is(err, ErrInvalidInput) {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusCreated, AddAircraftModelResp{AircraftModelSk: sk})
 }
 
 func (h *Handlers) DeleteAircraft(c echo.Context) error {
