@@ -33,6 +33,19 @@ var (
 	ErrInvalidInput = errors.New("ratings: invalid input")
 )
 
+// crew_ratings_fk de las calificaciones tácticas generales (seeds del catálogo
+// crew_ratings). Se usan tanto para adjuntar las métricas específicas como para
+// resolver el estado (vigente/aviso/caducado) en tacticalState.
+const (
+	tacticalVfrDiurna   = 12
+	tacticalVfrNocturna = 13
+	tacticalGvn         = 14
+	tacticalIfr         = 15
+	tacticalAeronaval   = 16
+	tacticalAnfibia     = 17
+	tacticalSao         = 18
+)
+
 // ============================================================
 // Service
 // ============================================================
@@ -470,25 +483,25 @@ func buildTacticalQuals(m queries.GeneralTacticalPersonMetricsRow, qs []queries.
 		}
 		// Adjuntar métricas específicas por crew_ratings_fk (espeja la lógica del SP).
 		switch q.CrewRatingsFk {
-		case 12:
+		case tacticalVfrDiurna:
 			v := numericToFloat(m.VfrDiurno365)
 			tq.TotalHorasVfrDiurno365 = &v
-		case 13:
+		case tacticalVfrNocturna:
 			v := numericToFloat(m.VfrNocturno365)
 			tq.TotalHorasVfrNocturno365 = &v
-		case 14, 17, 18:
+		case tacticalGvn, tacticalAnfibia, tacticalSao:
 			g90 := numericToFloat(m.Gvn90)
 			tq.TotalHorasGvn90 = &g90
 			g365 := numericToFloat(m.Gvn365)
 			tq.TotalHorasGvn365 = &g365
-		case 15:
+		case tacticalIfr:
 			i365 := numericToFloat(m.Ifr365)
 			tq.TotalHorasIfr365 = &i365
 			ap := m.AppPrecision365
 			tq.TotalAppPrecision365 = &ap
 			an := m.AppNoPrecision365
 			tq.TotalAppNoPrecision365 = &an
-		case 16:
+		case tacticalAeronaval:
 			db := m.DiaBuque
 			dm := m.DiaMono
 			dt := m.DiaMulti
@@ -533,7 +546,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 	isDot := m.PersonRol == "Dotación" || m.PersonRol == "Dotación/Nadador"
 
 	switch fk {
-	case 12: // VFR Diurna (Pilotos)
+	case tacticalVfrDiurna: // VFR Diurna (Pilotos)
 		if !isPiloto {
 			return "valid"
 		}
@@ -545,7 +558,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 		default:
 			return "valid"
 		}
-	case 13: // VFR Nocturna (Pilotos)
+	case tacticalVfrNocturna: // VFR Nocturna (Pilotos)
 		if !isPiloto {
 			return "valid"
 		}
@@ -557,7 +570,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 		default:
 			return "valid"
 		}
-	case 14: // GVN
+	case tacticalGvn: // GVN
 		if isPiloto {
 			switch {
 			case g90 < 3 || g365 < 12:
@@ -578,7 +591,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 				return "expired"
 			}
 		}
-	case 15: // IFR
+	case tacticalIfr: // IFR
 		if !isPiloto {
 			return "valid"
 		}
@@ -590,7 +603,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 		default:
 			return "valid"
 		}
-	case 16: // Aeronaval (sólo pilotos)
+	case tacticalAeronaval: // Aeronaval (sólo pilotos)
 		if !isPiloto {
 			return "valid"
 		}
@@ -605,7 +618,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 		default:
 			return "valid"
 		}
-	case 17: // Anfibia
+	case tacticalAnfibia: // Anfibia
 		switch {
 		case g90 < 6 || g365 < 24:
 			return "expired"
@@ -614,7 +627,7 @@ func tacticalState(m queries.GeneralTacticalPersonMetricsRow, fk int32) string {
 		default:
 			return "valid"
 		}
-	case 18: // SAO
+	case tacticalSao: // SAO
 		switch {
 		case g90 < 9 || g365 < 36:
 			return "expired"

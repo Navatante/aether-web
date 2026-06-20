@@ -548,6 +548,10 @@ type Querier interface {
 	PersonHasOverlapComision(ctx context.Context, arg PersonHasOverlapComisionParams) (bool, error)
 	// Personas activas filtradas por rol[] dentro de una escuadrilla.
 	PersonsByRoles(ctx context.Context, arg PersonsByRolesParams) ([]PersonsByRolesRow, error)
+	// De entre los person_sk dados, devuelve los que pertenecen a la escuadrilla.
+	// Sirve para validar en el bulk-assign que no se asignan personas de otra
+	// escuadrilla (los person_sk vienen del cliente y no están acotados de otro modo).
+	PersonsInEscuadrilla(ctx context.Context, arg PersonsInEscuadrillaParams) ([]int32, error)
 	// ============================================================
 	// Projectiles (proyectiles disparados por dotación)
 	//

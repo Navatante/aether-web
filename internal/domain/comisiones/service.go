@@ -385,6 +385,28 @@ func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisio
 		return PersonToComisionInsertResult{}, err
 	}
 
+	// RLS: los person_sk vienen del cliente. Antes de tocarlos (nombres,
+	// solapes, INSERT) verificamos que TODOS pertenecen a la escuadrilla de la
+	// sesión; si alguno es de otra escuadrilla, rechazamos el lote entero sin
+	// filtrar datos de esa persona. Esto cierra el hueco de las queries
+	// "personkeyed" que no llevan filtro de escuadrilla.
+	validSks, err := s.q.PersonsInEscuadrilla(ctx, queries.PersonsInEscuadrillaParams{
+		Column1:             personSks,
+		PersonEscuadrillaFk: esc,
+	})
+	if err != nil {
+		return PersonToComisionInsertResult{}, err
+	}
+	valid := make(map[int32]struct{}, len(validSks))
+	for _, sk := range validSks {
+		valid[sk] = struct{}{}
+	}
+	for _, ps := range personSks {
+		if _, ok := valid[ps]; !ok {
+			return PersonToComisionInsertResult{}, ErrInvalidInput
+		}
+	}
+
 	// Fase 1: validar todas, acumular errores.
 	verrs := &ValidationError{}
 	for _, ps := range personSks {

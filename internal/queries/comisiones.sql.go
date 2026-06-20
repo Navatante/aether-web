@@ -673,6 +673,41 @@ func (q *Queries) PersonHasOverlapComision(ctx context.Context, arg PersonHasOve
 	return exists, err
 }
 
+const personsInEscuadrilla = `-- name: PersonsInEscuadrilla :many
+SELECT person_sk
+FROM detall.person
+WHERE person_sk = ANY($1::int[])
+  AND person_escuadrilla_fk = $2
+`
+
+type PersonsInEscuadrillaParams struct {
+	Column1             []int32 `json:"column_1"`
+	PersonEscuadrillaFk int32   `json:"person_escuadrilla_fk"`
+}
+
+// De entre los person_sk dados, devuelve los que pertenecen a la escuadrilla.
+// Sirve para validar en el bulk-assign que no se asignan personas de otra
+// escuadrilla (los person_sk vienen del cliente y no están acotados de otro modo).
+func (q *Queries) PersonsInEscuadrilla(ctx context.Context, arg PersonsInEscuadrillaParams) ([]int32, error) {
+	rows, err := q.db.Query(ctx, personsInEscuadrilla, arg.Column1, arg.PersonEscuadrillaFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var person_sk int32
+		if err := rows.Scan(&person_sk); err != nil {
+			return nil, err
+		}
+		items = append(items, person_sk)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const resolveComisionLugar = `-- name: ResolveComisionLugar :one
 SELECT comision_lugar_sk FROM detall.comision_lugar WHERE comision_name = $1
 `

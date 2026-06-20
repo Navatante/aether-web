@@ -54,6 +54,18 @@ const (
 	projectileMag58 = 2
 )
 
+// Límites de paginación del listado. defaultListLimit se aplica cuando el
+// cliente no pide tamaño; maxListLimit acota un Limit arbitrariamente grande
+// para que una sola request no arrastre una página enorme.
+const (
+	defaultListLimit = 10
+	maxListLimit     = 100
+)
+
+// fp es la clave (flight_sk, person_sk) para indexar las filas hijas por
+// vuelo y persona.
+type fp struct{ f, p int32 }
+
 // ============================================================
 // Sentinel errors
 // ============================================================
@@ -150,7 +162,10 @@ func (s *Service) Insert(ctx context.Context, esc int32, userID, ip string, data
 		}
 	}
 	for _, cupo := range data.Cupos {
-		hours, ok := parseFloatNonZero(cupo.Horas)
+		hours, ok, err := parseOptionalFloat(cupo.Horas)
+		if err != nil {
+			return InsertResult{}, fmt.Errorf("%w (cupo)", err)
+		}
 		if !ok {
 			continue
 		}
@@ -163,7 +178,10 @@ func (s *Service) Insert(ctx context.Context, esc int32, userID, ip string, data
 		}
 	}
 	for _, capba := range data.Capbas {
-		hours, ok := parseFloatNonZero(capba.Horas)
+		hours, ok, err := parseOptionalFloat(capba.Horas)
+		if err != nil {
+			return InsertResult{}, fmt.Errorf("%w (capba)", err)
+		}
 		if !ok {
 			continue
 		}
@@ -176,7 +194,10 @@ func (s *Service) Insert(ctx context.Context, esc int32, userID, ip string, data
 		}
 	}
 	for _, pax := range data.Pasajeros {
-		qty, ok := parseIntNonZero(pax.Cantidad)
+		qty, ok, err := parseOptionalInt(pax.Cantidad)
+		if err != nil {
+			return InsertResult{}, fmt.Errorf("%w (pasajeros)", err)
+		}
 		if !ok {
 			continue
 		}
@@ -213,7 +234,11 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 		{periodGvn, pilot.PersonHour.HGvn},
 	}
 	for _, p := range periods {
-		if h, ok := parseFloatNonZero(p.raw); ok {
+		h, ok, err := parseOptionalFloat(p.raw)
+		if err != nil {
+			return fmt.Errorf("%w (person_hour periodo %d)", err, p.periodFk)
+		}
+		if ok {
 			if err := q.InsertPersonHour(ctx, queries.InsertPersonHourParams{
 				PersonHourFlightFk: flightSk, PersonHourPersonFk: person,
 				PersonHourPeriodFk: p.periodFk, PersonHourHourQty: numericFromFloat(h),
@@ -224,8 +249,14 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 	}
 
 	// GVN type (IIT + ANVIS)
-	iit, _ := parseFloat(pilot.GvnTypeHour.HIit)
-	anvis, _ := parseFloat(pilot.GvnTypeHour.HAnvis)
+	iit, _, err := parseOptionalFloat(pilot.GvnTypeHour.HIit)
+	if err != nil {
+		return fmt.Errorf("%w (gvntype iit)", err)
+	}
+	anvis, _, err := parseOptionalFloat(pilot.GvnTypeHour.HAnvis)
+	if err != nil {
+		return fmt.Errorf("%w (gvntype anvis)", err)
+	}
 	if iit > 0 || anvis > 0 {
 		if err := q.InsertGvntypeHour(ctx, queries.InsertGvntypeHourParams{
 			GvntypeHourFlightFk: flightSk, GvntypeHourPersonFk: person,
@@ -237,7 +268,9 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 	}
 
 	// IFT
-	if h, ok := parseFloatNonZero(pilot.IftHour); ok {
+	if h, ok, err := parseOptionalFloat(pilot.IftHour); err != nil {
+		return fmt.Errorf("%w (ift)", err)
+	} else if ok {
 		if err := q.InsertIftHour(ctx, queries.InsertIftHourParams{
 			IftHourFlightFk: flightSk, IftHourPersonFk: person,
 			IftHourQty: numericFromFloat(h),
@@ -247,7 +280,9 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 	}
 
 	// Instructor
-	if h, ok := parseFloatNonZero(pilot.InstructorHour); ok {
+	if h, ok, err := parseOptionalFloat(pilot.InstructorHour); err != nil {
+		return fmt.Errorf("%w (instructor)", err)
+	} else if ok {
 		if err := q.InsertInstructorHour(ctx, queries.InsertInstructorHourParams{
 			InstructorHourFlightFk: flightSk, InstructorHourPersonFk: person,
 			InstructorHourQty: numericFromFloat(h),
@@ -265,7 +300,11 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 		{periodGvn, pilot.FormationHour.HfGvn},
 	}
 	for _, f := range formations {
-		if h, ok := parseFloatNonZero(f.raw); ok {
+		h, ok, err := parseOptionalFloat(f.raw)
+		if err != nil {
+			return fmt.Errorf("%w (formation_hour periodo %d)", err, f.periodFk)
+		}
+		if ok {
 			if err := q.InsertFormationHour(ctx, queries.InsertFormationHourParams{
 				FormationHourFlightFk: flightSk, FormationHourPersonFk: person,
 				FormationHourPeriodFk:     f.periodFk,
@@ -287,7 +326,11 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 		{appSp, pilot.App.Sp},
 	}
 	for _, a := range apps {
-		if qty, ok := parseIntNonZero(a.raw); ok {
+		qty, ok, err := parseOptionalInt(a.raw)
+		if err != nil {
+			return fmt.Errorf("%w (approach tipo %d)", err, a.typeFk)
+		}
+		if ok {
 			if err := q.InsertApproach(ctx, queries.InsertApproachParams{
 				AppFlightFk: flightSk, AppPersonFk: person,
 				AppTypeFk: a.typeFk, AppQty: qty,
@@ -317,7 +360,11 @@ func insertPilot(ctx context.Context, q *queries.Queries, flightSk int32, pilot 
 			{periodGvn, l.data.LGvn},
 		}
 		for _, p := range periods {
-			if qty, ok := parseIntNonZero(p.raw); ok {
+			qty, ok, err := parseOptionalInt(p.raw)
+			if err != nil {
+				return fmt.Errorf("%w (landing lugar %d periodo %d)", err, l.placeFk, p.periodFk)
+			}
+			if ok {
 				if err := q.InsertLanding(ctx, queries.InsertLandingParams{
 					LandingFlightFk: flightSk, LandingPersonFk: person,
 					LandingPlaceFk: l.placeFk, LandingPeriodFk: p.periodFk, LandingQty: qty,
@@ -342,7 +389,11 @@ func insertDv(ctx context.Context, q *queries.Queries, flightSk int32, dv DvData
 		{periodGvn, dv.PersonHour.HGvn},
 	}
 	for _, p := range periods {
-		if h, ok := parseFloatNonZero(p.raw); ok {
+		h, ok, err := parseOptionalFloat(p.raw)
+		if err != nil {
+			return fmt.Errorf("%w (dv person_hour periodo %d)", err, p.periodFk)
+		}
+		if ok {
 			if err := q.InsertPersonHour(ctx, queries.InsertPersonHourParams{
 				PersonHourFlightFk: flightSk, PersonHourPersonFk: person,
 				PersonHourPeriodFk: p.periodFk, PersonHourHourQty: numericFromFloat(h),
@@ -352,7 +403,9 @@ func insertDv(ctx context.Context, q *queries.Queries, flightSk int32, dv DvData
 		}
 	}
 
-	if h, ok := parseFloatNonZero(dv.WtHour); ok {
+	if h, ok, err := parseOptionalFloat(dv.WtHour); err != nil {
+		return fmt.Errorf("%w (wt)", err)
+	} else if ok {
 		if err := q.InsertWtHour(ctx, queries.InsertWtHourParams{
 			WtHourFlightFk: flightSk, WtHourPersonFk: person,
 			WtHourQty: numericFromFloat(h),
@@ -369,7 +422,11 @@ func insertDv(ctx context.Context, q *queries.Queries, flightSk int32, dv DvData
 		{projectileMag58, dv.Projectile.Mag58},
 	}
 	for _, p := range projs {
-		if qty, ok := parseIntNonZero(p.raw); ok {
+		qty, ok, err := parseOptionalInt(p.raw)
+		if err != nil {
+			return fmt.Errorf("%w (projectile tipo %d)", err, p.typeFk)
+		}
+		if ok {
 			if err := q.InsertProjectile(ctx, queries.InsertProjectileParams{
 				ProjectileFlightFk: flightSk, ProjectilePersonFk: person,
 				ProjectileTypeFk: p.typeFk, ProjectileQty: qty,
@@ -418,7 +475,10 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 		return ListResult{}, err
 	}
 	if p.Limit <= 0 {
-		p.Limit = 10
+		p.Limit = defaultListLimit
+	}
+	if p.Limit > maxListLimit {
+		p.Limit = maxListLimit
 	}
 
 	q := queries.New(s.pool)
@@ -451,154 +511,241 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 		flightSks = append(flightSks, r.FlightSk)
 	}
 
-	// Bulk fetch de todas las dimensiones.
-	crew, err := q.FlightCrew(ctx, flightSks)
+	children, err := fetchChildren(ctx, q, flightSks)
 	if err != nil {
 		return ListResult{}, err
 	}
-	pHours, _ := q.FlightPersonHours(ctx, flightSks)
-	gvn, _ := q.FlightGvntypeHours(ctx, flightSks)
-	ift, _ := q.FlightIftHours(ctx, flightSks)
-	instr, _ := q.FlightInstructorHours(ctx, flightSks)
-	formation, _ := q.FlightFormationHours(ctx, flightSks)
-	apps, _ := q.FlightApproaches(ctx, flightSks)
-	landings, _ := q.FlightLandings(ctx, flightSks)
-	wt, _ := q.FlightWtHours(ctx, flightSks)
-	proj, _ := q.FlightProjectiles(ctx, flightSks)
-	paps, _ := q.FlightPapeletas(ctx, flightSks)
-	cupos, _ := q.FlightCupos(ctx, flightSks)
-	capbas, _ := q.FlightCapbas(ctx, flightSks)
-	pax, _ := q.FlightPassengers(ctx, flightSks)
+	idx := indexChildren(children)
+	return ListResult{Items: assembleItems(rows, idx), TotalCount: total}, nil
+}
 
-	// Indexar por (flight, person).
-	type fp struct{ f, p int32 }
-	personHours := map[fp]map[int32]float64{}
-	for _, r := range pHours {
+// ===== LIST helpers: fetch → index → assemble =====
+
+// flightChildren agrupa las filas hijas crudas de todos los vuelos de la
+// página: una slice por tabla, cada una de un único bulk-fetch por flight_sk.
+type flightChildren struct {
+	crew      []queries.FlightCrewRow
+	personH   []queries.FlightPersonHoursRow
+	gvn       []queries.FlightGvntypeHoursRow
+	ift       []queries.FlightIftHoursRow
+	instr     []queries.FlightInstructorHoursRow
+	formation []queries.FlightFormationHoursRow
+	apps      []queries.FlightApproachesRow
+	landings  []queries.FlightLandingsRow
+	wt        []queries.FlightWtHoursRow
+	proj      []queries.FlightProjectilesRow
+	paps      []queries.FlightPapeletasRow
+	cupos     []queries.FlightCuposRow
+	capbas    []queries.FlightCapbasRow
+	pax       []queries.FlightPassengersRow
+}
+
+// fetchChildren hace un bulk-fetch por tabla hija para todos los flights de la
+// página. Propaga el primer error: una query hija que falle aborta el listado
+// en lugar de devolver un vuelo silenciosamente incompleto como 200 OK.
+func fetchChildren(ctx context.Context, q *queries.Queries, flightSks []int32) (flightChildren, error) {
+	var ch flightChildren
+	var err error
+	if ch.crew, err = q.FlightCrew(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight crew: %w", err)
+	}
+	if ch.personH, err = q.FlightPersonHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight person hours: %w", err)
+	}
+	if ch.gvn, err = q.FlightGvntypeHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight gvntype hours: %w", err)
+	}
+	if ch.ift, err = q.FlightIftHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight ift hours: %w", err)
+	}
+	if ch.instr, err = q.FlightInstructorHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight instructor hours: %w", err)
+	}
+	if ch.formation, err = q.FlightFormationHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight formation hours: %w", err)
+	}
+	if ch.apps, err = q.FlightApproaches(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight approaches: %w", err)
+	}
+	if ch.landings, err = q.FlightLandings(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight landings: %w", err)
+	}
+	if ch.wt, err = q.FlightWtHours(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight wt hours: %w", err)
+	}
+	if ch.proj, err = q.FlightProjectiles(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight projectiles: %w", err)
+	}
+	if ch.paps, err = q.FlightPapeletas(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight papeletas: %w", err)
+	}
+	if ch.cupos, err = q.FlightCupos(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight cupos: %w", err)
+	}
+	if ch.capbas, err = q.FlightCapbas(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight capbas: %w", err)
+	}
+	if ch.pax, err = q.FlightPassengers(ctx, flightSks); err != nil {
+		return ch, fmt.Errorf("flight passengers: %w", err)
+	}
+	return ch, nil
+}
+
+type gvnPair struct{ iit, anvis float64 }
+
+// indexedChildren son las filas hijas ya indexadas por (flight, person) o por
+// flight, listas para ensamblar cada FlightItem sin re-recorrer slices.
+type indexedChildren struct {
+	personHours map[fp]map[int32]float64
+	gvn         map[fp]gvnPair
+	ift         map[fp]float64
+	instr       map[fp]float64
+	formation   map[fp]map[int32]float64
+	apps        map[fp]map[int32]int32
+	landings    map[fp]map[pp]int32
+	wt          map[fp]float64
+	proj        map[fp]map[int32]int32
+	paps        map[fp][]PapeletaJSON
+	cupos       map[int32][]CupoJSON
+	capbas      map[int32][]CapbaJSON
+	pax         map[int32][]PasajeroJSON
+	crew        map[int32][]queries.FlightCrewRow
+}
+
+// indexChildren agrupa las filas hijas por (flight, person) o por flight.
+func indexChildren(ch flightChildren) indexedChildren {
+	idx := indexedChildren{
+		personHours: map[fp]map[int32]float64{},
+		gvn:         map[fp]gvnPair{},
+		ift:         map[fp]float64{},
+		instr:       map[fp]float64{},
+		formation:   map[fp]map[int32]float64{},
+		apps:        map[fp]map[int32]int32{},
+		landings:    map[fp]map[pp]int32{},
+		wt:          map[fp]float64{},
+		proj:        map[fp]map[int32]int32{},
+		paps:        map[fp][]PapeletaJSON{},
+		cupos:       map[int32][]CupoJSON{},
+		capbas:      map[int32][]CapbaJSON{},
+		pax:         map[int32][]PasajeroJSON{},
+		crew:        map[int32][]queries.FlightCrewRow{},
+	}
+	for _, r := range ch.personH {
 		key := fp{r.FlightSk, r.PersonSk}
-		if personHours[key] == nil {
-			personHours[key] = map[int32]float64{}
+		if idx.personHours[key] == nil {
+			idx.personHours[key] = map[int32]float64{}
 		}
-		personHours[key][r.PeriodFk] = numericToFloat(r.Qty)
+		idx.personHours[key][r.PeriodFk] = numericToFloat(r.Qty)
 	}
-	gvnByFP := map[fp]struct{ iit, anvis float64 }{}
-	for _, r := range gvn {
-		gvnByFP[fp{r.FlightSk, r.PersonSk}] = struct{ iit, anvis float64 }{numericToFloat(r.Iit), numericToFloat(r.Anvis)}
+	for _, r := range ch.gvn {
+		idx.gvn[fp{r.FlightSk, r.PersonSk}] = gvnPair{numericToFloat(r.Iit), numericToFloat(r.Anvis)}
 	}
-	iftByFP := map[fp]float64{}
-	for _, r := range ift {
-		iftByFP[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
+	for _, r := range ch.ift {
+		idx.ift[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
 	}
-	instrByFP := map[fp]float64{}
-	for _, r := range instr {
-		instrByFP[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
+	for _, r := range ch.instr {
+		idx.instr[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
 	}
-	formationByFPP := map[fp]map[int32]float64{}
-	for _, r := range formation {
+	for _, r := range ch.formation {
 		key := fp{r.FlightSk, r.PersonSk}
-		if formationByFPP[key] == nil {
-			formationByFPP[key] = map[int32]float64{}
+		if idx.formation[key] == nil {
+			idx.formation[key] = map[int32]float64{}
 		}
-		formationByFPP[key][r.PeriodFk] = numericToFloat(r.Qty)
+		idx.formation[key][r.PeriodFk] = numericToFloat(r.Qty)
 	}
-	appsByFP := map[fp]map[int32]int32{}
-	for _, r := range apps {
+	for _, r := range ch.apps {
 		key := fp{r.FlightSk, r.PersonSk}
-		if appsByFP[key] == nil {
-			appsByFP[key] = map[int32]int32{}
+		if idx.apps[key] == nil {
+			idx.apps[key] = map[int32]int32{}
 		}
-		appsByFP[key][r.TypeFk] = r.Qty
+		idx.apps[key][r.TypeFk] = r.Qty
 	}
-	landingsByFP := map[fp]map[pp]int32{}
-	for _, r := range landings {
+	for _, r := range ch.landings {
 		key := fp{r.FlightSk, r.PersonSk}
-		if landingsByFP[key] == nil {
-			landingsByFP[key] = map[pp]int32{}
+		if idx.landings[key] == nil {
+			idx.landings[key] = map[pp]int32{}
 		}
-		landingsByFP[key][pp{r.PlaceFk, r.PeriodFk}] = r.Qty
+		idx.landings[key][pp{r.PlaceFk, r.PeriodFk}] = r.Qty
 	}
-	wtByFP := map[fp]float64{}
-	for _, r := range wt {
-		wtByFP[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
+	for _, r := range ch.wt {
+		idx.wt[fp{r.FlightSk, r.PersonSk}] = numericToFloat(r.Qty)
 	}
-	projByFP := map[fp]map[int32]int32{}
-	for _, r := range proj {
+	for _, r := range ch.proj {
 		key := fp{r.FlightSk, r.PersonSk}
-		if projByFP[key] == nil {
-			projByFP[key] = map[int32]int32{}
+		if idx.proj[key] == nil {
+			idx.proj[key] = map[int32]int32{}
 		}
-		projByFP[key][r.TypeFk] = r.Qty
+		idx.proj[key][r.TypeFk] = r.Qty
 	}
-	papsByFP := map[fp][]PapeletaJSON{}
-	for _, r := range paps {
+	for _, r := range ch.paps {
 		key := fp{r.FlightSk, r.PersonSk}
-		papsByFP[key] = append(papsByFP[key], PapeletaJSON{
+		idx.paps[key] = append(idx.paps[key], PapeletaJSON{
 			Nombre: r.Nombre, Descripcion: r.Descripcion, Periodo: r.Periodo,
 		})
 	}
-	cuposByFlight := map[int32][]CupoJSON{}
-	for _, r := range cupos {
-		cuposByFlight[r.FlightSk] = append(cuposByFlight[r.FlightSk], CupoJSON{
+	for _, r := range ch.cupos {
+		idx.cupos[r.FlightSk] = append(idx.cupos[r.FlightSk], CupoJSON{
 			Autoridad: r.Autoridad, Horas: numericToFloat(r.Horas),
 		})
 	}
-	capbasByFlight := map[int32][]CapbaJSON{}
-	for _, r := range capbas {
-		capbasByFlight[r.FlightSk] = append(capbasByFlight[r.FlightSk], CapbaJSON{
+	for _, r := range ch.capbas {
+		idx.capbas[r.FlightSk] = append(idx.capbas[r.FlightSk], CapbaJSON{
 			Capba: r.Capba, Horas: numericToFloat(r.Horas),
 		})
 	}
-	paxByFlight := map[int32][]PasajeroJSON{}
-	for _, r := range pax {
-		paxByFlight[r.FlightSk] = append(paxByFlight[r.FlightSk], PasajeroJSON{
+	for _, r := range ch.pax {
+		idx.pax[r.FlightSk] = append(idx.pax[r.FlightSk], PasajeroJSON{
 			Tipo: r.Tipo, Cantidad: r.Cantidad, Ruta: r.Ruta,
 		})
 	}
-	crewByFlight := map[int32][]queries.FlightCrewRow{}
-	for _, c := range crew {
-		crewByFlight[c.FlightSk] = append(crewByFlight[c.FlightSk], c)
+	for _, c := range ch.crew {
+		idx.crew[c.FlightSk] = append(idx.crew[c.FlightSk], c)
 	}
+	return idx
+}
 
+// assembleItems compone el JSON anidado (pilotos / dotaciones / cupos…) por
+// vuelo a partir de las filas indexadas.
+func assembleItems(rows []queries.ListFlightsRow, idx indexedChildren) []FlightItem {
 	items := make([]FlightItem, 0, len(rows))
 	for _, r := range rows {
-		// Pilotos vs dotaciones
 		var pilotos []PilotoJSON
 		var dotaciones []DotacionJSON
-		for _, c := range crewByFlight[r.FlightSk] {
+		for _, c := range idx.crew[r.FlightSk] {
 			key := fp{r.FlightSk, c.PersonSk}
 			nk := ""
 			if c.PersonNk != nil {
 				nk = *c.PersonNk
 			}
 			if c.PersonRol == "Piloto" {
-				ph := personHours[key]
-				gh := gvnByFP[key]
-				ap := appsByFP[key]
-				fm := formationByFPP[key]
-				gvnTotal := ph[periodGvn]
+				ph := idx.personHours[key]
+				gh := idx.gvn[key]
+				ap := idx.apps[key]
+				fm := idx.formation[key]
 				pilotos = append(pilotos, PilotoJSON{
 					Nombre: c.Nombre, Nk: nk, Orden: c.OrderPosition,
 					HoraVueloPiloto: HVPilotoJSON{
 						Dia: ph[periodDay], Noche: ph[periodNight],
-						Gvn:          GvnSubJSON{Total: gvnTotal, Iit: gh.iit, Anvis: gh.anvis},
-						Instrumentos: iftByFP[key], Instructor: instrByFP[key],
+						Gvn:          GvnSubJSON{Total: ph[periodGvn], Iit: gh.iit, Anvis: gh.anvis},
+						Instrumentos: idx.ift[key], Instructor: idx.instr[key],
 						FormacionDia: fm[periodDay], FormacionGvn: fm[periodGvn],
 					},
-					Tomas:               buildTomas(landingsByFP[key]),
+					Tomas:               buildTomas(idx.landings[key]),
 					AproximacionesInstr: ApsInstrJSON{Precision: ap[appPrecision], NoPrecision: ap[appNoPrecision]},
 					AproximacionesSar:   ApsSarJSON{Td: ap[appTd], Sp: ap[appSp]},
-					Papeletas:           orEmptyPap(papsByFP[key]),
+					Papeletas:           orEmpty(idx.paps[key]),
 				})
 			} else {
-				ph := personHours[key]
-				pr := projByFP[key]
+				ph := idx.personHours[key]
+				pr := idx.proj[key]
 				dotaciones = append(dotaciones, DotacionJSON{
 					Nombre: c.Nombre, Nk: nk, Orden: c.OrderPosition,
 					HoraVueloDotacion: HVDotacionJSON{
 						Dia: ph[periodDay], Noche: ph[periodNight],
-						Gvn: ph[periodGvn], WinchTrim: wtByFP[key],
+						Gvn: ph[periodGvn], WinchTrim: idx.wt[key],
 					},
 					Proyectiles: ProyectilesJSON{M3M: pr[projectileM3M], Mag58: pr[projectileMag58]},
-					Papeletas:   orEmptyPap(papsByFP[key]),
+					Papeletas:   orEmpty(idx.paps[key]),
 				})
 			}
 		}
@@ -615,16 +762,16 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 			Horas:       numericToFloat(r.FlightTotalHours),
 			Detalles: FlightDetails{
 				Tripulacion: Tripulacion{
-					Pilotos:    orEmptyPilotos(pilotos),
-					Dotaciones: orEmptyDotaciones(dotaciones),
+					Pilotos:    orEmpty(pilotos),
+					Dotaciones: orEmpty(dotaciones),
 				},
-				CuposAutoridad:     orEmptyCupos(cuposByFlight[r.FlightSk]),
-				CapacidadesBasicas: orEmptyCapbas(capbasByFlight[r.FlightSk]),
-				Pasajeros:          orEmptyPasajeros(paxByFlight[r.FlightSk]),
+				CuposAutoridad:     orEmpty(idx.cupos[r.FlightSk]),
+				CapacidadesBasicas: orEmpty(idx.capbas[r.FlightSk]),
+				Pasajeros:          orEmpty(idx.pax[r.FlightSk]),
 			},
 		})
 	}
-	return ListResult{Items: items, TotalCount: total}, nil
+	return items
 }
 
 func buildTomas(m map[pp]int32) TomasJSON {
@@ -679,33 +826,41 @@ func parseOptionalDates(from, to string) (pgtype.Date, pgtype.Date, error) {
 	return df, dt, nil
 }
 
-func parseFloat(s string) (float64, bool) {
+// parseOptionalFloat interpreta un campo de horas opcional del formulario.
+// Distingue tres casos en vez de tragarse el dato inválido como cero:
+//   - "" (en blanco)               → (0, false, nil): se omite la fila.
+//   - número válido >= 0           → (v, v>0, nil): el bool indica si se inserta.
+//   - texto no numérico o negativo → error de validación (aborta el insert).
+func parseOptionalFloat(s string) (float64, bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return 0, false
+		return 0, false, nil
 	}
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		return 0, false
+		return 0, false, fmt.Errorf("%w: %q no es un número válido", ErrInvalidInput, s)
 	}
-	return f, true
+	if f < 0 {
+		return 0, false, fmt.Errorf("%w: %q no puede ser negativo", ErrInvalidInput, s)
+	}
+	return f, f > 0, nil
 }
 
-func parseFloatNonZero(s string) (float64, bool) {
-	f, ok := parseFloat(s)
-	return f, ok && f > 0
-}
-
-func parseIntNonZero(s string) (int32, bool) {
+// parseOptionalInt es el equivalente para conteos enteros (>= 0): tomas,
+// aproximaciones, proyectiles, pasajeros.
+func parseOptionalInt(s string) (int32, bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return 0, false
+		return 0, false, nil
 	}
 	n, err := strconv.ParseInt(s, 10, 32)
-	if err != nil || n <= 0 {
-		return 0, false
+	if err != nil {
+		return 0, false, fmt.Errorf("%w: %q no es un entero válido", ErrInvalidInput, s)
 	}
-	return int32(n), true
+	if n < 0 {
+		return 0, false, fmt.Errorf("%w: %q no puede ser negativo", ErrInvalidInput, s)
+	}
+	return int32(n), n > 0, nil
 }
 
 func numericFromFloat(f float64) pgtype.Numeric {
@@ -743,44 +898,11 @@ func microsToHHMM(us int64) string {
 	return fmt.Sprintf("%02d:%02d", h, m)
 }
 
-func orEmptyPap(s []PapeletaJSON) []PapeletaJSON {
+// orEmpty normaliza un slice nil a uno vacío para que el JSON serialice [] en
+// lugar de null.
+func orEmpty[T any](s []T) []T {
 	if s == nil {
-		return []PapeletaJSON{}
-	}
-	return s
-}
-
-func orEmptyPilotos(s []PilotoJSON) []PilotoJSON {
-	if s == nil {
-		return []PilotoJSON{}
-	}
-	return s
-}
-
-func orEmptyDotaciones(s []DotacionJSON) []DotacionJSON {
-	if s == nil {
-		return []DotacionJSON{}
-	}
-	return s
-}
-
-func orEmptyCupos(s []CupoJSON) []CupoJSON {
-	if s == nil {
-		return []CupoJSON{}
-	}
-	return s
-}
-
-func orEmptyCapbas(s []CapbaJSON) []CapbaJSON {
-	if s == nil {
-		return []CapbaJSON{}
-	}
-	return s
-}
-
-func orEmptyPasajeros(s []PasajeroJSON) []PasajeroJSON {
-	if s == nil {
-		return []PasajeroJSON{}
+		return []T{}
 	}
 	return s
 }

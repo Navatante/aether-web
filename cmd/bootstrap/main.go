@@ -1,5 +1,11 @@
 // Bootstrap: configura la contraseña y/o el nivel de permiso de un usuario existente.
 //
+// Es una herramienta de administración: fija la contraseña TAL CUAL, sin aplicar
+// la política de la app (longitud mínima, no-default) ni marcar
+// person_password_must_change. A diferencia de un alta o un reseteo del
+// Superusuario, la cuenta NO queda forzada a cambiar la contraseña en el
+// siguiente login. Pensado para crear el primer Superusuario o recuperar acceso.
+//
 // Uso:
 //
 //	go run ./cmd/bootstrap -user jcarm20                          # contraseña por stdin (con eco)

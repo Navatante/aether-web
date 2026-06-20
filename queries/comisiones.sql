@@ -144,6 +144,15 @@ SELECT comision_start_date, comision_end_date
 FROM detall.comision
 WHERE comision_sk = $1 AND comision_escuadrilla_fk = $2;
 
+-- name: PersonsInEscuadrilla :many
+-- De entre los person_sk dados, devuelve los que pertenecen a la escuadrilla.
+-- Sirve para validar en el bulk-assign que no se asignan personas de otra
+-- escuadrilla (los person_sk vienen del cliente y no están acotados de otro modo).
+SELECT person_sk
+FROM detall.person
+WHERE person_sk = ANY($1::int[])
+  AND person_escuadrilla_fk = $2;
+
 -- name: PersonFullName :one
 -- Para mensajes de error en bulk assign.
 SELECT

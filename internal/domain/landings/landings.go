@@ -7,7 +7,6 @@ package landings
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +16,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/daterange"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -32,100 +32,33 @@ type Request struct {
 }
 
 // ============================================================
-// Range parser (espejo de dashboard.ResolveRange, sin acoplar)
+// Range parser (adaptador sobre internal/daterange)
 // ============================================================
 
-// defaultHistoricStart es el ancla de respaldo para el rango "histórico"
-// cuando no se puede leer escuadrilla_creation_date (no debería ocurrir).
-var defaultHistoricStart = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+// defaultHistoricStart es el ancla de respaldo para el rango "histórico".
+// Fuente única: daterange.DefaultHistoricStart.
+var defaultHistoricStart = daterange.DefaultHistoricStart
 
 type dateRange struct{ from, to time.Time }
 
+// resolveRange adapta el Request a internal/daterange: modo custom si viene
+// alguna de las dos fechas (ambas obligatorias), si no clave predefinida.
 func resolveRange(req Request, today, historicStart time.Time) (dateRange, error) {
-	if today.IsZero() {
-		today = time.Now().UTC()
-	}
-	today = startOfDay(today)
-
-	// 1) Custom — ambos o nada
 	if req.CustomStartDate != "" || req.CustomEndDate != "" {
 		if req.CustomStartDate == "" || req.CustomEndDate == "" {
 			return dateRange{}, errors.New("custom_start_date y custom_end_date deben ir juntos")
 		}
-		from, err := time.Parse("2006-01-02", req.CustomStartDate)
+		r, err := daterange.Custom(req.CustomStartDate, req.CustomEndDate)
 		if err != nil {
-			return dateRange{}, fmt.Errorf("custom_start_date inválido: %w", err)
+			return dateRange{}, err
 		}
-		to, err := time.Parse("2006-01-02", req.CustomEndDate)
-		if err != nil {
-			return dateRange{}, fmt.Errorf("custom_end_date inválido: %w", err)
-		}
-		if from.After(to) {
-			return dateRange{}, errors.New("custom_start_date posterior a custom_end_date")
-		}
-		return dateRange{from: from, to: to}, nil
+		return dateRange{from: r.From, to: r.To}, nil
 	}
-
-	// 2) Predefined
-	key := req.TimeRange
-	if key == "" {
-		key = "ultimos-7-dias"
+	r, err := daterange.Predefined(req.TimeRange, today, historicStart)
+	if err != nil {
+		return dateRange{}, err
 	}
-	switch key {
-	case "ultimos-7-dias":
-		return dateRange{today.AddDate(0, 0, -6), today}, nil
-	case "ultimos-30-dias":
-		return dateRange{today.AddDate(0, 0, -29), today}, nil
-	case "ultimos-90-dias":
-		return dateRange{today.AddDate(0, 0, -89), today}, nil
-	case "ultimos-182-dias":
-		return dateRange{today.AddDate(0, 0, -181), today}, nil
-	case "ultimos-365-dias":
-		return dateRange{today.AddDate(0, 0, -364), today}, nil
-	case "semana-actual":
-		return dateRange{mondayOf(today), today}, nil
-	case "ultima-semana":
-		mon := mondayOf(today).AddDate(0, 0, -7)
-		return dateRange{mon, mon.AddDate(0, 0, 6)}, nil
-	case "mes-actual":
-		return dateRange{firstOfMonth(today), today}, nil
-	case "ultimo-mes":
-		return dateRange{firstOfMonth(today).AddDate(0, -1, 0), firstOfMonth(today).AddDate(0, 0, -1)}, nil
-	case "ultimos-3-meses":
-		return dateRange{firstOfMonth(today).AddDate(0, -3, 0), firstOfMonth(today).AddDate(0, 0, -1)}, nil
-	case "anio-actual":
-		return dateRange{time.Date(today.Year(), 1, 1, 0, 0, 0, 0, today.Location()), today}, nil
-	case "ultimo-anio":
-		y := today.Year() - 1
-		return dateRange{
-			time.Date(y, 1, 1, 0, 0, 0, 0, today.Location()),
-			time.Date(y, 12, 31, 0, 0, 0, 0, today.Location()),
-		}, nil
-	case "ultimos-2-anios":
-		return dateRange{
-			time.Date(today.Year()-2, 1, 1, 0, 0, 0, 0, today.Location()),
-			time.Date(today.Year()-1, 12, 31, 0, 0, 0, 0, today.Location()),
-		}, nil
-	case "historico":
-		return dateRange{historicStart, today}, nil
-	}
-	return dateRange{}, fmt.Errorf("time_range desconocido: %q", key)
-}
-
-func startOfDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-}
-
-func firstOfMonth(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
-}
-
-func mondayOf(t time.Time) time.Time {
-	wd := int(t.Weekday())
-	if wd == 0 {
-		wd = 7
-	}
-	return t.AddDate(0, 0, -(wd - 1))
+	return dateRange{from: r.From, to: r.To}, nil
 }
 
 // ============================================================
