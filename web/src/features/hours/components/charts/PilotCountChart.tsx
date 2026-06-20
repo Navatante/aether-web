@@ -79,7 +79,6 @@ export default function PilotCountChart<T extends { person_nk: string }>({
                             strokeWidth={2}
                             dot={{ fill: `var(--color-${s.key})`, r: 3, strokeWidth: 0 }}
                             activeDot={{ r: 4 }}
-                            isAnimationActive={false}
                         />
                     ))}
                 </LineChart>
