@@ -14,7 +14,7 @@ PG_ADMIN_DB   ?= postgres
 # BD destino que vamos a tirar y recrear.
 PG_TARGET_DB  ?= aether
 # Última versión de migración que NO depende de personas (las posteriores se aplican tras load-sqlite).
-SCHEMA_CUTOFF ?= 3
+SCHEMA_CUTOFF ?= 2
 # Usuario jon para dev (debe existir en SQLite tras load-sqlite).
 DEV_USER      ?= jon
 DEV_PASSWORD  ?= 1234
@@ -93,14 +93,14 @@ migrate-down:
 	migrate -path migrations -database "$(DATABASE_URL)" down 1
 
 # Carga datos productivos desde database-utils/Aether.db al PostgreSQL apuntado por $DATABASE_URL.
-# Requiere haber aplicado migraciones 0001-0003 (NO 0004 todavía).
+# Requiere haber aplicado migraciones 0001-0002 (NO 0003 todavía).
 load-sqlite:
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)"
 
 # Re-importa desde cero usando un Aether.db actualizado:
 #   1) TRUNCATE (CASCADE) las tablas que carga el script Python
 #   2) recarga desde SQLite
-# El seed productivo (0004) es solo-up y queda como cima de migración, así que
+# El seed productivo (0003) es solo-up y queda como cima de migración, así que
 # aquí no hay migrate down/up. Para un reset total del esquema usa `make dev-rebuild`.
 reload-sqlite:
 	./.venv/bin/python database-utils/migrationSQLiteToPostgres.py --pg-dsn "$(DATABASE_URL)" --truncate
@@ -115,7 +115,7 @@ link-private:
 	ln -sfn $(AETHER_DATA)/Aether.db                                   database-utils/Aether.db
 	ln -sfn $(AETHER_DATA)/person_users.json                           database-utils/person_users.json
 	ln -sfn $(AETHER_DATA)/migrations/0002_seed_lookups.up.sql         migrations/0002_seed_lookups.up.sql
-	ln -sfn $(AETHER_DATA)/migrations/0004_seed_productive_data.up.sql migrations/0004_seed_productive_data.up.sql
+	ln -sfn $(AETHER_DATA)/migrations/0003_seed_productive_data.up.sql migrations/0003_seed_productive_data.up.sql
 	@echo "==> Symlinks privados (re)creados desde $(AETHER_DATA)."
 
 # DROP + CREATE de la BD destino. Mantiene el contenedor PostgreSQL en marcha.
@@ -129,13 +129,13 @@ db-reset:
 
 # Rebuild completo de desarrollo:
 #   1) db-reset             (drop + create de la BD)
-#   2) migraciones 1..N     (esquema + lookups + auth + triggers)
+#   2) migraciones 1..2     (esquema + triggers + lookups)
 #   3) load-sqlite          (carga personas, vuelos, etc. desde Aether.db)
-#   4) migraciones N+1..    (datos productivos que referencian personas)
+#   4) migración 3          (datos productivos que referencian personas)
 #   5) bootstrap admin      (DEV_USER / DEV_PASSWORD, nivel DEV_LEVEL)
 #
 # Sobrescribibles:
-#   make dev-rebuild DEV_USER=otro DEV_PASSWORD=otra DEV_LEVEL=Operacional SCHEMA_CUTOFF=5
+#   make dev-rebuild DEV_USER=otro DEV_PASSWORD=otra DEV_LEVEL=Operacional SCHEMA_CUTOFF=3
 dev-rebuild: db-reset
 	@echo "==> Aplicando migraciones 1..$(SCHEMA_CUTOFF) (esquema)…"
 	migrate -path migrations -database "$(DEV_DATABASE_URL)" goto $(SCHEMA_CUTOFF)
