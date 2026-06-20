@@ -184,9 +184,14 @@ export function UserProvider({ children, onUserLoaded, onError }: UserProviderPr
         state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
         (state.permissionLevel !== null && levels.includes(state.permissionLevel));
 
+    // Restaura la sesión una sola vez al montar. No dependas de la identidad de
+    // refreshUser: con React Compiler (sin useCallback) cambia en cada render, y
+    // un dep [refreshUser] dispararía un bucle infinito (setState -> re-render ->
+    // nueva fn -> efecto -> ...). El intent real es "al montar", así que [].
     useEffect(() => {
         refreshUser();
-    }, [refreshUser]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const value: UserContextType = {
         ...state,
