@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PermissionLevel, useUser } from "@/providers";
+import { useDebouncedValue } from "@/shared/hooks";
 import {
     ActionButton,
     GradientTitle,
@@ -44,21 +45,19 @@ const Comisiones = () => {
     const { hasPermission, escuadrillaId } = useUser();
     const [isPending, startTransition] = useTransition();
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
     const [params, setParamsState] = useState({ limit: 20, offset: 0, comision_sk: null as number | null });
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState(prev => ({ ...prev, ...newParams }));
     };
 
-    // Búsqueda en vivo con debounce (300ms): busca por ID al dejar de teclear
-    // (1 petición por pausa, no por pulsación) y vuelve a la 1ª página.
+    // Búsqueda en vivo (300ms): al dejar de teclear busca por ID y vuelve a la
+    // 1ª página. El debounce lo encapsula useDebouncedValue.
     useEffect(() => {
-        const t = setTimeout(() => {
-            const sk = searchQuery.trim() ? parseInt(searchQuery, 10) : null;
-            setParams({ comision_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
-        }, 300);
-        return () => clearTimeout(t);
-    }, [searchQuery]);
+        const sk = debouncedSearch.trim() ? parseInt(debouncedSearch, 10) : null;
+        setParams({ comision_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
+    }, [debouncedSearch]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.comision_sk != null) query.comision_sk = params.comision_sk;

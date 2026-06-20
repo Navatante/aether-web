@@ -1,7 +1,7 @@
 // Estado, datos y handlers de la página Disponibilidad. La página queda
 // solo con el render; aquí vive el calendario, filtros, festivos y diálogos.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PermissionLevel, useHasPermission, useEscuadrilla, useUser } from '@/providers';
 import { useApiQuery } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
@@ -122,13 +122,9 @@ export function useDisponibilidad() {
     // Estado para el dialog de Festivos
     const [isFestivosDialogOpen, setIsFestivosDialogOpen] = useState<boolean>(false);
 
-
-    // Escuchar evento de refresh desde TopbarMenus
-    useEffect(() => {
-        const handleRefresh = () => refetchAvailability();
-        window.addEventListener('refresh-availability', handleRefresh);
-        return () => window.removeEventListener('refresh-availability', handleRefresh);
-    }, [refetchAvailability]);
+    // El refresco tras registrar una ausencia desde la topbar lo gestiona
+    // TanStack Query: TopbarMenus invalida queryKeys.availability.all(escId) y
+    // esta query (si está montada) se refetchea sola. Sin bus de eventos DOM.
 
     // Crear un Set de fechas festivas para búsqueda rápida O(1)
     const festivosSet = (() => {

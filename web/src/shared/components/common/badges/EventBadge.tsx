@@ -15,7 +15,7 @@ const variants = cva("px-2 py-0.5 rounded text-xs font-medium", {
   defaultVariants: { type: "default" }
 });
 
-type EventType = "mision" | "maniobra-nacional" | "maniobra-internacional" | "pruebas" | "adaptacion" | "adiestramiento" | "default";
+export type EventType = "mision" | "maniobra-nacional" | "maniobra-internacional" | "pruebas" | "adaptacion" | "adiestramiento" | "default";
 
 interface Props extends VariantProps<typeof variants> {
   type: EventType;

@@ -33,7 +33,16 @@ export function useConfirmationDialog(): UseConfirmationDialogReturn {
         confirmation: "",
     });
 
+    // Timer del reset diferido (limpieza tras la animación de cierre): lo
+    // guardamos para poder cancelarlo si el componente se desmonta antes de que
+    // dispare (evita un setState sobre un componente desmontado).
+    const resetTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    React.useEffect(() => () => {
+        if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+    }, []);
+
     const open = (target: ConfirmationTarget) => {
+        if (resetTimer.current !== null) clearTimeout(resetTimer.current);
         setDialog({
             isOpen: true,
             target,
@@ -44,7 +53,11 @@ export function useConfirmationDialog(): UseConfirmationDialogReturn {
     const close = () => {
         setDialog((prev) => ({ ...prev, isOpen: false }));
         // Limpiamos después de la animación (300 ms)
-        setTimeout(() => setDialog({ isOpen: false, target: null, confirmation: "" }), 300);
+        if (resetTimer.current !== null) clearTimeout(resetTimer.current);
+        resetTimer.current = setTimeout(
+            () => setDialog({ isOpen: false, target: null, confirmation: "" }),
+            300,
+        );
     };
 
     const setConfirmation = (text: string) => {

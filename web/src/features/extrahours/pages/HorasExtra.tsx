@@ -2,6 +2,7 @@ import React, { useState, useEffect, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiQuery, useApiMutation } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
 import { useEscuadrilla, PermissionLevel, useUser } from '@/providers';
+import { useDebouncedValue } from '@/shared/hooks';
 import type { PersonTotalsItem, ExtraHourItem } from '@/types/generated/extrahours';
 import {
     ChevronLeft, ChevronRight, ChevronDown, ChevronUp, RefreshCw, Trash2, Pencil,
@@ -67,19 +68,18 @@ const HorasExtra = () => {
     const { id: escId } = useEscuadrilla();
     const [isPending, startTransition] = useTransition();
     const [searchInput, setSearchInput] = useState('');
+    const debouncedSearch = useDebouncedValue(searchInput, 300);
 
     const [params, setParamsState] = useState({ limit: 20, offset: 0, q: '' });
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState((prev) => ({ ...prev, ...newParams }));
     };
 
-    // Búsqueda en vivo con debounce (300ms): filtra al dejar de teclear y vuelve a la 1ª página.
+    // Búsqueda en vivo (300ms): al dejar de teclear filtra y vuelve a la 1ª
+    // página. El debounce lo encapsula useDebouncedValue.
     useEffect(() => {
-        const t = setTimeout(() => {
-            setParamsState((prev) => ({ ...prev, q: searchInput.trim(), offset: 0 }));
-        }, 300);
-        return () => clearTimeout(t);
-    }, [searchInput]);
+        setParamsState((prev) => ({ ...prev, q: debouncedSearch.trim(), offset: 0 }));
+    }, [debouncedSearch]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.q) query.q = params.q;

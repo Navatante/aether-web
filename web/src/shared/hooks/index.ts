@@ -1,6 +1,7 @@
 // Shared hooks barrel export
 export { useConfirmationDialog } from './useConfirmationDialog'
 export type { ConfirmationTarget } from './useConfirmationDialog'
+export { useDebouncedValue } from './useDebouncedValue'
 
 // Lookups (datos de referencia para formularios)
 export {

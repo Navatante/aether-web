@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/menubar"
 
 import {useState} from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/queryKeys"
 
 import { RegisterFlightDialog } from "@/features/flights"
 import { RegisterGroundSchoolDialog } from "@/features/groundschool"
@@ -38,7 +40,8 @@ export function TopbarMenus() {
     const [generateReportOpen, setGenerateReportOpen] = useState(false)
 
     // === CONTEXTO DE USUARIO ===
-    const { hasPermission } = useUser();
+    const { hasPermission, escuadrillaId } = useUser();
+    const queryClient = useQueryClient();
 
     // Permisos derivados para mejor legibilidad
     const canAccessOperacional = hasPermission(PermissionLevel.OPERACIONAL);
@@ -46,8 +49,11 @@ export function TopbarMenus() {
     const canAccessOperacionalAndAdministrativo = canAccessOperacional || canAccessAdministrativo;
 
     // === HANDLERS ===
+    // Tras registrar una ausencia desde la topbar (diálogo global), invalida la
+    // caché de disponibilidad de la escuadrilla: si la página Disponibilidad está
+    // montada, TanStack Query la refetchea sola; si no, se refrescará al montar.
     const handleAbsenceSuccess = () => {
-        window.dispatchEvent(new CustomEvent('refresh-availability'));
+        queryClient.invalidateQueries({ queryKey: queryKeys.availability.all(escuadrillaId ?? 0) });
     };
 
     return (

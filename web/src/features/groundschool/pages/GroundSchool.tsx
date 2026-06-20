@@ -2,6 +2,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiMutation } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
 import { useEscuadrilla, PermissionLevel, useUser } from '@/providers';
+import { useDebouncedValue } from '@/shared/hooks';
 import type { GroundSchoolItem } from '@/types/generated/groundschool';
 import {
     ChevronLeft, ChevronRight, RefreshCw, Trash2,
@@ -31,21 +32,19 @@ const GroundSchool = () => {
     const { id: escId } = useEscuadrilla();
     const [isPending, startTransition] = useTransition();
     const [searchInput, setSearchInput] = useState('');
+    const debouncedSearch = useDebouncedValue(searchInput, 300);
 
     const [params, setParamsState] = useState({ limit: 20, offset: 0, ground_school_sk: null as number | null });
     const setParams = (newParams: Partial<typeof params>) => {
         setParamsState((prev) => ({ ...prev, ...newParams }));
     };
 
-    // Búsqueda en vivo con debounce (300ms): busca por ID al dejar de teclear
-    // (1 petición por pausa, no por pulsación) y vuelve a la 1ª página.
+    // Búsqueda en vivo (300ms): al dejar de teclear busca por ID y vuelve a la
+    // 1ª página. El debounce lo encapsula useDebouncedValue.
     useEffect(() => {
-        const t = setTimeout(() => {
-            const sk = searchInput.trim() ? parseInt(searchInput, 10) : null;
-            setParams({ ground_school_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
-        }, 300);
-        return () => clearTimeout(t);
-    }, [searchInput]);
+        const sk = debouncedSearch.trim() ? parseInt(debouncedSearch, 10) : null;
+        setParams({ ground_school_sk: sk != null && !Number.isNaN(sk) ? sk : null, offset: 0 });
+    }, [debouncedSearch]);
 
     const query: Record<string, string | number> = { limit: params.limit, offset: params.offset };
     if (params.ground_school_sk != null) query.ground_school_sk = params.ground_school_sk;

@@ -1,10 +1,11 @@
 // shared/components/layout/MainLayout.tsx
 import { Suspense } from "react"
-import { Outlet } from "react-router-dom"
+import { Outlet, useLocation } from "react-router-dom"
 import { Loader2 } from "lucide-react"
 import { Topbar } from "./Topbar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "./AppSidebar"
+import { ErrorBoundary } from "@/shared/components/common"
 
 function MemoizedOutlet() {
     return <Outlet />
@@ -20,6 +21,7 @@ function ContentLoader() {
 }
 
 export function MainLayout() {
+    const location = useLocation()
     return (
         <div className="flex h-screen flex-col overflow-hidden">
             {/* Topbar arriba del toddo */}
@@ -30,9 +32,13 @@ export function MainLayout() {
                 <div className="flex flex-1 overflow-hidden">
                     <AppSidebar />
                     <main className="flex-1 overflow-hidden">
-                        <Suspense fallback={<ContentLoader />}>
-                            <MemoizedOutlet />
-                        </Suspense>
+                        {/* Boundary por ruta: un error de render en una página no tumba
+                            topbar/sidebar; `key` lo reinicia al navegar a otra ruta. */}
+                        <ErrorBoundary key={location.pathname} context="MainLayout">
+                            <Suspense fallback={<ContentLoader />}>
+                                <MemoizedOutlet />
+                            </Suspense>
+                        </ErrorBoundary>
                     </main>
                 </div>
             </SidebarProvider>

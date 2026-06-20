@@ -9,6 +9,7 @@ export * from './TableRow'
 export * from './DetailsRow'
 export * from './SearchInput'
 export * from './ActionButton'
+export * from './ErrorBoundary'
 
 export * from './DateTimePicker'
 export * from './DatePicker'
