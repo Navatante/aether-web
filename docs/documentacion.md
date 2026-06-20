@@ -1167,3 +1167,12 @@ Cuatro jobs en cada push/PR:
 ---
 
 > **Cómo seguir desde aquí.** Lee de corrido un dominio backend completo (`festivos` es el más corto) y su feature frontend (`personnel`), con este manual al lado. Cuando quieras *hacer* algo concreto (añadir un endpoint, una columna, un lookup), las recetas paso a paso están en `docs/ARQUITECTURA.md §11` y en `web/CLAUDE.md`. Las reglas que **no** debes saltarte (RGPD, código generado, migraciones, contrato de errores, permisos) están en el `CLAUDE.md` raíz.
+
+### Cambio de escuadrilla de una persona (semántica "el pasado se queda donde se voló")
+
+Una persona puede cambiar de escuadrilla. **No hay UI para ello** (la RLS-por-código encierra incluso al Superusuario en su escuadrilla): es un `UPDATE detall.person SET person_escuadrilla_fk` **manual en BD**. `person_escuadrilla_fk` es la escuadrilla **actual** (un único valor mutable). Reglas del modelo elegido:
+
+- **El registro histórico se queda donde se generó.** Los datos "sellados" con su propia `*_escuadrilla_fk` (vuelos, comisiones, ausencias, calificaciones, papeletas, aeronaves…) **no se mueven nunca**.
+- **La persona desaparece de la escuadrilla antigua.** Todos los informes basan su *roster* en `person_escuadrilla_fk` actual, así que tras el cambio la persona solo aparece en la nueva.
+- **Horas de vuelo — vista doble** (`queries/hours.sql`, `NH90PeriodHours`, flag `$5` = modo "Totales"): por escuadrilla (`$5=false`) cuenta solo vuelos de la escuadrilla actual y horas extra del modelo propio en rango; Totales (`$5=true`) cruza escuadrillas e ignora el rango de fechas (histórico vitalicio), sumando horas extra de otros modelos. Es una exención acotada a la RLS-por-código: solo expone datos *propios* de personas del roster actual. Mismo patrón `$5` en `CtaHours`/`IftHours`.
+- **Comisión y esfuerzo siguen a la persona y acumulan** (ya son person-centric). `operations.extra_hour` (tabla unificada de horas extra) es person-centric (sin `escuadrilla_fk`).

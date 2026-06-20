@@ -1,90 +1,77 @@
-# Aether-Web
+# CLAUDE.md
 
-Gestión de operaciones de vuelo de una escuadrilla de helicópteros: vuelos, horas, calificaciones, papeletas, ausencias y comisiones. App cliente-servidor en intranet: backend Go (Echo + sqlc + pgx) con la SPA React (Vite + TanStack Query + Radix) embebida vía `go:embed`, sobre PostgreSQL. Un único desarrollador.
+Aether-Web manages flight operations for a helicopter squadron. Client-server app on an intranet: Go backend (Echo + sqlc + pgx) with the React SPA (Vite + TanStack Query + Base UI) embedded via `go:embed`, on top of PostgreSQL. **Public** repo (MIT), single developer.
 
-Guía extensa (walkthroughs, setup paso a paso, despliegue, glosario): `docs/ARQUITECTURA.md`.
+## Commands
 
-## Comandos
-
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `make run` | Backend en `:8080` (requiere `AETHER_DATABASE_URL`). |
-| `cd web && npm run dev` | Frontend en `:5173`, proxy `/api` → `:8080`. |
-| `make test` | Tests Go. Con `AETHER_TEST_DATABASE_URL` corre también los de integración (BD efímera, `internal/testdb`). |
-| `make sqlc` | Regenera `internal/queries/` tras tocar `queries/*.sql`. |
-| `make types` | Regenera `web/src/types/generated/` (tygo) tras tocar DTOs Go. CI falla si está desactualizado. |
+| `make run` | Backend on `:8080` (requires `AETHER_DATABASE_URL`). |
+| `make dev` | Starts Postgres (docker), frontend in a separate window, and backend in this terminal. |
+| `cd web && npm run dev` | Frontend on `:5173`, proxy `/api` → `:8080`. |
+| `make test` | Go tests. With `AETHER_TEST_DATABASE_URL` also runs integration tests (ephemeral DB, `internal/testdb`). |
+| `go test ./internal/auth/ -run TestX` | Single test/package. |
+| `make sqlc` | Regenerates `internal/queries/` after touching `queries/*.sql`. |
+| `make types` | Regenerates `web/src/types/generated/` (tygo) after touching Go DTOs. CI fails if out of date. |
 | `make lint` / `make vet` / `make fmt` | golangci-lint / go vet / gofmt. |
-| `make migrate-up` | Aplica migraciones pendientes (usa `$DATABASE_URL`). |
-| `make dev-rebuild` | BD desde cero: drop+create, migraciones, datos SQLite, admin. |
-| `make build-prod` / `make dist` | Binario de producción con frontend embebido / tarball desplegable. |
+| `make theme-guard` | Fails if there are hardcoded colors in frontend outside `web/src/app/theme.css`. |
+| `make migrate-up` | Applies pending migrations (uses `$DATABASE_URL`). |
+| `make dev-rebuild` | DB from scratch: drop+create, migrations, SQLite data, admin. See `DEV_USER` note in README. |
+| `make build-prod` / `make dist` | Production binary with embedded frontend / deployable tarball. |
 
-BD de desarrollo: contenedor Docker `aether-pg`. DSN típico: `postgres://aether_admin:CHANGEME@127.0.0.1:5432/aether?sslmode=disable` (sirve también para `AETHER_TEST_DATABASE_URL`). Estas credenciales son las que usa `make dev`/`pg-up` (variables `PG_SUPERUSER` / `DEV_DB_PASSWORD` del Makefile).
+Dev database: Docker container `aether-pg`. Typical DSN: `postgres://aether_admin:CHANGEME@127.0.0.1:5432/aether?sslmode=disable` (also works for `AETHER_TEST_DATABASE_URL`). Requirements: Go 1.25+, Node 20+, Docker, `sqlc`, `migrate` (golang-migrate), `tygo`.
 
-## Arquitectura backend
+## Backend Architecture
 
-Cadena por capas: `queries/<dominio>.sql` → sqlc genera `internal/queries/` → `Service` (lógica de negocio) → `Handlers` (HTTP) → Echo.
+Layered chain: `queries/<domain>.sql` → sqlc generates `internal/queries/` → `Service` (business logic) → `Handlers` (HTTP) → Echo.
 
-- Un paquete por dominio en `internal/domain/<dominio>/`. Los grandes (flights, ratings, lookups, comisiones, dashboard) se dividen en `dto.go` (contrato JSON), `service.go` (negocio + sentinel errors) y `handlers.go` (parseo HTTP + `Register(g, authSvc)`); los pequeños lo reúnen todo en un único `<dominio>.go` (festivos, events…). Mismas piezas en ambos casos.
-- Las rutas se registran explícitamente desde `cmd/server/main.go`; si un dominio no se enchufa ahí, sus rutas no existen. No hay descubrimiento mágico.
-- Configuración solo vía `internal/config` (variables `AETHER_*`); no añadir `os.Getenv` en otros sitios. Sin `AETHER_DATABASE_URL` el proceso no arranca.
-- RLS por código: las queries de datos por escuadrilla filtran siempre por `*_escuadrilla_fk` usando el `EscuadrillaID` de la sesión. Un test de guardia (`internal/queryguard/guard_test.go`, corre en `make test`) vigila esto: tras tocar `queries/*.sql`, toda sentencia nueva sobre datos por escuadrilla debe llevar el filtro o exentarse en `exemptBaseline` con su categoría; si no, CI falla.
-- El insert de vuelos es transaccional (~12 tablas hijas) y setea los GUCs `aether.user_id`/`aether.ip_address` para el trigger de auditoría `tr_audit_flight`. Mismo patrón en las escrituras de `persons` (envueltas en tx con esas GUCs vía `withAudit`) para el trigger `tr_audit_person`; este enmascara el hash de contraseña (guarda solo `person_password_hash_present`, nunca el hash). Ambos triggers escriben en `detall.audit_log`.
+- One package per domain in `internal/domain/<domain>/`. Large ones (flights, ratings, lookups, commissions, dashboard) are split into `dto.go` (JSON contract), `service.go` (business logic + sentinel errors), and `handlers.go` (HTTP parsing + `Register(g, authSvc)`); small ones consolidate everything in a single `<domain>.go` (holidays, events…). Same pieces in both cases.
+- Routes are registered explicitly from `cmd/server/main.go`; if a domain isn't wired in there (build handler + `.Register(api, authSvc)`), its routes don't exist. No magic discovery.
+- Configuration only via `internal/config` (`AETHER_*` variables); do not add `os.Getenv` elsewhere. Without `AETHER_DATABASE_URL` the process won't start.
+- Code-level RLS: queries for squadron-scoped data always filter by `*_escuadrilla_fk` using the `EscuadrillaID` from the session. A guard test (`internal/queryguard/guard_test.go`, runs on `make test`) enforces this: after touching `queries/*.sql`, every new statement on squadron-scoped data must carry the filter or be exempted in `exemptBaseline` with its category; otherwise CI fails.
+- The flight insert is transactional (~12 child tables) and sets GUCs `aether.user_id`/`aether.ip_address` for the audit trigger `tr_audit_flight`. Same pattern for `persons` writes (wrapped in tx with those GUCs via `withAudit`) for the trigger `tr_audit_person`; it masks the password hash (stores only `person_password_hash_present`, never the hash). Both triggers write to `detall.audit_log`.
 
-### Cambio de escuadrilla de una persona (semántica "el pasado se queda donde se voló")
 
-Una persona puede cambiar de escuadrilla. **No hay UI para ello** (la RLS-por-código encierra incluso al Superusuario en su escuadrilla): es un `UPDATE detall.person SET person_escuadrilla_fk` **manual en BD**. `person_escuadrilla_fk` es la escuadrilla **actual** (un único valor mutable). Modelo elegido y sus reglas:
+### Error Contract
 
-- **El registro histórico se queda donde se generó.** Los datos "sellados" con su propia `*_escuadrilla_fk` (vuelos, comisiones, ausencias, calificaciones, papeletas, aeronaves…) **no se mueven nunca**; se quedan en la escuadrilla donde ocurrieron.
-- **La persona desaparece de la escuadrilla antigua.** Todos los informes basan su *roster* en `person_escuadrilla_fk` actual, así que tras el cambio la persona solo aparece en la nueva. No se desacopla el roster del histórico.
-- **Horas de vuelo — vista doble** (`queries/hours.sql`, `NH90PeriodHours`, flag `$5` = modo "Totales"):
-  - *Por escuadrilla* (`$5=false`): `person_hour` cuenta **solo vuelos de la escuadrilla actual** (`AND ($5::bool OR f.flight_escuadrilla_fk = $3)`) → "horas voladas aquí, con el helicóptero de esta escuadrilla".
-  - *Totales* (`$5=true`): `person_hour` **cruza escuadrillas** para esa persona (sin filtro de `flight_escuadrilla_fk`) **y además ignora el rango de fechas** (`WHERE ($5::bool OR (f.flight_date BETWEEN $1 AND $2))`) — el histórico vitalicio no se acota ni por escuadrilla ni por fecha (tampoco por `escuadrilla_creation_date`); suma además las horas extra de **otros modelos** (`extra_hours_model_fk` distinto al de la escuadrilla) → histórico completo. Es una **exención acotada a la RLS-por-código**: solo expone datos *propios* de personas del roster actual, nunca de terceros. En modo por-escuadrilla (`$5=false`) solo se suman las horas extra del **modelo de la escuadrilla** (`extra_hours_model_fk = escuadrilla_model_fk`) dentro del rango de fechas. Mismo patrón `$5` en las queries de horas por categoría (`CtaHours`: real/sim del modelo propio en rango, todos los modelos en Totales; `IftHours`: la parte inst de otros modelos solo en Totales — la del modelo propio nunca cuenta en IFT, quirk heredado).
-- **Comisión y esfuerzo siguen a la persona y acumulan** (`queries/comisiones.sql` `DiasComision`, `queries/esfuerzo.sql` `Esfuerzo`): ya son person-centric (roster por `person_escuadrilla_fk` actual, pero las subconsultas `person_comision`→`comision` **no** filtran `comision_escuadrilla_fk`). No requieren cambios al modelo.
-- `operations.extra_hour` (tabla **unificada** de horas extra: lleva `extra_hours_date`, `extra_hours_is_real` real/simulador y `extra_hours_model_fk → operations.aircraft_model`) es **person-centric** (sin `escuadrilla_fk`); no se ve afectada por el filtro por escuadrilla. El "modelo de la escuadrilla" (NH-90) que separa las horas propias de las de otros modelos está en `detall.escuadrilla.escuadrilla_model_fk`.
+- Expected errors (validation, not found, duplicate): domain sentinel error → `echo.NewHTTPError(4xx, safeMessage)` in the handler.
+- Any other error: **return it unwrapped** (`return err`). The central handler (`internal/httpx/errors.go`) logs it with `request_id` and returns a generic 500.
+- **Never** `echo.NewHTTPError(500, err.Error())`: leaks SQL/schema to the client.
 
-Descartadas: (2) re-sellar las FKs para migrar el histórico con la persona; (3) tabla `person_escuadrilla` con vigencias temporales.
+### Permissions (no hierarchy, except Superuser)
 
-### Contrato de errores
+`person_permission_level` ∈ {`Común`, `Operacional`, `Administrativo`, `Seguridad`, `Superusuario`}. This is an **exact allow-list per route** — Administrativo does NOT include Operacional and vice versa. Every write carries `auth.RequirePermission(...)` chained after `auth.RequireAuth(...)`:
 
-- Errores esperables (validación, not found, duplicado): sentinel error del dominio → `echo.NewHTTPError(4xx, mensajeSeguro)` en el handler.
-- Cualquier otro error: **devolverlo sin envolver** (`return err`). El handler central (`internal/httpx/errors.go`) lo loguea con `request_id` y responde un 500 genérico.
-- **Nunca** `echo.NewHTTPError(500, err.Error())`: filtra SQL/esquema al cliente.
-
-### Permisos (sin jerarquía, salvo Superusuario)
-
-`person_permission_level` ∈ {`Común`, `Operacional`, `Administrativo`, `Seguridad`, `Superusuario`}. Es una **allow-list exacta por ruta** — Administrativo NO incluye Operacional ni viceversa. Toda escritura lleva `auth.RequirePermission(...)` encadenado tras `auth.RequireAuth(...)`:
-
-| Escrituras de… | Niveles admitidos |
+| Writes for… | Allowed levels |
 |---|---|
-| Vuelos, papeletas, eventos, lookups de vuelo (aeronaves, lugares) | Operacional |
-| Personal, comisiones, festivos | Administrativo |
-| Ausencias, calificaciones (crew / not-crew) | Operacional o Administrativo |
-| Credenciales y nivel de permiso (panel, su escuadrilla) | Superusuario |
-| Lecturas (GET) | Cualquier autenticado |
+| Flights, slips, events, flight lookups (aircraft, locations) | Operacional |
+| Personnel, commissions, holidays | Administrativo |
+| Absences, ratings (crew / not-crew) | Operacional or Administrativo |
+| Credentials and permission level (panel, own squadron) | Superusuario |
+| Reads (GET) | Any authenticated user |
 
-**Excepción god-mode (acotada a la escuadrilla)**: `Superusuario` es el **único nivel jerárquico** en cuanto a *permisos*: `RequirePermission` lo deja pasar por **cualquier** ruta protegida (bypass centralizado en `internal/auth/middleware.go`), presente o futura, sin listarlo en cada ruta; el frontend espeja esto (`hasPermission`/`canAccess` devuelven `true` para `SUPERUSUARIO`). Pero **NO** rompe la RLS por escuadrilla: igual que todos, opera solo sobre datos de su propia escuadrilla (sus rutas exclusivas `/superuser/persons*` filtran por el `EscuadrillaID` de la sesión). El primer Superusuario no se puede crear por la web (huevo-y-gallina): se fija con `go run ./cmd/bootstrap -user <u> -level Superusuario`. Salvaguarda: no se puede degradar al último Superusuario de la escuadrilla.
+**God-mode exception (scoped to squadron)**: `Superusuario` is the only hierarchical level in *permissions*: `RequirePermission` lets it through any protected route (bypass centralized in `internal/auth/middleware.go`); the frontend mirrors this. But it does **NOT** break squadron-level RLS. The first Superuser cannot be created via the web: `go run ./cmd/bootstrap -user <u> -level Superusuario`. Safeguard: the last Superuser of a squadron cannot be downgraded. UI gating (`hasPermission`) is cosmetic only; the real guarantee is the 403 from the backend.
 
-El gating de la UI (`hasPermission`) es solo cosmético; la garantía real es el 403 del backend.
+## Frontend Conventions
 
-## Convenciones frontend
+Operational detail in `web/CLAUDE.md`.
 
-1. **Componentes = solo render.** La lógica de datos/estado/handlers de páginas y diálogos no triviales vive en `features/<feature>/hooks/use<Nombre>.ts`. Referencias: `availability/hooks/useDisponibilidad.ts`, `personnel/hooks/usePersonnel.ts`, `comisiones/hooks/useComisionForm.ts`.
-2. **Modelo compartido por feature** (tipos, catálogos, helpers usados por varios componentes): módulo propio, p. ej. `availability/absences.ts`.
-3. **Diálogos multi-tab**: un archivo por tab en subcarpeta del diálogo (`flights/components/dialogs/manage-flight-data/`).
-4. **Tipos de la API**: los structs Go son la fuente de verdad; tygo genera `web/src/types/generated/` (**no editar a mano**). Los `web/src/types/*.ts` son adaptadores finos que re-exportan con los nombres históricos (ver `types/dashboard.ts`); ahí sí van los tipos puramente de UI.
-5. **Datos siempre por TanStack Query**: `useApiQuery` / `useApiMutation` / `useApiPaginatedQuery` (acepta genérico `TRaw` para tipar `transform`) con `queryKeys` + `invalidateKeys`. El patrón `http()` + `useState` + refetch manual está deprecado para queries.
+1. **Components = render only.** Data/state/handler logic lives in `features/<feature>/hooks/use<Name>.ts`.
+2. **Shared model per feature** (types, catalogs, helpers): own module, e.g. `availability/absences.ts`.
+3. **Multi-tab dialogs**: one file per tab in a subfolder of the dialog (`flights/components/dialogs/manage-flight-data/`).
+4. **API types**: Go structs are the source of truth; tygo generates `web/src/types/generated/` (**do not edit manually**). The `web/src/types/*.ts` files are thin adapters that re-export with historical names; purely UI types go there.
+5. **Data always via TanStack Query**: `useApiQuery` / `useApiMutation` / `useApiPaginatedQuery` with `queryKeys` + `invalidateKeys`. The `http()` + `useState` + manual refetch pattern is deprecated for queries.
 
-## Reglas críticas
+## Critical Rules
 
-- **RGPD — jamás versionar en este repo (público)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.up.sql`, `migrations/0004_seed_productive_data.up.sql`. Son symlinks al repo privado `aether-data` (por defecto `~/aether-data`). Los symlinks **están gitignored** (no viajan por git): se recrean por máquina con `make link-private` (ruta sobrescribible: `make link-private AETHER_DATA=/otra/ruta/aether-data`). Por eso la ruta del repo privado puede diferir entre máquinas sin romper nada. El CI tiene leak-guard, pero revisa `git status` antes de cada push igualmente. Nunca `git add -f`.
-- **No editar código generado**: `internal/queries/` (sqlc) ni `web/src/types/generated/` (tygo).
-- **Migraciones**: numeradas secuencialmente en `migrations/` (mira el último número antes de crear una; convenciones en `migrations/README.md`). Las de **esquema** llevan par `.up.sql`/`.down.sql`; las de **seed** (0002, 0004) son **solo-up** (dev hace drop+create y prod solo aplica `up`). Tras cambiar el esquema: actualizar `queries/*.sql` → `make sqlc` → DTOs → `make types`.
-- **Timestamps**: usar `timestamptz`, nunca `TIMESTAMP` sin zona (las sesiones lo usan por un bug real de zonas horarias; el esquema de auth/sesión vive consolidado en `0001_init_schema`).
-- Commits y push solo cuando el usuario lo pida; el frontend embebido (`web/dist/`) está versionado — reconstruirlo (`cd web && npm run build`) antes de commitear cambios de frontend relevantes.
+- **GDPR — never version in this repo (public)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.up.sql`, `migrations/0004_seed_productive_data.up.sql`. These are symlinks to the private repo `aether-data` (default `~/aether-data`), **gitignored**: recreated per machine with `make link-private` (path overridable with `AETHER_DATA=`). CI has a leak-guard, but review `git status` before each push anyway. Never `git add -f`.
+- **Do not edit generated code**: `internal/queries/` (sqlc) or `web/src/types/generated/` (tygo).
+- **Timestamps**: use `timestamptz`, never `TIMESTAMP` without timezone (real timezone bug; the auth/session schema lives consolidated in `0001_init_schema`).
+- Commits and pushes only when the user asks; the embedded frontend (`web/dist/`) is versioned — rebuild it (`cd web && npm run build`) before committing relevant frontend changes.
 
-## Otros documentos
+## Other Documents
 
-- `docs/ARQUITECTURA.md` — guía extensa: arranque del binario, walkthrough de un dominio, tareas típicas ("cómo añado un endpoint/columna/lookup"), desarrollo local completo, repos público/privado, despliegue, glosario.
-- `web/CLAUDE.md` — detalle operativo del frontend (recetas de hooks, queryKeys, lookups, tipos generados).
-- `migrations/README.md` — convenciones de migraciones y qué archivos son symlinks al repo privado.
-- `deploy/README.md` — runbook de producción (systemd, install/update con rollback).
+- `docs/ARQUITECTURA.md` — extensive guide: binary startup, domain walkthrough, common tasks, local development, public/private repos, deployment, glossary.
+- `web/CLAUDE.md` — frontend operational detail (hook recipes, queryKeys, lookups, generated types).
+- `migrations/README.md` — migration conventions and which files are symlinks to the private repo.
+- `deploy/README.md` — production runbook (systemd, install/update with rollback).
