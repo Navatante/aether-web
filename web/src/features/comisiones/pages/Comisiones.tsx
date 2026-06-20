@@ -301,7 +301,7 @@ const Comisiones = () => {
 
                                                                     {/* Botón Eliminar */}
                                                                     <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                                                                        <AlertDialogTrigger asChild>
+                                                                        <AlertDialogTrigger render={
                                                                             <button
                                                                                 onClick={() => openDeleteDialog(comision.comision_sk)}
                                                                                 className="pb-2 px-4 text-danger hover:text-danger/80 transition-all text-xs"
@@ -309,7 +309,7 @@ const Comisiones = () => {
                                                                                 <Trash2 className="pb-1 w-4 h-4 inline mr-1" />
                                                                                 Eliminar
                                                                             </button>
-                                                                        </AlertDialogTrigger>
+                                                                        } />
                                                                         <AlertDialogContent>
                                                                             <AlertDialogHeader>
                                                                                 <AlertDialogTitle className="text-xl font-semibold">

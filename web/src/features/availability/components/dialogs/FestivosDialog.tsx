@@ -272,7 +272,7 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
                             <div className="space-y-2">
                                 <Label>Fecha</Label>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -287,7 +287,7 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
                                                 <span>Selecciona una fecha</span>
                                             )}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"

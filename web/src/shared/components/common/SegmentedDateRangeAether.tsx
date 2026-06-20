@@ -325,7 +325,7 @@ export default function SegmentedDateRangeAether({
                             {/* Fecha Inicio */}
                             <div className="flex-1">
                                 <Popover>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -336,7 +336,7 @@ export default function SegmentedDateRangeAether({
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {startDate ? format(startDate, "dd/MM/yyyy", { locale: es }) : <span>Fecha inicio</span>}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
@@ -357,7 +357,7 @@ export default function SegmentedDateRangeAether({
                             {/* Fecha Fin */}
                             <div className="flex-1">
                                 <Popover>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             disabled={!startDate}
@@ -369,7 +369,7 @@ export default function SegmentedDateRangeAether({
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {endDate ? format(endDate, "dd/MM/yyyy", { locale: es }) : <span>Fecha fin</span>}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"

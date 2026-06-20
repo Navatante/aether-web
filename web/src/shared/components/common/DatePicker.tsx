@@ -61,7 +61,7 @@ export function DatePicker({
     return (
         <div className={cn("flex", className)}>
             <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
+                <PopoverTrigger render={
                     <Button
                         variant="outline"
                         disabled={disabled}
@@ -78,7 +78,7 @@ export function DatePicker({
                         }
                         <ChevronDownIcon className="h-4 w-4 opacity-50" />
                     </Button>
-                </PopoverTrigger>
+                } />
                 <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                     <Calendar
                         mode="single"

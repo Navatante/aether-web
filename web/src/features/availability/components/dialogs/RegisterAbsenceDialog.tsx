@@ -71,7 +71,7 @@ function DatePicker({ date, onSelect, placeholder = "Seleccionar fecha" }: DateP
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
+            <PopoverTrigger render={
                 <Button
                     variant="outline"
                     className={cn(
@@ -86,7 +86,7 @@ function DatePicker({ date, onSelect, placeholder = "Seleccionar fecha" }: DateP
                         <span>{placeholder}</span>
                     )}
                 </Button>
-            </PopoverTrigger>
+            } />
             <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                     mode="single"

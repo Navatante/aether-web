@@ -328,7 +328,7 @@ export default function OperationalRatings() {
         if (isCertified) {
             return (
                 <Tooltip>
-                    <TooltipTrigger asChild>
+                    <TooltipTrigger render={
                         <div
                             className={`inline-flex items-center justify-center p-3 rounded-xl cursor-help ${colors.bg} border-2 ${colors.border} shadow-lg ${colors.shadow}`}
                         >
@@ -336,7 +336,7 @@ export default function OperationalRatings() {
                                 {rating.abbreviation}
                             </span>
                         </div>
-                    </TooltipTrigger>
+                    } />
                     <TooltipContent side="top" variant="info" className="p-4 min-w-[300px]">
                         <OperationalTooltip
                             calificacion={personData?.calificacion_operativa}

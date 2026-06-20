@@ -229,7 +229,7 @@ const Flights = () => {
                         <div className="flex flex-wrap gap-2">
                             {member.papeletas.map((p, i) => (
                                 <Tooltip key={i}>
-                                    <TooltipTrigger asChild>
+                                    <TooltipTrigger render={
                                         <span className={cn(
                                             "px-2 py-1 rounded text-sm cursor-help font-medium",
                                             p.periodo === 3
@@ -238,7 +238,7 @@ const Flights = () => {
                                                     ? "bg-danger-muted text-danger-muted-foreground"
                                                     : "bg-info-muted text-info-muted-foreground"
                                         )}>{p.nombre}</span>
-                                    </TooltipTrigger>
+                                    } />
                                     <TooltipContent variant="info"><p>{p.descripcion}</p></TooltipContent>
                                 </Tooltip>
                             ))}
@@ -423,11 +423,11 @@ const Flights = () => {
                                                             <button onClick={() => setActiveTab('autoridad')} className={`pb-2 px-4 transition-all ${activeTab === 'autoridad' ? 'text-foreground border-b-2 border-foreground/50' : 'text-muted-foreground hover:text-foreground'}`}><Shield className="w-4 h-4 inline mr-2" />Autoridad, Capba y Pasajeros</button>
                                                             {hasPermission(PermissionLevel.OPERACIONAL) && (
                                                                 <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                                                                    <AlertDialogTrigger asChild>
+                                                                    <AlertDialogTrigger render={
                                                                         <button onClick={() => openDeleteDialog(flight.id)} className="ml-auto pb-2 px-4 text-danger hover:text-danger/80 transition-all text-xs">
                                                                             <Trash2 className="pb-1 w-4 h-4 inline mr-1" />Eliminar
                                                                         </button>
-                                                                    </AlertDialogTrigger>
+                                                                    } />
                                                                     <AlertDialogContent>
                                                                         <form action={() => {
                                                                             if (flightToDelete && confirmationText === `eliminarvuelo${flightToDelete}`) {

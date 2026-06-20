@@ -188,25 +188,27 @@ function ExpandedNavItem({
     return (
         <Collapsible defaultOpen={isSubActive} className="group/collapsible">
             <SidebarMenuItem>
-                <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                        <Icon />
-                        <span>{item.title}</span>
-                        <ChevronDown className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
-                    </SidebarMenuButton>
-                </CollapsibleTrigger>
+                <CollapsibleTrigger
+                    render={
+                        <SidebarMenuButton tooltip={item.title}>
+                            <Icon />
+                            <span>{item.title}</span>
+                            <ChevronDown className="ml-auto transition-transform group-data-[open]/collapsible:rotate-180" />
+                        </SidebarMenuButton>
+                    }
+                />
                 <CollapsibleContent>
                     <SidebarMenuSub>
                         {item.subItems.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.href}>
                                 <SidebarMenuSubButton
-                                    asChild
+                                    render={
+                                        <NavLink to={subItem.href}>
+                                            <span>{subItem.title}</span>
+                                        </NavLink>
+                                    }
                                     isActive={currentPath === subItem.href}
-                                >
-                                    <NavLink to={subItem.href}>
-                                        <span>{subItem.title}</span>
-                                    </NavLink>
-                                </SidebarMenuSubButton>
+                                />
                             </SidebarMenuSubItem>
                         ))}
                     </SidebarMenuSub>
@@ -250,12 +252,16 @@ function NavItem({ item }: { item: NavItemSimple }) {
 
     return (
         <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                <NavLink to={item.href}>
-                    <Icon />
-                    <span>{item.title}</span>
-                </NavLink>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+                render={
+                    <NavLink to={item.href}>
+                        <Icon />
+                        <span>{item.title}</span>
+                    </NavLink>
+                }
+                isActive={isActive}
+                tooltip={item.title}
+            />
         </SidebarMenuItem>
     )
 }

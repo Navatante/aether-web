@@ -141,7 +141,7 @@ export default function Effort() {
                                     Últimos 730 días hasta:
                                 </span>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -156,7 +156,7 @@ export default function Effort() {
                                                 <span>Seleccionar fecha</span>
                                             )}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"

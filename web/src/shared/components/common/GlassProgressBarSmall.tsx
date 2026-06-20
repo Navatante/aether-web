@@ -177,7 +177,7 @@ function GlassProgressBarSmall({
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
                 <div
                     ref={barRef}
                     className={`relative cursor-help ${className}`}
@@ -220,7 +220,7 @@ function GlassProgressBarSmall({
                         />
                     </div>
                 </div>
-            </TooltipTrigger>
+            } />
 
             {/* Tooltip shadcn */}
             <TooltipContent

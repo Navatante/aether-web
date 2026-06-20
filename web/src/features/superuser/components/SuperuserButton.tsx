@@ -129,7 +129,7 @@ export function SuperuserButton() {
                         <div className="space-y-2">
                             <Label>Contraseña</Label>
                             <AlertDialog>
-                                <AlertDialogTrigger asChild>
+                                <AlertDialogTrigger render={
                                     <Button
                                         variant="outline"
                                         className="w-full"
@@ -137,7 +137,7 @@ export function SuperuserButton() {
                                     >
                                         Resetear contraseña
                                     </Button>
-                                </AlertDialogTrigger>
+                                } />
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>¿Resetear la contraseña?</AlertDialogTitle>

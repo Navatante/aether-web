@@ -84,11 +84,11 @@ export function RatingTable({
                         >
                             <td className={stickyFirstColClass(idx, "p-4")}>
                                 <Tooltip>
-                                    <TooltipTrigger asChild>
+                                    <TooltipTrigger render={
                                         <span className="font-medium text-lg text-muted-foreground cursor-help">
                                             {personKey}
                                         </span>
-                                    </TooltipTrigger>
+                                    } />
                                     <TooltipContent side="right" variant="info" className="max-w-xs">
                                         <p className="text-sm font-medium">
                                             {personFullNameMap[personKey] ||

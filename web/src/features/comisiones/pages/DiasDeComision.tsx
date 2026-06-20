@@ -310,7 +310,7 @@ export default function DiasDeComision() {
                                     Últimos 365 días hasta:
                                 </span>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -325,7 +325,7 @@ export default function DiasDeComision() {
                                                 <span>Seleccionar fecha</span>
                                             )}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="center">
                                         <Calendar
                                             mode="single"

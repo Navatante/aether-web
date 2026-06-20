@@ -68,7 +68,7 @@ export const ConnectionIndicatorSidebar = () => {
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
                 <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs ${getStatusColor()}`}>
                     {getStatusIcon()}
                     <span className="group-data-[collapsible=icon]:hidden">
@@ -83,7 +83,7 @@ export const ConnectionIndicatorSidebar = () => {
                         </button>
                     )}
                 </div>
-            </TooltipTrigger>
+            } />
             <TooltipContent side="right" variant="info">
                 <p>{error || getStatusText()}</p>
             </TooltipContent>

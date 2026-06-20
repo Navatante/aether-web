@@ -404,7 +404,7 @@ export function AddEditPersonForm({
                             <div className="space-y-1">
                                 <Label>Antiguedad empleo</Label>
                                 <Popover>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -415,7 +415,7 @@ export function AddEditPersonForm({
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {aEmp ? format(aEmp, "dd/MM/yyyy") : <span>Seleccionar</span>}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
@@ -437,7 +437,7 @@ export function AddEditPersonForm({
                             <div className="space-y-1">
                                 <Label>Fecha Embarque</Label>
                                 <Popover>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -448,7 +448,7 @@ export function AddEditPersonForm({
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {fEmb ? format(fEmb, "dd/MM/yyyy") : <span>Seleccionar</span>}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"
@@ -470,7 +470,7 @@ export function AddEditPersonForm({
                             <div className="space-y-1">
                                 <Label>Fecha Nacimiento</Label>
                                 <Popover>
-                                    <PopoverTrigger asChild>
+                                    <PopoverTrigger render={
                                         <Button
                                             variant="outline"
                                             className={cn(
@@ -482,7 +482,7 @@ export function AddEditPersonForm({
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {birthdate ? format(birthdate, "dd/MM/yyyy") : <span>Seleccionar</span>}
                                         </Button>
-                                    </PopoverTrigger>
+                                    } />
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
                                             mode="single"

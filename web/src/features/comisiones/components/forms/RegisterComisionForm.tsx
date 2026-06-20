@@ -77,7 +77,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                     <div className="space-y-2">
                         <Label className="text-foreground">Fecha Inicio</Label>
                         <Popover>
-                            <PopoverTrigger asChild>
+                            <PopoverTrigger render={
                                 <Button
                                     variant="outline"
                                     className={cn(
@@ -89,7 +89,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {fechaInicio ? format(fechaInicio, "dd/MM/yyyy", { locale: es }) : <span>Seleccionar</span>}
                                 </Button>
-                            </PopoverTrigger>
+                            } />
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
@@ -112,7 +112,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                     <div className="space-y-2">
                         <Label className="text-foreground">Fecha Fin</Label>
                         <Popover>
-                            <PopoverTrigger asChild>
+                            <PopoverTrigger render={
                                 <Button
                                     variant="outline"
                                     className={cn(
@@ -124,7 +124,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                                     <CalendarIcon className="mr-2 h-4 w-4" />
                                     {fechaFin ? format(fechaFin, "dd/MM/yyyy", { locale: es }) : <span>Seleccionar</span>}
                                 </Button>
-                            </PopoverTrigger>
+                            } />
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"

@@ -63,15 +63,15 @@ export function TopbarMenus() {
                             {/* --- Sección Vuelos (Solo OPERACIONAL) --- */}
                             {canAccessOperacional && (
                                 <>
-                                    <MenubarItem onSelect={() => setRegisterFlightOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterFlightOpen(true)}>
                                         <Helicopter className="mr-2 h-4 w-4" />
                                         Vuelo
                                     </MenubarItem>
-                                    <MenubarItem onSelect={() => setRegisterGroundSchoolOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterGroundSchoolOpen(true)}>
                                         <Presentation className="mr-2 h-4 w-4" />
                                         Ground School
                                     </MenubarItem>
-                                    <MenubarItem onSelect={() => setRegisterExtraHoursOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterExtraHoursOpen(true)}>
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Horas extra
                                     </MenubarItem>
@@ -82,11 +82,11 @@ export function TopbarMenus() {
                             {/* --- Sección Comisiones (Solo ADMINISTRATIVO) --- */}
                             {canAccessAdministrativo && (
                                 <>
-                                    <MenubarItem onSelect={() => setRegisterComisionOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterComisionOpen(true)}>
                                         <CalendarPlus className="mr-2 h-4 w-4" />
                                         Comisión
                                     </MenubarItem>
-                                    <MenubarItem onSelect={() => setRegisterPersonToComisionOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterPersonToComisionOpen(true)}>
                                         <Luggage className="mr-2 h-4 w-4" />
                                         Personal en Comisión
                                     </MenubarItem>
@@ -95,7 +95,7 @@ export function TopbarMenus() {
                             )}
 
                             {/* --- Ausencias (OPERACIONAL y ADMINISTRATIVO) --- */}
-                            <MenubarItem onSelect={() => setRegisterAusenciaOpen(true)}>
+                            <MenubarItem onClick={() => setRegisterAusenciaOpen(true)}>
                                 <UserMinus className="mr-2 h-4 w-4" />
                                 Ausencia
                             </MenubarItem>
@@ -108,7 +108,7 @@ export function TopbarMenus() {
                 <MenubarMenu>
                     <MenubarTrigger>Documentos</MenubarTrigger>
                     <MenubarContent>
-                        <MenubarItem onSelect={() => setGenerateReportOpen(true)}>
+                        <MenubarItem onClick={() => setGenerateReportOpen(true)}>
                             <FileBarChart className="mr-2 h-4 w-4" />
                             Generar Reporte PDF
                         </MenubarItem>

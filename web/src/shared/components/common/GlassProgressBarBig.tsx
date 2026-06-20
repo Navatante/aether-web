@@ -407,7 +407,7 @@ function GlassProgressBarBig({
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>
+            <TooltipTrigger render={
                 <div
                     ref={barRef}
                     className={`relative cursor-help flex flex-col items-center ${className}`}
@@ -483,7 +483,7 @@ function GlassProgressBarBig({
                         {label}
                     </span>
                 </div>
-            </TooltipTrigger>
+            } />
 
             <TooltipContent
                 side="top"

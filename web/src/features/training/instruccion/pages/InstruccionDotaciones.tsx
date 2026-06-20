@@ -285,11 +285,11 @@ export default function InstruccionDotaciones() {
                                 {visiblePersons.map(persona => (
                                     <th key={persona.person_sk} className="text-center p-4 min-w-[80px]">
                                         <Tooltip>
-                                            <TooltipTrigger asChild>
+                                            <TooltipTrigger render={
                                                     <span className="font-semibold text-table-header-foreground cursor-help">
                                                         {persona.person_nk}
                                                     </span>
-                                            </TooltipTrigger>
+                                            } />
                                             <TooltipContent
                                                 side="bottom"
                                                 sideOffset={10}
@@ -330,11 +330,11 @@ export default function InstruccionDotaciones() {
                                             <div className="flex items-center gap-2">
                                                 <BlockBadge block={papeleta.papeleta_block} />
                                             <Tooltip>
-                                                <TooltipTrigger asChild>
+                                                <TooltipTrigger render={
                                                         <span className="font-medium text-foreground cursor-help">
                                                             {papeleta.papeleta_name}
                                                         </span>
-                                                </TooltipTrigger>
+                                                } />
                                                 <TooltipContent
                                                     side="top"
                                                     sideOffset={8}

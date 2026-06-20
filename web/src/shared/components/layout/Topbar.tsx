@@ -48,7 +48,7 @@ export function Topbar() {
 
               {nk !== null && (
                   <Sheet open={crewPanelOpen} onOpenChange={setCrewPanelOpen}>
-                    <SheetTrigger asChild>
+                    <SheetTrigger render={
                       <div>
                         <OutlineGradientButton
                             text={nk}
@@ -57,7 +57,7 @@ export function Topbar() {
                             gradient="from-gradient-from to-gradient-to hover:from-brand-from hover:via-brand-via hover:to-brand-to"
                         />
                       </div>
-                    </SheetTrigger>
+                    } />
                     <SheetContent side="right" className="w-1/3">
                       <SheetHeader>
                         <SheetTitle>Panel de Tripulante</SheetTitle>
@@ -111,11 +111,11 @@ export function Topbar() {
                           <LogOut className="h-4 w-4" />
                           Cerrar sesión
                         </Button>
-                        <SheetClose asChild>
+                        <SheetClose render={
                           <Button variant="outline" className="w-full">
                             Cerrar
                           </Button>
-                        </SheetClose>
+                        } />
                       </SheetFooter>
                     </SheetContent>
                   </Sheet>

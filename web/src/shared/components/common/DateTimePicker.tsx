@@ -118,7 +118,7 @@ export function DateTimePicker({
         <div className={cn("flex gap-2", className)}>
             {/* Date Picker */}
             <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
+                <PopoverTrigger render={
                     <Button
                         variant="outline"
                         disabled={disabled}
@@ -135,7 +135,7 @@ export function DateTimePicker({
                         }
                         <ChevronDownIcon className="h-4 w-4 opacity-50" />
                     </Button>
-                </PopoverTrigger>
+                } />
                 <PopoverContent className="w-auto overflow-hidden p-0" align="start">
                     <Calendar
                         mode="single"

@@ -121,7 +121,7 @@ export function RatingButton({
                     if (!open) onPopoverClose?.();
                 }}
             >
-                <PopoverTrigger asChild>
+                <PopoverTrigger render={
                     <button
                         onClick={onPopoverOpen}
                         className={getButtonClasses()}
@@ -129,7 +129,7 @@ export function RatingButton({
                     >
                         {getIcon()}
                     </button>
-                </PopoverTrigger>
+                } />
 
                 <PopoverContent className="w-auto p-4">
                     <div className="space-y-4">
@@ -185,7 +185,7 @@ export function RatingButton({
     if (tooltipContent) {
         return (
             <Tooltip>
-                <TooltipTrigger asChild>
+                <TooltipTrigger render={
                     <div className="relative inline-block">
                         <button
                             disabled={!hasPermission || isDisabled || !isCertified}
@@ -200,7 +200,7 @@ export function RatingButton({
                         </button>
                         {stateDot}
                     </div>
-                </TooltipTrigger>
+                } />
                 <TooltipContent side="top" variant="info" className="p-4">
                     {tooltipContent}
                 </TooltipContent>

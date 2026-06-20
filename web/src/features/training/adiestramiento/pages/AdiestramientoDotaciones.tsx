@@ -423,11 +423,11 @@ export default function AdiestramientoDotaciones() {
 
                                             {/* Nombre del dotacion */}
                                             <Tooltip>
-                                                <TooltipTrigger asChild>
+                                                <TooltipTrigger render={
                                                     <span className="font-semibold text-table-header-foreground mt-2 cursor-help">
                                                         {persona.person_nk}
                                                     </span>
-                                                </TooltipTrigger>
+                                                } />
                                                 <TooltipContent
                                                     side="bottom"
                                                     sideOffset={10}
@@ -468,13 +468,13 @@ export default function AdiestramientoDotaciones() {
                                             <div className="flex items-center gap-2">
                                                 <BlockBadge block={papeleta.papeleta_block} />
                                             <Tooltip>
-                                                <TooltipTrigger asChild>
+                                                <TooltipTrigger render={
                                                     <div className="cursor-help">
                                                       <span className="font-medium text-foreground">
                                                         {papeleta.papeleta_name}
                                                       </span>
                                                     </div>
-                                                </TooltipTrigger>
+                                                } />
 
                                                 <TooltipContent
                                                     side="top"
@@ -510,7 +510,7 @@ export default function AdiestramientoDotaciones() {
                                             return (
                                                 <td key={persona.person_sk} className="text-center p-2">
                                                     <Tooltip>
-                                                        <TooltipTrigger asChild>
+                                                        <TooltipTrigger render={
                                                             <div
                                                                 className={`
                                                                         inline-flex flex-col items-center justify-center
@@ -531,7 +531,7 @@ export default function AdiestramientoDotaciones() {
                                                                     <span className="text-muted-foreground">-</span>
                                                                 )}
                                                             </div>
-                                                        </TooltipTrigger>
+                                                        } />
                                                         <TooltipContent
                                                             side="top"
                                                             variant="info" className="p-0 max-w-80 overflow-hidden"
