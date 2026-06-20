@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useApiQuery } from '@/lib/apiQuery'
 import { queryKeys } from '@/lib/queryKeys'
 import { useEscuadrilla } from '@/providers'
@@ -46,12 +46,9 @@ export function useHorasVuelo(options: UseHorasVueloOptions = {}): UseHorasVuelo
     // Al cambiar cualquier param, TanStack Query refetchea (la queryKey los incluye).
     // El modo "Totales" (arrastre vitalicio) solo tiene sentido con el rango completo,
     // así que fuerza "historico" e ignora el rango del selector.
-    const queryParams = useMemo<Record<string, string | undefined>>(() => {
-        if (includeExtra) {
-            return { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
-        }
-        return { person_rol: personRol, ...rangeParams }
-    }, [personRol, includeExtra, rangeParams])
+    const queryParams: Record<string, string | undefined> = includeExtra
+        ? { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
+        : { person_rol: personRol, ...rangeParams }
 
     const {
         data,
@@ -71,16 +68,13 @@ export function useHorasVuelo(options: UseHorasVueloOptions = {}): UseHorasVuelo
         ? (queryError instanceof Error ? queryError.message : 'Error al obtener los datos')
         : undefined
 
-    const enrichedChartData = useMemo<EnrichedTripulanteData[]>(
-        () => chartData.map(d => ({
-            ...d,
-            total_all: d.total_day_hour_qty + d.total_night_hour_qty + d.total_gvn_hour_qty,
-        })),
-        [chartData],
-    )
+    const enrichedChartData: EnrichedTripulanteData[] = chartData.map(d => ({
+        ...d,
+        total_all: d.total_day_hour_qty + d.total_night_hour_qty + d.total_gvn_hour_qty,
+    }))
 
     // Traduce el rango emitido por el selector al estado de rango del backend.
-    const handleDateRangeChange = useCallback((params: StatsParams) => {
+    const handleDateRangeChange = (params: StatsParams) => {
         if (params.range_type === 'custom' && params.date_from && params.date_to) {
             setRangeParams({
                 custom_start_date: params.date_from,
@@ -91,7 +85,7 @@ export function useHorasVuelo(options: UseHorasVueloOptions = {}): UseHorasVuelo
                 time_range: params.predefined_range ?? 'ultimos-7-dias',
             })
         }
-    }, [])
+    }
 
     return { loading, errorMsg, chartData, enrichedChartData, startDate, endDate, handleDateRangeChange }
 }

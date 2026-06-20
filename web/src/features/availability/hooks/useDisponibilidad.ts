@@ -1,7 +1,7 @@
 // Estado, datos y handlers de la página Disponibilidad. La página queda
 // solo con el render; aquí vive el calendario, filtros, festivos y diálogos.
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { PermissionLevel, useHasPermission, useEscuadrilla, useUser } from '@/providers';
 import { useApiQuery } from '@/lib/apiQuery';
 import { queryKeys } from '@/lib/queryKeys';
@@ -68,7 +68,7 @@ export function useDisponibilidad() {
 
     // Índices persona -> eventos, para evitar barridos O(días×personas×N) por celda.
     // Las fechas del backend son YYYY-MM-DD, así que se comparan como strings.
-    const absencesByPerson = useMemo(() => {
+    const absencesByPerson = (() => {
         const map = new Map<number, Absence[]>();
         for (const a of availabilityData?.absenses ?? []) {
             const arr = map.get(a.absence_person_fk);
@@ -76,9 +76,9 @@ export function useDisponibilidad() {
             else map.set(a.absence_person_fk, [a]);
         }
         return map;
-    }, [availabilityData]);
+    })();
 
-    const comisionsByPerson = useMemo(() => {
+    const comisionsByPerson = (() => {
         const map = new Map<number, PersonComision[]>();
         for (const c of availabilityData?.person_comisions ?? []) {
             const arr = map.get(c.person_fk);
@@ -86,7 +86,7 @@ export function useDisponibilidad() {
             else map.set(c.person_fk, [c]);
         }
         return map;
-    }, [availabilityData]);
+    })();
 
     // Festivos vía TanStack Query, con la MISMA clave que usa FestivosDialog en
     // sus mutaciones: al crear/editar/borrar un festivo, el diálogo invalida esa

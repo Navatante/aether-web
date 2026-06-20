@@ -33,11 +33,11 @@ export function DatePicker({
                            }: DatePickerProps) {
     const [open, setOpen] = React.useState(false)
 
-    const selectedDate = React.useMemo(() => {
+    const selectedDate = (() => {
         if (!value) return undefined
         const date = parse(value, "yyyy-MM-dd", new Date())
         return isValid(date) ? date : undefined
-    }, [value])
+    })()
 
     const handleDateSelect = (newDate: Date | undefined) => {
         if (!newDate) {

@@ -130,7 +130,7 @@ function ChartTooltipContent({
 >) {
     const { config } = useChart()
 
-    const tooltipLabel = React.useMemo(() => {
+    const tooltipLabel = (() => {
         if (hideLabel || !payload?.length) {
             return null
         }
@@ -152,7 +152,7 @@ function ChartTooltipContent({
         }
 
         return <div className={cn("font-medium", labelClassName)}>{value}</div>
-    }, [config, hideLabel, label, labelClassName, labelFormatter, labelKey, payload])
+    })()
 
     if (!active || !payload?.length) {
         return null

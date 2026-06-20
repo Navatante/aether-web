@@ -59,25 +59,22 @@ function SidebarProvider({
     // We use openProp and setOpenProp for control from outside the component.
     const [_open, _setOpen] = React.useState(defaultOpen)
     const open = openProp ?? _open
-    const setOpen = React.useCallback(
-        (value: boolean | ((value: boolean) => boolean)) => {
-            const openState = typeof value === "function" ? value(open) : value
-            if (setOpenProp) {
-                setOpenProp(openState)
-            } else {
-                _setOpen(openState)
-            }
+    const setOpen = (value: boolean | ((value: boolean) => boolean)) => {
+        const openState = typeof value === "function" ? value(open) : value
+        if (setOpenProp) {
+            setOpenProp(openState)
+        } else {
+            _setOpen(openState)
+        }
 
-            // This sets the cookie to keep the sidebar state.
-            document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-        },
-        [setOpenProp, open]
-    )
+        // This sets the cookie to keep the sidebar state.
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+    }
 
     // Helper to toggle the sidebar.
-    const toggleSidebar = React.useCallback(() => {
+    const toggleSidebar = () => {
         return setOpen((open) => !open)
-    }, [setOpen])
+    }
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
@@ -99,15 +96,12 @@ function SidebarProvider({
     // This makes it easier to style the sidebar with Tailwind classes.
     const state = open ? "expanded" : "collapsed"
 
-    const contextValue = React.useMemo<SidebarContextProps>(
-        () => ({
-            state,
-            open,
-            setOpen,
-            toggleSidebar,
-        }),
-        [state, open, setOpen, toggleSidebar]
-    )
+    const contextValue: SidebarContextProps = {
+        state,
+        open,
+        setOpen,
+        toggleSidebar,
+    }
 
     return (
         <SidebarContext.Provider value={contextValue}>
@@ -563,10 +557,9 @@ function SidebarMenuSkeleton({
                              }: React.ComponentProps<"div"> & {
     showIcon?: boolean
 }) {
-    // Random width between 50 to 90%.
-    const width = React.useMemo(() => {
-        return `${Math.floor(Math.random() * 40) + 50}%`
-    }, [])
+    // Random width between 50 to 90%. (React Compiler lo memoiza sin deps:
+    // se calcula una vez por instancia, como el antiguo useMemo([]).)
+    const width = `${Math.floor(Math.random() * 40) + 50}%`
 
     return (
         <div

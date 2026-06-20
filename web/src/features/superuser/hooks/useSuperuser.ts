@@ -1,7 +1,7 @@
 // Lógica del panel de superusuario: lista global de personas + mutaciones
 // para cambiar contraseña y nivel de permiso. (Componentes = solo render.)
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useApiQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { useEscuadrilla } from "@/providers";
@@ -17,7 +17,7 @@ export function useSuperuser(enabled: boolean) {
         { enabled },
         personsKey,
     );
-    const persons = useMemo(() => personsQuery.data ?? [], [personsQuery.data]);
+    const persons = personsQuery.data ?? [];
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const selected = persons.find((p) => p.id === selectedId) ?? null;

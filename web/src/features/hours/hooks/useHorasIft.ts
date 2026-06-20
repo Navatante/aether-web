@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useApiQuery } from '@/lib/apiQuery'
 import { queryKeys } from '@/lib/queryKeys'
 import { useEscuadrilla } from '@/providers'
@@ -42,12 +42,9 @@ export function useHorasIft(options: UseHorasIftOptions = {}): UseHorasIftResult
 
     // El modo "Totales" cruza escuadrillas y solo tiene sentido con el histórico
     // completo, así que fuerza "historico" e ignora el rango del selector.
-    const queryParams = useMemo<Record<string, string | undefined>>(() => {
-        if (includeExtra) {
-            return { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
-        }
-        return { person_rol: personRol, ...rangeParams }
-    }, [personRol, includeExtra, rangeParams])
+    const queryParams: Record<string, string | undefined> = includeExtra
+        ? { person_rol: personRol, include_extra: 'true', time_range: 'historico' }
+        : { person_rol: personRol, ...rangeParams }
 
     const {
         data,
@@ -68,7 +65,7 @@ export function useHorasIft(options: UseHorasIftOptions = {}): UseHorasIftResult
         : undefined
 
     // Traduce el rango emitido por el selector al estado de rango del backend.
-    const handleDateRangeChange = useCallback((params: StatsParams) => {
+    const handleDateRangeChange = (params: StatsParams) => {
         if (params.range_type === 'custom' && params.date_from && params.date_to) {
             setRangeParams({
                 custom_start_date: params.date_from,
@@ -79,7 +76,7 @@ export function useHorasIft(options: UseHorasIftOptions = {}): UseHorasIftResult
                 time_range: params.predefined_range ?? 'ultimos-7-dias',
             })
         }
-    }, [])
+    }
 
     return { loading, errorMsg, chartData, startDate, endDate, handleDateRangeChange }
 }

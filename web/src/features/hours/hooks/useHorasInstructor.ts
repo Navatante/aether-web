@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useApiQuery } from '@/lib/apiQuery'
 import { queryKeys } from '@/lib/queryKeys'
 import { useEscuadrilla } from '@/providers'
@@ -38,10 +38,7 @@ export function useHorasInstructor(options: UseHorasInstructorOptions = {}): Use
         time_range: initialTimeRange,
     })
 
-    const queryParams = useMemo<Record<string, string | undefined>>(
-        () => ({ person_rol: personRol, ...rangeParams }),
-        [personRol, rangeParams],
-    )
+    const queryParams: Record<string, string | undefined> = { person_rol: personRol, ...rangeParams }
 
     const {
         data,
@@ -62,7 +59,7 @@ export function useHorasInstructor(options: UseHorasInstructorOptions = {}): Use
         : undefined
 
     // Traduce el rango emitido por el selector al estado de rango del backend.
-    const handleDateRangeChange = useCallback((params: StatsParams) => {
+    const handleDateRangeChange = (params: StatsParams) => {
         if (params.range_type === 'custom' && params.date_from && params.date_to) {
             setRangeParams({
                 custom_start_date: params.date_from,
@@ -73,7 +70,7 @@ export function useHorasInstructor(options: UseHorasInstructorOptions = {}): Use
                 time_range: params.predefined_range ?? 'ultimos-7-dias',
             })
         }
-    }, [])
+    }
 
     return { loading, errorMsg, chartData, startDate, endDate, handleDateRangeChange }
 }

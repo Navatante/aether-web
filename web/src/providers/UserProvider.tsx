@@ -10,7 +10,6 @@ import {
     useContext,
     useState,
     useEffect,
-    useCallback,
     type ReactNode,
 } from "react";
 import { http, HttpError } from "@/lib/http";
@@ -131,7 +130,7 @@ function applyUser(u: UserSessionInfo): Partial<UserState> {
 export function UserProvider({ children, onUserLoaded, onError }: UserProviderProps) {
     const [state, setState] = useState<UserState>(initialState);
 
-    const refreshUser = useCallback(async () => {
+    const refreshUser = async () => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         try {
             const user = await http<UserSessionInfo>("GET", "/auth/me");
@@ -147,9 +146,9 @@ export function UserProvider({ children, onUserLoaded, onError }: UserProviderPr
             setState((prev) => ({ ...prev, loading: false, error: e }));
             onError?.(e);
         }
-    }, [onUserLoaded, onError]);
+    };
 
-    const login = useCallback(async (user: string, password: string) => {
+    const login = async (user: string, password: string) => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
         try {
             const u = await http<UserSessionInfo>("POST", "/auth/login", {
@@ -162,33 +161,28 @@ export function UserProvider({ children, onUserLoaded, onError }: UserProviderPr
             setState((prev) => ({ ...prev, loading: false, error: e }));
             throw e;
         }
-    }, [onUserLoaded]);
+    };
 
-    const logout = useCallback(async () => {
+    const logout = async () => {
         try {
             await http<void>("POST", "/auth/logout");
         } catch {
             // best-effort
         }
         setState({ ...initialState, loading: false });
-    }, []);
+    };
 
-    const clearError = useCallback(() => {
+    const clearError = () => {
         setState((prev) => ({ ...prev, error: null }));
-    }, []);
+    };
 
-    const hasPermission = useCallback(
-        (level: PermissionLevel) =>
-            state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
-            state.permissionLevel === level,
-        [state.permissionLevel],
-    );
-    const canAccess = useCallback(
-        (levels: PermissionLevel[]) =>
-            state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
-            (state.permissionLevel !== null && levels.includes(state.permissionLevel)),
-        [state.permissionLevel],
-    );
+    const hasPermission = (level: PermissionLevel) =>
+        state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
+        state.permissionLevel === level;
+
+    const canAccess = (levels: PermissionLevel[]) =>
+        state.permissionLevel === PermissionLevel.SUPERUSUARIO ||
+        (state.permissionLevel !== null && levels.includes(state.permissionLevel));
 
     useEffect(() => {
         refreshUser();
