@@ -12,7 +12,7 @@ import {
     useEffect,
     type ReactNode,
 } from "react";
-import { http, HttpError } from "@/lib/http";
+import { http } from "@/lib/http";
 
 // ==================== Types ====================
 
@@ -134,14 +134,14 @@ export function UserProvider({ children, onUserLoaded, onError }: UserProviderPr
         setState((prev) => ({ ...prev, loading: true, error: null }));
         try {
             const user = await http<UserSessionInfo>("GET", "/auth/me");
-            setState((prev) => ({ ...prev, ...applyUser(user) }));
-            onUserLoaded?.(user);
-        } catch (err) {
-            if (err instanceof HttpError && err.status === 401) {
-                // No sesión: estado inicial, sin error.
+            if (!user) {
+                // No sesión (204): estado inicial, sin error.
                 setState({ ...initialState, loading: false });
                 return;
             }
+            setState((prev) => ({ ...prev, ...applyUser(user) }));
+            onUserLoaded?.(user);
+        } catch (err) {
             const e = err instanceof Error ? err : new Error("Error al cargar sesión");
             setState((prev) => ({ ...prev, loading: false, error: e }));
             onError?.(e);

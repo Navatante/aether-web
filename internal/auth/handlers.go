@@ -37,7 +37,7 @@ func (h *Handlers) Register(g *echo.Group) {
 	})
 	g.POST("/auth/login", h.Login, loginLimiter)
 	g.POST("/auth/logout", h.Logout)
-	g.GET("/auth/me", h.Me, RequireAuth(h.svc))
+	g.GET("/auth/me", h.Me)
 	g.POST("/auth/change-password", h.ChangePassword, RequireAuth(h.svc))
 }
 
@@ -113,9 +113,16 @@ func (h *Handlers) Logout(c echo.Context) error {
 }
 
 func (h *Handlers) Me(c echo.Context) error {
-	user := CurrentUser(c)
-	if user == nil {
-		return echo.NewHTTPError(http.StatusUnauthorized, "no session")
+	cookie, err := c.Cookie(CookieName)
+	if err != nil || cookie.Value == "" {
+		return c.NoContent(http.StatusNoContent)
+	}
+	user, err := h.svc.Validate(c.Request().Context(), cookie.Value)
+	if err != nil {
+		if errors.Is(err, ErrSessionNotFound) {
+			return c.NoContent(http.StatusNoContent)
+		}
+		return err
 	}
 	return c.JSON(http.StatusOK, toDTO(user))
 }
