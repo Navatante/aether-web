@@ -49,14 +49,12 @@ export function Topbar() {
               {nk !== null && (
                   <Sheet open={crewPanelOpen} onOpenChange={setCrewPanelOpen}>
                     <SheetTrigger render={
-                      <div>
-                        <OutlineGradientButton
-                            text={nk}
-                            size="xs"
-                            textColor="text-foreground/80 hover:text-foreground"
-                            gradient="from-gradient-from to-gradient-to hover:from-brand-from hover:via-brand-via hover:to-brand-to"
-                        />
-                      </div>
+                      <OutlineGradientButton
+                          text={nk}
+                          size="xs"
+                          textColor="text-foreground/80 hover:text-foreground"
+                          gradient="from-gradient-from to-gradient-to hover:from-brand-from hover:via-brand-via hover:to-brand-to"
+                      />
                     } />
                     <SheetContent side="right" className="w-1/3">
                       <SheetHeader>

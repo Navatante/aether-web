@@ -4,29 +4,26 @@ import React from 'react';
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 // Define las props del componente
-interface OutlineGradientButtonProps {
+interface OutlineGradientButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     icon?: React.ReactNode;
     text?: string;
     size?: ButtonSize;
-    onClick?: () => void;
     gradient?: string;
     textColor?: string;
     textHoverColor?: string;
-    className?: string;
-    children?: React.ReactNode;
 }
 
-export default function OutlineGradientButton({
+const OutlineGradientButton = React.forwardRef<HTMLButtonElement, OutlineGradientButtonProps>(function OutlineGradientButton({
                                                   icon,
                                                   text,
                                                   size = 'md',
-                                                  onClick,
                                                   gradient = 'from-gradient-from to-gradient-to',
                                                   textColor = 'text-foreground',
                                                   textHoverColor = 'group-hover:text-primary',
                                                   className = '',
-                                                  children
-                                              }: OutlineGradientButtonProps) {
+                                                  children,
+                                                  ...rest
+                                              }, ref) {
     // Define las clases con tipado explícito
     const sizeClasses: Record<ButtonSize, string> = {
         xs: 'w-10 h-10 text-xs',
@@ -64,7 +61,7 @@ export default function OutlineGradientButton({
 
     return (
         <button
-            onClick={onClick}
+            ref={ref}
             className={`
                 relative ${sizeClasses[size]} rounded-full bg-transparent 
                 transition-all duration-300
@@ -74,6 +71,7 @@ export default function OutlineGradientButton({
                 // Respaldo para navegadores que no soporten bien las variables CSS en shadow
                 '--tw-shadow-color': 'var(--color-ring)',
             } as React.CSSProperties}
+            {...rest}
         >
             <span className={`absolute inset-0 rounded-full bg-gradient-to-r ${gradient} ${borderWidth[size]}`}>
                 <span className={`
@@ -112,4 +110,6 @@ export default function OutlineGradientButton({
             </span>
         </button>
     );
-}
+});
+
+export default OutlineGradientButton;
