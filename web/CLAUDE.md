@@ -39,7 +39,7 @@ Los errores HTTP de mutaciones ya los notifica el toast de `useApiMutation`: no 
 
 **`useApiMutation` manda las `vars` como body.** Si tu `path` es dinámico (`(v) => /x/${v.id}`), el id viaja en `vars` y por defecto acabaría también en el body. Para evitarlo, usa el selector `body`: `{ body: ({ id, ...rest }) => rest }` (o `body: () => undefined` en endpoints de acción sin cuerpo). GET/DELETE nunca llevan body. El refresco de listas tras navegar no se hace solo: añade `invalidateKeys` (el `staleTime` global es 5 min, así que no basta con el refetch-on-mount).
 
-**Defaults globales** (`lib/queryClient.ts`, no los redefinas por query salvo casos como el polling de `/health`): `staleTime: 5min`, `refetchOnWindowFocus: false`, `placeholderData: keepPreviousData` (al cambiar la `queryKey` —paginación, rango, mes— mantiene los datos previos visibles en vez de parpadear; usa `isFetching` para el spinner), y `retry` que **no** reintenta 4xx (solo 5xx/red, una vez).
+**Defaults globales** (`lib/queryClient.ts`, no los redefinas por query salvo casos como el polling de `/health`): `staleTime: 5min`, `refetchOnWindowFocus: true` (al volver a la pestaña refresca lo que ya esté obsoleto —lo acota el `staleTime`—; app en navegador y multiusuario), `placeholderData: keepPreviousData` (al cambiar la `queryKey` —paginación, rango, mes— mantiene los datos previos visibles en vez de parpadear; usa `isFetching` para el spinner), y `retry` que **no** reintenta 4xx (solo 5xx/red, una vez).
 
 ## Receta: añadir un lookup nuevo
 

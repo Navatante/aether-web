@@ -4,7 +4,10 @@ import { HttpError } from './http';
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 5 * 60 * 1000,      // 5 min - desktop app, data changes infrequently
+            // 5 min: ventana de frescura vs. coste de red para una intranet cuyos
+            // datos cambian con poca frecuencia. También acota el refetch-on-focus
+            // de abajo (solo refetchea lo que ya esté obsoleto, >5 min).
+            staleTime: 5 * 60 * 1000,
             gcTime: 30 * 60 * 1000,         // 30 min garbage collection
             // Al cambiar la queryKey (paginación, rango de fechas, filtros, mes del
             // calendario…) mantiene visibles los datos anteriores mientras llega la
@@ -18,7 +21,11 @@ export const queryClient = new QueryClient({
                 if (error instanceof HttpError && error.status >= 400 && error.status < 500) return false;
                 return failureCount < 1;
             },
-            refetchOnWindowFocus: false,     // Desktop app, not needed
+            // App en navegador y multiusuario: al volver a la pestaña refresca por
+            // si otro usuario tocó los datos. El staleTime (5 min) lo limita a datos
+            // ya obsoletos, así que el coste es casi nulo y no interrumpe formularios
+            // (su estado es local; esto solo refetchea datos de servidor en segundo plano).
+            refetchOnWindowFocus: true,
             refetchOnReconnect: true,
         },
         mutations: {

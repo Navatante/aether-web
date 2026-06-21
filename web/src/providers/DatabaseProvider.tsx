@@ -61,7 +61,7 @@ export function DatabaseProvider({ children }: DatabaseProviderProps) {
         queryFn: ({ signal }) => http<HealthResponse>('GET', '/health', { signal }),
         refetchInterval: DATABASE_CONFIG.monitoring.checkInterval,
         refetchIntervalInBackground: true,
-        refetchOnWindowFocus: true,   // override del default global: el health SÍ refresca al enfocar
+        refetchOnWindowFocus: true,   // explícito: el health refresca al enfocar (alineado con el default global)
         refetchOnReconnect: true,
         retry: false,                 // un poll fallido no se reintenta; el siguiente tick (5s) lo hace
         staleTime: 0,
