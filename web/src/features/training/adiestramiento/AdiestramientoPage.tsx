@@ -90,6 +90,74 @@ const PERIOD_OPTIONS: { value: PeriodFilter; label: string; activeClass: string 
     { value: 3, label: 'GVN', activeClass: 'bg-success text-success-foreground' },
 ];
 
+const ESTADO_LABEL: Record<string, string> = {
+    Expirado: '⚠️ Expirado',
+    Alerta: '⏰ Próximo a vencer',
+    Vigente: '✅ Vigente',
+};
+
+function getStatusColor(estado: string | null): string {
+    switch (estado) {
+        case 'Expirado':
+            return 'bg-danger-muted text-danger-muted-foreground border-danger/30';
+        case 'Alerta':
+            return 'bg-warning-muted text-warning-muted-foreground border-warning/30';
+        case 'Vigente':
+            return 'bg-success-muted text-success-muted-foreground border-success/30';
+        default:
+            return 'bg-muted text-muted-foreground border-border';
+    }
+}
+
+function getCellBackground(estado: string | null): string {
+    switch (estado) {
+        case 'Expirado':
+            return 'bg-danger-muted';
+        case 'Alerta':
+            return 'bg-warning-muted';
+        case 'Vigente':
+            return 'bg-success-muted';
+        default:
+            return 'bg-muted';
+    }
+}
+
+// Celda de estado con tooltip nativo (atributo `title`) en vez de un Tooltip de
+// Base UI: la matriz es personas × papeletas (cientos/miles de celdas) y montar
+// un Tooltip por celda dispara el tiempo de render. Mismo patrón que el
+// `StatusCell` de InstruccionPage.
+interface StatusCellProps {
+    status: PapeletaRealizada | null;
+}
+
+function StatusCell({ status }: StatusCellProps) {
+    const estado = status?.estado ?? null;
+    const tooltipText = status
+        ? `Transcurridos: ${status.dias_transcurridos} días\n`
+          + `Restantes: ${status.dias_restantes} días\n`
+          + (ESTADO_LABEL[status.estado] ?? status.estado)
+        : 'Nunca realizó esta papeleta';
+
+    return (
+        <td className="text-center p-2">
+            <div
+                title={tooltipText}
+                className={cn(
+                    "inline-flex flex-col items-center justify-center w-16 h-16 rounded-lg border transition-all duration-300 cursor-help",
+                    getCellBackground(estado),
+                    getStatusColor(estado),
+                )}
+            >
+                {status ? (
+                    <div className="font-bold text-lg">{status.dias_restantes}</div>
+                ) : (
+                    <span className="text-muted-foreground">-</span>
+                )}
+            </div>
+        </td>
+    );
+}
+
 export interface AdiestramientoVariant {
     /** Título de la página. */
     title: string;
@@ -222,32 +290,6 @@ export function AdiestramientoPage({ variant }: { variant: AdiestramientoVariant
 
         return result;
     })();
-
-    const getStatusColor = (estado: string | null): string => {
-        switch (estado) {
-            case 'Expirado':
-                return 'bg-danger-muted text-danger-muted-foreground border-danger/30';
-            case 'Alerta':
-                return 'bg-warning-muted text-warning-muted-foreground border-warning/30';
-            case 'Vigente':
-                return 'bg-success-muted text-success-muted-foreground border-success/30';
-            default:
-                return 'bg-muted text-muted-foreground border-border';
-        }
-    };
-
-    const getCellBackground = (estado: string | null): string => {
-        switch (estado) {
-            case 'Expirado':
-                return 'bg-danger-muted';
-            case 'Alerta':
-                return 'bg-warning-muted';
-            case 'Vigente':
-                return 'bg-success-muted';
-            default:
-                return 'bg-muted';
-        }
-    };
 
     if (isLoading) {
         return (
@@ -526,68 +568,12 @@ export function AdiestramientoPage({ variant }: { variant: AdiestramientoVariant
                                             </Tooltip>
                                             </div>
                                         </td>
-                                        {visiblePersonas.map(persona => {
-                                            const status = getPapeletaStatus(persona, papeleta.papeleta_sk);
-
-                                            return (
-                                                <td key={persona.person_sk} className="text-center p-2">
-                                                    <Tooltip>
-                                                        <TooltipTrigger render={
-                                                            <div
-                                                                className={`
-                                                                        inline-flex flex-col items-center justify-center
-                                                                        w-16 h-16
-                                                                        rounded-lg border
-                                                                        transition-all duration-300 cursor-help
-                                                                        ${getCellBackground(status?.estado || null)}
-                                                                        ${getStatusColor(status?.estado || null)}
-                                                                    `}
-                                                            >
-                                                                {status ? (
-                                                                    <>
-                                                                        <div className="font-bold text-lg">
-                                                                            {status.dias_restantes}
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <span className="text-muted-foreground">-</span>
-                                                                )}
-                                                            </div>
-                                                        } />
-                                                        <TooltipContent
-                                                            side="top"
-                                                            variant="info" className="p-0 max-w-80 overflow-hidden"
-                                                        >
-                                                            {status ? (
-                                                                <div className="px-4 py-3 space-y-1">
-                                                                    <p className="text-sm text-foreground leading-relaxed text-pretty">
-                                                                        Transcurridos: {status.dias_transcurridos} días
-                                                                    </p>
-                                                                    <p className="text-sm text-foreground leading-relaxed text-pretty">
-                                                                        Restantes: {status.dias_restantes} días
-                                                                    </p>
-                                                                    <p className={`text-sm font-medium ${
-                                                                        status.estado === 'Expirado' ? 'text-danger' :
-                                                                            status.estado === 'Alerta' ? 'text-warning' :
-                                                                                'text-success'
-                                                                    }`}>
-                                                                        {status.estado === 'Expirado' ? '⚠️ Expirado' :
-                                                                            status.estado === 'Alerta' ? '⏰ Próximo a vencer' :
-                                                                                '✅ Vigente'}
-                                                                    </p>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="px-4 py-3">
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        Nunca realizó esta papeleta
-                                                                    </p>
-                                                                </div>
-                                                            )}
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </td>
-                                            );
-                                        })}
+                                        {visiblePersonas.map(persona => (
+                                            <StatusCell
+                                                key={persona.person_sk}
+                                                status={getPapeletaStatus(persona, papeleta.papeleta_sk)}
+                                            />
+                                        ))}
                                     </tr>
                                     </Fragment>
                                     );
