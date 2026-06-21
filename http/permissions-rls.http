@@ -1,0 +1,457 @@
+################################################################################
+# Aether-Web — Banco de pruebas de PERMISOS y RLS
+#
+# Objetivo: dejar fijadas las comprobaciones de la allow-list por ruta y del
+# aislamiento por escuadrilla (RLS), que de otro modo se verifican a mano por la
+# UI con riesgo de olvidar un caso.
+#
+# Cómo usarlo:
+#   1. Rellena http-client.private.env.json con usuarios/contraseñas reales de
+#      cada nivel (ese archivo está gitignorado: NO subas credenciales).
+#   2. Selecciona el entorno "dev" (esquina sup. derecha al ejecutar).
+#   3. Ejecuta de arriba a abajo. Cada login captura su cookie de sesión en una
+#      variable distinta (opCookie / admCookie / suCookie / comunCookie), así
+#      podemos mantener VARIAS identidades a la vez en el mismo archivo y enviar
+#      la cabecera Cookie de forma explícita por petición.
+#
+# Recordatorio de la allow-list (CLAUDE.md): NO hay jerarquía salvo Superusuario.
+#   - Vuelos, slips, eventos, lookups de vuelo .......... Operacional
+#   - Personal, comisiones, festivos .................... Administrativo
+#   - Ausencias, ratings ............................... Operacional o Administrativo
+#   - Credenciales y nivel de permiso (panel superuser) . Superusuario
+#   - Lecturas (GET) ................................... cualquier autenticado
+#   - Superusuario bypassa permisos PERO NO el RLS por escuadrilla.
+################################################################################
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### LOGINS — cada uno guarda su cookie en una variable global propia
+### ───────────────────────────────────────────────────────────────────────────
+
+### Login OPERACIONAL
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "user": "{{opUser}}", "password": "{{opPass}}" }
+
+> {%
+    client.test("operacional: login 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+    // Set-Cookie viene como "aether_session=TOKEN; Path=/; HttpOnly; ...".
+    // Nos quedamos solo con "aether_session=TOKEN".
+    const sc = response.headers.valueOf("Set-Cookie");
+    if (sc) client.global.set("opCookie", sc.split(";")[0]);
+    client.test("operacional: nivel correcto", () => {
+        client.assert(response.body.permissionLevel === "Operacional",
+            "nivel inesperado: " + response.body.permissionLevel);
+    });
+%}
+
+### Login ADMINISTRATIVO
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "user": "{{admUser}}", "password": "{{admPass}}" }
+
+> {%
+    client.test("administrativo: login 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+    const sc = response.headers.valueOf("Set-Cookie");
+    if (sc) client.global.set("admCookie", sc.split(";")[0]);
+%}
+
+### Login COMÚN (sin permisos de escritura)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "user": "{{comunUser}}", "password": "{{comunPass}}" }
+
+> {%
+    client.test("comun: login 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+    const sc = response.headers.valueOf("Set-Cookie");
+    if (sc) client.global.set("comunCookie", sc.split(";")[0]);
+%}
+
+### Login SUPERUSUARIO (god-mode: bypassa permisos, NO el RLS)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "user": "{{suUser}}", "password": "{{suPass}}" }
+
+> {%
+    client.test("superusuario: login 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+    const sc = response.headers.valueOf("Set-Cookie");
+    if (sc) client.global.set("suCookie", sc.split(";")[0]);
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 1 — Sin sesión: toda escritura debe ser 401 (no 403)
+### ───────────────────────────────────────────────────────────────────────────
+
+### POST /persons sin cookie -> 401
+POST {{baseUrl}}/api/v1/persons
+Content-Type: application/json
+
+{ "person_user": "noimporta" }
+
+> {%
+    client.test("sin sesion: 401", () => {
+        client.assert(response.status === 401, "esperaba 401, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 2 — Lecturas (GET): cualquier autenticado, incluido COMÚN -> 200
+### ───────────────────────────────────────────────────────────────────────────
+
+### GET /persons como COMÚN -> 200
+GET {{baseUrl}}/api/v1/persons
+Cookie: {{comunCookie}}
+
+> {%
+    client.test("comun lee persons: 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+%}
+
+### GET /lookups/aircrafts como COMÚN -> 200
+GET {{baseUrl}}/api/v1/lookups/aircrafts
+Cookie: {{comunCookie}}
+
+> {%
+    client.test("comun lee lookups: 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 3 — Personal = ADMINISTRATIVO (la clave: Operacional NO entra)
+### ───────────────────────────────────────────────────────────────────────────
+
+### POST /persons como OPERACIONAL -> 403 (no incluye Administrativo)
+### El cuerpo da igual: el guard corta con 403 antes de llegar al servicio.
+POST {{baseUrl}}/api/v1/persons
+Content-Type: application/json
+Cookie: {{opCookie}}
+
+{ "person_user": "perm.check" }
+
+> {%
+    client.test("operacional NO puede crear persons: 403", () => {
+        client.assert(response.status === 403, "esperaba 403, fue " + response.status);
+    });
+%}
+
+### POST /persons como COMÚN -> 403
+POST {{baseUrl}}/api/v1/persons
+Content-Type: application/json
+Cookie: {{comunCookie}}
+
+{ "person_user": "test.comun" }
+
+> {%
+    client.test("comun NO puede crear persons: 403", () => {
+        client.assert(response.status === 403, "esperaba 403, fue " + response.status);
+    });
+%}
+
+### POST /persons como ADMINISTRATIVO -> pasa el permiso (no 401/403)
+### Cuerpo deliberadamente INCOMPLETO (sin rank/name) para que el servicio
+### devuelva 400 (ErrInvalidInput) SIN escribir datos de prueba en la DB. Lo que
+### comprobamos aquí es solo que el guard de permiso lo DEJA pasar. Para un alta
+### real (201) hay que mandar el cuerpo completo, y ojo: person_rank,
+### person_especialidad, person_localidad, person_division y person_rol son FK
+### POR NOMBRE (deben existir ya en sus catálogos) o el INSERT da 500.
+POST {{baseUrl}}/api/v1/persons
+Content-Type: application/json
+Cookie: {{admCookie}}
+
+{ "person_user": "perm.check" }
+
+> {%
+    client.test("administrativo pasa el permiso (no 401/403)", () => {
+        client.assert(response.status !== 401 && response.status !== 403,
+            "el guard de permiso bloqueó indebidamente: " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 4 — Lookups de vuelo = OPERACIONAL (Administrativo NO entra)
+### ───────────────────────────────────────────────────────────────────────────
+
+### POST /lookups/aircrafts como ADMINISTRATIVO -> 403 (no incluye Operacional)
+POST {{baseUrl}}/api/v1/lookups/aircrafts
+Content-Type: application/json
+Cookie: {{admCookie}}
+
+{ "matricula": "TEST-RLS" }
+
+> {%
+    client.test("administrativo NO puede crear aircraft: 403", () => {
+        client.assert(response.status === 403, "esperaba 403, fue " + response.status);
+    });
+%}
+
+### POST /lookups/aircrafts como OPERACIONAL -> pasa el permiso (no 401/403)
+POST {{baseUrl}}/api/v1/lookups/aircrafts
+Content-Type: application/json
+Cookie: {{opCookie}}
+
+{ "matricula": "TEST-RLS" }
+
+> {%
+    client.test("operacional pasa el permiso (no 401/403)", () => {
+        client.assert(response.status !== 401 && response.status !== 403,
+            "el guard de permiso bloqueó indebidamente: " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 5 — Panel SUPERUSUARIO: solo Superusuario
+### ───────────────────────────────────────────────────────────────────────────
+
+### GET /superuser/persons como ADMINISTRATIVO -> 403
+GET {{baseUrl}}/api/v1/superuser/persons
+Cookie: {{admCookie}}
+
+> {%
+    client.test("administrativo NO entra al panel superuser: 403", () => {
+        client.assert(response.status === 403, "esperaba 403, fue " + response.status);
+    });
+%}
+
+### GET /superuser/persons como SUPERUSUARIO -> 200 (god-mode pasa el permiso)
+GET {{baseUrl}}/api/v1/superuser/persons
+Cookie: {{suCookie}}
+
+> {%
+    client.test("superusuario entra al panel: 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 6 — GOD-MODE bypassa permisos: Superusuario puede escribir personal
+###          (que normalmente es Administrativo) sin ser Administrativo
+### ───────────────────────────────────────────────────────────────────────────
+
+### POST /persons como SUPERUSUARIO -> pasa el permiso (no 401/403)
+POST {{baseUrl}}/api/v1/persons
+Content-Type: application/json
+Cookie: {{suCookie}}
+
+{ "person_user": "test.su" }
+
+> {%
+    client.test("superusuario bypassa el permiso de personal (no 401/403)", () => {
+        client.assert(response.status !== 401 && response.status !== 403,
+            "god-mode debería pasar el guard: " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 7 — RLS por escuadrilla: god-mode NO la rompe
+###
+### El panel superuser opera SOLO sobre la escuadrilla de la sesión. Un :id de
+### persona de OTRA escuadrilla debe dar 404 (no encontrado bajo el filtro RLS),
+### nunca permitir la operación. Pon en {{otherEscPersonId}} un id real de otra
+### escuadrilla; si no tienes uno a mano, déjalo y este test quedará informativo.
+### ───────────────────────────────────────────────────────────────────────────
+
+### PUT /superuser/persons/:id/password sobre persona de OTRA escuadrilla -> 404
+PUT {{baseUrl}}/api/v1/superuser/persons/{{otherEscPersonId}}/password
+Cookie: {{suCookie}}
+
+> {%
+    client.test("RLS: superuser no toca otra escuadrilla (404)", () => {
+        client.assert(response.status === 404,
+            "esperaba 404 por RLS, fue " + response.status +
+            " (revisa que otherEscPersonId sea de OTRA escuadrilla)");
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 8 — Salvaguarda: no degradar al último Superusuario de la escuadrilla
+###
+### Cambiar el nivel del único Superusuario de la escuadrilla debe dar 409.
+### Pon en {{lastSuPersonId}} el id de ESE superusuario.
+### ───────────────────────────────────────────────────────────────────────────
+
+### PATCH nivel del último Superusuario -> 409 (ErrLastSuperuser)
+PATCH {{baseUrl}}/api/v1/superuser/persons/{{lastSuPersonId}}/permission-level
+Content-Type: application/json
+Cookie: {{suCookie}}
+
+{ "permissionLevel": "Común" }
+
+> {%
+    client.test("no se puede degradar al último superuser: 409", () => {
+        client.assert(response.status === 409,
+            "esperaba 409, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 9 — END-TO-END de FLIGHTS (Operacional): crear → leer → borrar
+###
+### Requiere ids REALES de tu DB local en el entorno (ver http-client.env.json):
+###   depPlaceId, arrPlaceId  -> lookups/departure-arrival-places
+###   aircraftId              -> lookups/aircrafts (de tu escuadrilla)
+###   eventId                 -> lookups/events
+###   pilotPersonSk           -> person_sk de un piloto de tu escuadrilla
+### El POST es transaccional (~12 tablas hijas) y dispara tr_audit_flight.
+### ───────────────────────────────────────────────────────────────────────────
+
+### 9.1 — Crear vuelo como OPERACIONAL -> 201, captura flight_id
+POST {{baseUrl}}/api/v1/flights
+Content-Type: application/json
+Cookie: {{opCookie}}
+
+{
+  "general": {
+    "date": "2026-06-21",
+    "departurePlace": {{depPlaceId}},
+    "departureTime": "09:00",
+    "arrivalPlace": {{arrPlaceId}},
+    "arrivalTime": "10:30",
+    "aircraft": {{aircraftId}},
+    "event": {{eventId}},
+    "totalHours": "1.5"
+  },
+  "pilots": [
+    {
+      "name": {{pilotPersonSk}},
+      "person_hour": { "hDay": "1.5", "hNight": "0", "hGvn": "0" },
+      "ift_hour": "0",
+      "gvnType_hour": { "hIit": "0", "hAnvis": "0" },
+      "instructor_hour": "0",
+      "formation_hour": { "hfDay": "0", "hfGvn": "0" },
+      "app": { "precision": "0", "noPrecision": "0", "td": "0", "sp": "0" },
+      "landing": {
+        "tierra":  { "lDay": "1", "lNight": "0", "lGvn": "0" },
+        "mono":    { "lDay": "0", "lNight": "0", "lGvn": "0" },
+        "multi":   { "lDay": "0", "lNight": "0", "lGvn": "0" },
+        "carrier": { "lDay": "0", "lNight": "0", "lGvn": "0" }
+      }
+    }
+  ],
+  "dvs": [],
+  "papeletas": [],
+  "cupos": [],
+  "capbas": [],
+  "pasajeros": []
+}
+
+> {%
+    client.test("crear vuelo: 201", () => {
+        client.assert(response.status === 201, "esperaba 201, fue " + response.status +
+            " | body: " + JSON.stringify(response.body));
+    });
+    if (response.body && response.body.flight_id) {
+        client.global.set("e2eFlightId", response.body.flight_id);
+    }
+    client.test("crear vuelo: success=true", () => {
+        client.assert(response.body.success === true, "success no es true");
+    });
+%}
+
+### 9.2 — Leer el vuelo recién creado (filtrando por flight_sk) -> 200, aparece
+GET {{baseUrl}}/api/v1/flights?flight_sk={{e2eFlightId}}
+Cookie: {{opCookie}}
+
+> {%
+    client.test("leer vuelo creado: 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+    client.test("leer vuelo creado: aparece en el listado", () => {
+        client.assert(response.body.total_count >= 1 && response.body.items.length >= 1,
+            "no se encontró el vuelo creado");
+        client.assert(String(response.body.items[0].id) === client.global.get("e2eFlightId"),
+            "el id del listado no coincide con el creado");
+    });
+%}
+
+### 9.3 — Borrar el vuelo como OPERACIONAL -> 204
+DELETE {{baseUrl}}/api/v1/flights/{{e2eFlightId}}
+Cookie: {{opCookie}}
+
+> {%
+    client.test("borrar vuelo: 204", () => {
+        client.assert(response.status === 204, "esperaba 204, fue " + response.status);
+    });
+%}
+
+### 9.4 — Confirmar que ya no existe -> 200 con listado vacío
+GET {{baseUrl}}/api/v1/flights?flight_sk={{e2eFlightId}}
+Cookie: {{opCookie}}
+
+> {%
+    client.test("vuelo borrado: ya no aparece", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+        client.assert(response.body.total_count === 0 && response.body.items.length === 0,
+            "el vuelo sigue apareciendo tras el borrado");
+    });
+%}
+
+### 9.5 — Borrar de nuevo el mismo id -> 404 (ya no existe)
+DELETE {{baseUrl}}/api/v1/flights/{{e2eFlightId}}
+Cookie: {{opCookie}}
+
+> {%
+    client.test("borrar vuelo inexistente: 404", () => {
+        client.assert(response.status === 404, "esperaba 404, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### CASO 10 — Permisos sobre el end-to-end de flights
+### ───────────────────────────────────────────────────────────────────────────
+
+### POST /flights como ADMINISTRATIVO -> 403 (flights es Operacional)
+POST {{baseUrl}}/api/v1/flights
+Content-Type: application/json
+Cookie: {{admCookie}}
+
+{ "general": { "date": "2026-06-21" }, "pilots": [] }
+
+> {%
+    client.test("administrativo NO puede crear vuelos: 403", () => {
+        client.assert(response.status === 403, "esperaba 403, fue " + response.status);
+    });
+%}
+
+### GET /flights como COMÚN -> 200 (lecturas abiertas)
+GET {{baseUrl}}/api/v1/flights?limit=1
+Cookie: {{comunCookie}}
+
+> {%
+    client.test("comun lee flights: 200", () => {
+        client.assert(response.status === 200, "esperaba 200, fue " + response.status);
+    });
+%}
+
+
+### ───────────────────────────────────────────────────────────────────────────
+### LIMPIEZA / utilidades
+### ───────────────────────────────────────────────────────────────────────────
+
+### Logout (limpia la sesión del navegador; las variables *Cookie siguen válidas
+### hasta que caduque la sesión en servidor o reinicies)
+POST {{baseUrl}}/api/v1/auth/logout
+Cookie: {{opCookie}}
