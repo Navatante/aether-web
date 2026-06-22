@@ -131,7 +131,7 @@ func (s *Service) Summary(ctx context.Context, esc int32, month, year int) (Fuel
 			order = append(order, r.Payer)
 		}
 		g.Rows = append(g.Rows, FuelDetailRow{
-			Event: r.Event, Phase: r.Phase, PlaceName: r.PlaceName, PlaceType: r.PlaceType, Qty: r.Qty,
+			Event: r.Event, EventPlace: r.EventPlace, Phase: r.Phase, PlaceName: r.PlaceName, PlaceType: r.PlaceType, Qty: r.Qty,
 		})
 		g.Subtotal += r.Qty
 		grand += r.Qty

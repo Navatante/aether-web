@@ -77,6 +77,7 @@ export interface FuelItem {
  */
 export interface FuelDetailRow {
   event: string;
+  event_place: string;
   phase: string;
   place_name: string;
   place_type: string;

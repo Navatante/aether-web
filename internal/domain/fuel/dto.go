@@ -73,11 +73,12 @@ type FuelItem struct {
 // FuelDetailRow es una fila de detalle del informe: combinación evento + fase +
 // lugar (nombre y tipo) con sus litros, dentro de un grupo de pagador.
 type FuelDetailRow struct {
-	Event     string  `json:"event"`
-	Phase     string  `json:"phase"`
-	PlaceName string  `json:"place_name"`
-	PlaceType string  `json:"place_type"`
-	Qty       float64 `json:"qty"`
+	Event      string  `json:"event"`
+	EventPlace string  `json:"event_place"`
+	Phase      string  `json:"phase"`
+	PlaceName  string  `json:"place_name"`
+	PlaceType  string  `json:"place_type"`
+	Qty        float64 `json:"qty"`
 }
 
 // FuelPayerGroup agrupa las filas de detalle de un pagador con su subtotal.

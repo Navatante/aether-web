@@ -65,7 +65,10 @@ export default function FuelSummary({ summary, isLoading = false, periodLabel }:
                                             {g.rows.map((r, idx) => (
                                                 <tr key={`${r.event}-${r.phase}-${r.place_name}-${idx}`} className="border-t border-border/40">
                                                     <td className="px-4 py-2 text-sm text-foreground align-top">{idx === 0 ? g.payer : ''}</td>
-                                                    <td className="px-4 py-2 text-sm text-muted-foreground">{r.event}</td>
+                                                    <td className="px-4 py-2 text-sm text-muted-foreground">
+                                                        {r.event}
+                                                        <span className="block text-xs text-muted-foreground/70">{r.event_place}</span>
+                                                    </td>
                                                     <td className="px-4 py-2 text-sm text-muted-foreground">{r.phase}</td>
                                                     <td className="px-4 py-2 text-sm text-muted-foreground">
                                                         {r.place_name}

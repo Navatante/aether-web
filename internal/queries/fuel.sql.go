@@ -67,6 +67,7 @@ const fuelDetailGrouped = `-- name: FuelDetailGrouped :many
 SELECT
     pay.fuel_payer_assignment_type_abbrev AS payer,
     e.event_name        AS event,
+    e.event_place       AS event_place,
     ph.fuel_phase       AS phase,
     fp.fuel_place_name  AS place_name,
     fp.fuel_place_type  AS place_type,
@@ -79,7 +80,7 @@ JOIN operations.fuel_phase ph  ON ph.fuel_phase_sk = f.fuel_phase_fk
 JOIN operations.fuel_place fp  ON fp.fuel_place_sk = f.fuel_place_fk
 WHERE a.aircraft_escuadrilla_fk = $1
   AND f.fuel_date BETWEEN $2 AND $3
-GROUP BY pay.fuel_payer_assignment_type_abbrev, e.event_name,
+GROUP BY pay.fuel_payer_assignment_type_abbrev, e.event_name, e.event_place,
          ph.fuel_phase, ph.fuel_phase_sk, fp.fuel_place_name, fp.fuel_place_type
 ORDER BY pay.fuel_payer_assignment_type_abbrev, e.event_name, ph.fuel_phase_sk, fp.fuel_place_name
 `
@@ -91,12 +92,13 @@ type FuelDetailGroupedParams struct {
 }
 
 type FuelDetailGroupedRow struct {
-	Payer     string  `json:"payer"`
-	Event     string  `json:"event"`
-	Phase     string  `json:"phase"`
-	PlaceName string  `json:"place_name"`
-	PlaceType string  `json:"place_type"`
-	Qty       float64 `json:"qty"`
+	Payer      string  `json:"payer"`
+	Event      string  `json:"event"`
+	EventPlace string  `json:"event_place"`
+	Phase      string  `json:"phase"`
+	PlaceName  string  `json:"place_name"`
+	PlaceType  string  `json:"place_type"`
+	Qty        float64 `json:"qty"`
 }
 
 // ============================================================
@@ -118,6 +120,7 @@ func (q *Queries) FuelDetailGrouped(ctx context.Context, arg FuelDetailGroupedPa
 		if err := rows.Scan(
 			&i.Payer,
 			&i.Event,
+			&i.EventPlace,
 			&i.Phase,
 			&i.PlaceName,
 			&i.PlaceType,

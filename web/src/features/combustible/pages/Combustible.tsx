@@ -68,7 +68,7 @@ export default function Combustible() {
                 <PageControls>
                     <div className="flex flex-wrap gap-4 items-center">
                         <Select value={String(month)} onValueChange={(v) => v && setMonth(Number(v))}>
-                            <SelectTrigger className="w-40"><SelectValue placeholder="Mes" /></SelectTrigger>
+                            <SelectTrigger className="w-40"><SelectValue placeholder="Mes">{MONTHS_ES[month - 1]}</SelectValue></SelectTrigger>
                             <SelectContent>
                                 {MONTHS_ES.map((name, idx) => (
                                     <SelectItem key={name} value={String(idx + 1)}>{name}</SelectItem>
@@ -148,7 +148,10 @@ export default function Combustible() {
                                             </td>
                                             <td className="text-center p-4 text-sm text-muted-foreground">{rec.fuel_type}</td>
                                             <td className="text-center p-4 text-sm text-muted-foreground">{rec.fuel_payer_abbrev}</td>
-                                            <td className="text-center p-4 text-sm text-muted-foreground">{rec.event_name}</td>
+                                            <td className="text-center p-4 text-sm text-muted-foreground">
+                                                {rec.event_name}
+                                                <span className="block text-xs text-muted-foreground/70">{rec.event_place}</span>
+                                            </td>
                                             <td className="text-center p-4 text-sm text-muted-foreground">{rec.fuel_phase}</td>
                                             <td className="text-right p-4 text-sm text-foreground font-mono tabular-nums">{rec.fuel_qty.toLocaleString('es-ES')}</td>
                                             {canWrite && (

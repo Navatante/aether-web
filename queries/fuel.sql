@@ -69,6 +69,7 @@ WHERE a.aircraft_escuadrilla_fk = $1
 SELECT
     pay.fuel_payer_assignment_type_abbrev AS payer,
     e.event_name        AS event,
+    e.event_place       AS event_place,
     ph.fuel_phase       AS phase,
     fp.fuel_place_name  AS place_name,
     fp.fuel_place_type  AS place_type,
@@ -81,7 +82,7 @@ JOIN operations.fuel_phase ph  ON ph.fuel_phase_sk = f.fuel_phase_fk
 JOIN operations.fuel_place fp  ON fp.fuel_place_sk = f.fuel_place_fk
 WHERE a.aircraft_escuadrilla_fk = $1
   AND f.fuel_date BETWEEN $2 AND $3
-GROUP BY pay.fuel_payer_assignment_type_abbrev, e.event_name,
+GROUP BY pay.fuel_payer_assignment_type_abbrev, e.event_name, e.event_place,
          ph.fuel_phase, ph.fuel_phase_sk, fp.fuel_place_name, fp.fuel_place_type
 ORDER BY pay.fuel_payer_assignment_type_abbrev, e.event_name, ph.fuel_phase_sk, fp.fuel_place_name;
 
