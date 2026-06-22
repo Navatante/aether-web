@@ -22,7 +22,7 @@ export default function RegisterFuelDialog({
         <Dialog open={open} onOpenChange={onOpenChange} disablePointerDismissal>
             <DialogContent
                 onWheel={(e) => e.stopPropagation()}
-                className="max-w-lg max-h-[90vh] w-auto h-auto flex flex-col p-0 overflow-hidden"
+                className="max-w-2xl max-h-[90vh] w-full h-auto flex flex-col p-0 overflow-hidden"
             >
                 <DialogHeader className="px-6 pt-6 pb-6 shrink-0">
                     <DialogTitle>

@@ -76,7 +76,7 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
             {/* Aeronave (helo) */}
             <div className="grid gap-2">
                 <Label className="text-foreground">Aeronave</Label>
-                {renderSelect(heloOptions, helo, setHelo, helosLoading, 'Seleccione una aeronave', 'Sin aeronaves')}
+                {renderSelect(heloOptions, helo, setHelo, helosLoading, 'Seleccionar', 'Sin aeronaves')}
             </div>
 
             {/* Lugar de repostaje: selector del catálogo + alta inline */}
@@ -98,19 +98,19 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
                             Nuevo lugar de repostaje
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="grid gap-1.5">
+                            <div className="grid gap-1.5 min-w-0">
                                 <Label htmlFor="place_name">Nombre</Label>
                                 <Input id="place_name" placeholder="LEMO"
                                     value={newPlaceName} onChange={(e) => setNewPlaceName(e.target.value)}
                                     maxLength={50} className="bg-background" />
                             </div>
-                            <div className="grid gap-1.5">
+                            <div className="grid gap-1.5 min-w-0">
                                 <Label htmlFor="place_type">Tipo</Label>
                                 <TypeSelect value={newPlaceType} onValueChange={(value) => value && setNewPlaceType(value as typeof newPlaceType)}>
-                                    <SelectTrigger id="place_type" className="w-full bg-background">
-                                        <SelectValue placeholder="Selecciona tipo" />
+                                    <SelectTrigger id="place_type" className="w-full min-w-0 bg-background">
+                                        <SelectValue placeholder="Selecciona tipo" className="min-w-0" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent alignItemWithTrigger={false} className="w-auto">
                                         {FUEL_PLACE_TYPES.map((t) => (
                                             <SelectItem key={t} value={t}>{t}</SelectItem>
                                         ))}
@@ -128,7 +128,7 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
                         </div>
                     </div>
                 ) : (
-                    renderSelect(placeOptions, place, setPlace, placesLoading, 'Seleccione un lugar', 'Sin lugares')
+                    renderSelect(placeOptions, place, setPlace, placesLoading, 'Seleccionar', 'Sin lugares')
                 )}
             </div>
 
@@ -136,11 +136,11 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
             <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label className="text-foreground">Pagador</Label>
-                    {renderSelect(payerOptions, payer, setPayer, payersLoading, 'Seleccione un pagador', 'Sin pagadores')}
+                    {renderSelect(payerOptions, payer, setPayer, payersLoading, 'Seleccionar', 'Sin pagadores')}
                 </div>
                 <div className="grid gap-2">
                     <Label className="text-foreground">Evento</Label>
-                    {renderSelect(eventOptions, event, setEvent, eventsLoading, 'Seleccione un evento', 'Sin eventos')}
+                    {renderSelect(eventOptions, event, setEvent, eventsLoading, 'Seleccionar', 'Sin eventos')}
                 </div>
             </div>
 
@@ -148,11 +148,11 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
             <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label className="text-foreground">Fase</Label>
-                    {renderSelect(phaseOptions, phase, setPhase, phasesLoading, 'Seleccione una fase', 'Sin fases')}
+                    {renderSelect(phaseOptions, phase, setPhase, phasesLoading, 'Seleccionar', 'Sin fases')}
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-foreground">Tipo de combustible</Label>
-                    {renderSelect(typeOptions, type, setType, typesLoading, 'Seleccione un tipo', 'Sin tipos')}
+                    <Label className="text-foreground">Tipo</Label>
+                    {renderSelect(typeOptions, type, setType, typesLoading, 'Seleccionar', 'Sin tipos')}
                 </div>
             </div>
 
@@ -160,7 +160,7 @@ export default function RegisterFuelForm({ mode, initial, onClose }: RegisterFue
             <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label className="text-foreground">Fecha</Label>
-                    <DatePicker value={date} onChange={setDate} placeholder="Seleccionar fecha" />
+                    <DatePicker value={date} onChange={setDate} placeholder="Seleccionar" />
                 </div>
                 <div className="grid gap-2">
                     <Label className="text-foreground">Cantidad (litros)</Label>
