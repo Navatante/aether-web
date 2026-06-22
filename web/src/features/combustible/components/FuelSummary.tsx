@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { RefreshCw } from 'lucide-react'
 import {
     Card,
@@ -6,7 +7,9 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card'
-import type { FuelSummary as FuelSummaryData } from '@/types/generated/fuel'
+import type { ReactNode } from 'react'
+import type { FuelDetailRow, FuelPayerGroup, FuelSummary as FuelSummaryData } from '@/types/generated/fuel'
+import { FLOAN_PAYER, groupRowsByEvent, groupRowsByPlaceType, mergeCombinedPayers } from '../fuel'
 
 interface FuelSummaryProps {
     summary: FuelSummaryData
@@ -25,6 +28,50 @@ const fmtLitros = (n: number) => n.toLocaleString('es-ES')
 export default function FuelSummary({ summary, isLoading = false, periodLabel }: FuelSummaryProps) {
     const { payers, grand_total } = summary
     const isEmpty = payers.length === 0
+
+    // Fila de detalle del informe. payerLabel solo se pinta en la primera fila
+    // de cada grupo de pagador (en el resto, celda vacía).
+    const detailRow = (r: FuelDetailRow, key: string, payerLabel: string) => (
+        <tr key={key} className="border-t border-border/40">
+            <td className="px-4 py-2 text-sm text-foreground align-top">{payerLabel}</td>
+            <td className="px-4 py-2 text-sm text-muted-foreground">
+                {r.event}
+                <span className="block text-xs text-muted-foreground/70">{r.event_place}</span>
+            </td>
+            <td className="px-4 py-2 text-sm text-muted-foreground">{r.phase}</td>
+            <td className="px-4 py-2 text-sm text-muted-foreground">
+                {r.place_name}
+                <span className="block text-xs text-muted-foreground/70">{r.place_type}</span>
+            </td>
+            <td className="px-4 py-2 text-sm text-right text-foreground font-mono tabular-nums whitespace-nowrap">
+                {fmtLitros(r.qty)}
+            </td>
+        </tr>
+    )
+
+    // Bloques de subtotal parcial dentro de un grupo de pagador: FLOAN por tipo
+    // de lugar; el resto de pagadores por evento (nombre + lugar del evento).
+    const blocksFor = (g: FuelPayerGroup): { key: string; label: ReactNode; rows: FuelDetailRow[]; subtotal: number }[] => {
+        if (g.payer === FLOAN_PAYER) {
+            return groupRowsByPlaceType(g.rows).map((b) => ({
+                key: b.placeType,
+                label: `Subtotal ${b.placeType}`,
+                rows: b.rows,
+                subtotal: b.subtotal,
+            }))
+        }
+        return groupRowsByEvent(g.rows).map((b) => ({
+            key: `${b.event} ${b.eventPlace}`,
+            label: (
+                <>
+                    Subtotal {b.event}
+                    {b.eventPlace && <span className="text-muted-foreground/70"> · {b.eventPlace}</span>}
+                </>
+            ),
+            rows: b.rows,
+            subtotal: b.subtotal,
+        }))
+    }
 
     return (
         <Card>
@@ -60,24 +107,24 @@ export default function FuelSummary({ summary, isLoading = false, periodLabel }:
                                         </tr>
                                     </tbody>
                                 ) : (
-                                    payers.map((g) => (
+                                    mergeCombinedPayers(payers).map((g) => (
                                         <tbody key={g.payer} className="border-t border-border">
-                                            {g.rows.map((r, idx) => (
-                                                <tr key={`${r.event}-${r.phase}-${r.place_name}-${idx}`} className="border-t border-border/40">
-                                                    <td className="px-4 py-2 text-sm text-foreground align-top">{idx === 0 ? g.payer : ''}</td>
-                                                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                                                        {r.event}
-                                                        <span className="block text-xs text-muted-foreground/70">{r.event_place}</span>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-muted-foreground">{r.phase}</td>
-                                                    <td className="px-4 py-2 text-sm text-muted-foreground">
-                                                        {r.place_name}
-                                                        <span className="block text-xs text-muted-foreground/70">{r.place_type}</span>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-right text-foreground font-mono tabular-nums whitespace-nowrap">
-                                                        {fmtLitros(r.qty)}
-                                                    </td>
-                                                </tr>
+                                            {blocksFor(g).map((block, bIdx) => (
+                                                <Fragment key={block.key}>
+                                                    {block.rows.map((r, idx) => detailRow(
+                                                        r,
+                                                        `${block.key}-${r.event}-${r.phase}-${r.place_name}-${idx}`,
+                                                        bIdx === 0 && idx === 0 ? g.payer : '',
+                                                    ))}
+                                                    <tr className="bg-muted/20">
+                                                        <td colSpan={4} className="px-4 py-2 text-sm text-right text-muted-foreground">
+                                                            {block.label}
+                                                        </td>
+                                                        <td className="px-4 py-2 text-sm text-right text-muted-foreground font-mono tabular-nums whitespace-nowrap">
+                                                            {fmtLitros(block.subtotal)}
+                                                        </td>
+                                                    </tr>
+                                                </Fragment>
                                             ))}
                                             <tr className="bg-muted/30">
                                                 <td colSpan={4} className="px-4 py-2 text-sm text-right font-medium text-foreground">
