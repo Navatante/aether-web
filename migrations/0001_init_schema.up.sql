@@ -157,7 +157,11 @@ CREATE TABLE operations.crew_rating_type (
 
 CREATE TABLE operations.fuel_place (
     fuel_place_sk  INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    fuel_place     VARCHAR(50) NOT NULL UNIQUE
+    fuel_place_name     VARCHAR(50) NOT NULL UNIQUE,
+    fuel_place_type     VARCHAR(50) NOT NULL,
+    CONSTRAINT chk_fuel_place_type CHECK (
+        type in ('Aeropuerto nacional', 'Aeropuerto internacional', 'Buque nacional', 'Buque internacional', 'Base Naval de Rota')
+        )
 );
 
 CREATE TABLE operations.fuel_payer (
