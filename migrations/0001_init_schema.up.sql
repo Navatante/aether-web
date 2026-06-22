@@ -160,7 +160,7 @@ CREATE TABLE operations.fuel_place (
     fuel_place_name     VARCHAR(50) NOT NULL UNIQUE,
     fuel_place_type     VARCHAR(50) NOT NULL,
     CONSTRAINT chk_fuel_place_type CHECK (
-        type in ('Aeropuerto nacional', 'Aeropuerto internacional', 'Buque nacional', 'Buque internacional', 'Base Naval de Rota')
+        fuel_place_type in ('Aeropuerto nacional', 'Aeropuerto internacional', 'Buque nacional', 'Buque internacional', 'Base Naval de Rota')
         )
 );
 

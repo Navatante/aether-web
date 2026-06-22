@@ -120,9 +120,32 @@ export interface Person {
   person_sk: number /* int32 */;
   full_name: string;
 }
+export interface FuelPlace {
+  fuel_place_sk: number /* int32 */;
+  fuel_place_name: string;
+  fuel_place_type: string;
+}
+export interface FuelPayer {
+  fuel_payer_sk: number /* int32 */;
+  fuel_payer_abbrev: string;
+  fuel_payer_type: string;
+  fuel_payer_name: string;
+}
+export interface FuelPhase {
+  fuel_phase_sk: number /* int32 */;
+  fuel_phase: string;
+}
+export interface FuelType {
+  fuel_type_sk: number /* int32 */;
+  fuel_type: string;
+}
 export interface AddDepartureArrivalPlaceReq {
   code: string;
   name: string;
+}
+export interface AddFuelPlaceReq {
+  fuel_place_name: string;
+  fuel_place_type: string;
 }
 export interface AddAircraftReq {
   registration: string;

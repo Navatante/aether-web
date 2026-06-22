@@ -207,6 +207,28 @@ SELECT division_name FROM detall.division ORDER BY division_name;
 -- name: LookupPersonRoles :many
 SELECT person_rol_name FROM detall.person_rol ORDER BY person_rol_name;
 
+-- ===== Catálogos de combustible (globales, sin escuadrilla) =====
+
+-- name: LookupFuelPlaces :many
+SELECT fuel_place_sk, fuel_place_name, fuel_place_type
+FROM operations.fuel_place
+ORDER BY fuel_place_name;
+
+-- name: LookupFuelPayers :many
+SELECT fuel_payer_sk, fuel_payer_assignment_type_abbrev, fuel_payer_assignment_type, fuel_payer_name
+FROM operations.fuel_payer
+ORDER BY fuel_payer_name;
+
+-- name: LookupFuelPhases :many
+SELECT fuel_phase_sk, fuel_phase
+FROM operations.fuel_phase
+ORDER BY fuel_phase_sk;
+
+-- name: LookupFuelTypes :many
+SELECT fuel_type_sk, fuel_type
+FROM operations.fuel_type
+ORDER BY fuel_type;
+
 
 -- =============== Mutaciones ===============
 
@@ -217,6 +239,12 @@ VALUES ($1, $2);
 
 -- name: DeleteDepartureArrivalPlace :execrows
 DELETE FROM operations.departure_arrival_place WHERE departure_arrival_place_sk = $1;
+
+-- name: AddFuelPlace :exec
+-- Alta de un lugar de repostaje. fuel_place_type lo valida el CHECK del schema
+-- (lista fija) y el service antes de insertar. UNIQUE sobre fuel_place_name.
+INSERT INTO operations.fuel_place (fuel_place_name, fuel_place_type)
+VALUES ($1, $2);
 
 -- name: InsertAircraftModel :one
 -- Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE

@@ -31,6 +31,10 @@ export {
     usePersonRolesLookup,
     usePersonsLookup,
     usePersonsNkLookup,
+    useFuelPlaces,
+    useFuelPayers,
+    useFuelPhases,
+    useFuelTypes,
 } from './useLookups'
 export type {
     AircraftLookup,
@@ -49,4 +53,8 @@ export type {
     RecentComisionLookup,
     PersonForComisionLookup,
     PersonLookup,
+    FuelPlaceLookup,
+    FuelPayerLookup,
+    FuelPhaseLookup,
+    FuelTypeLookup,
 } from './useLookups'

@@ -70,6 +70,23 @@ func (q *Queries) AddEscuadrillaCapba(ctx context.Context, arg AddEscuadrillaCap
 	return err
 }
 
+const addFuelPlace = `-- name: AddFuelPlace :exec
+INSERT INTO operations.fuel_place (fuel_place_name, fuel_place_type)
+VALUES ($1, $2)
+`
+
+type AddFuelPlaceParams struct {
+	FuelPlaceName string `json:"fuel_place_name"`
+	FuelPlaceType string `json:"fuel_place_type"`
+}
+
+// Alta de un lugar de repostaje. fuel_place_type lo valida el CHECK del schema
+// (lista fija) y el service antes de insertar. UNIQUE sobre fuel_place_name.
+func (q *Queries) AddFuelPlace(ctx context.Context, arg AddFuelPlaceParams) error {
+	_, err := q.db.Exec(ctx, addFuelPlace, arg.FuelPlaceName, arg.FuelPlaceType)
+	return err
+}
+
 const deleteAircraft = `-- name: DeleteAircraft :execrows
 DELETE FROM operations.aircraft
 WHERE aircraft_sk = $1 AND aircraft_escuadrilla_fk = $2
@@ -640,6 +657,117 @@ func (q *Queries) LookupEventsManage(ctx context.Context) ([]OperationsEvent, er
 	for rows.Next() {
 		var i OperationsEvent
 		if err := rows.Scan(&i.EventSk, &i.EventName, &i.EventPlace); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupFuelPayers = `-- name: LookupFuelPayers :many
+SELECT fuel_payer_sk, fuel_payer_assignment_type_abbrev, fuel_payer_assignment_type, fuel_payer_name
+FROM operations.fuel_payer
+ORDER BY fuel_payer_name
+`
+
+func (q *Queries) LookupFuelPayers(ctx context.Context) ([]OperationsFuelPayer, error) {
+	rows, err := q.db.Query(ctx, lookupFuelPayers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OperationsFuelPayer
+	for rows.Next() {
+		var i OperationsFuelPayer
+		if err := rows.Scan(
+			&i.FuelPayerSk,
+			&i.FuelPayerAssignmentTypeAbbrev,
+			&i.FuelPayerAssignmentType,
+			&i.FuelPayerName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupFuelPhases = `-- name: LookupFuelPhases :many
+SELECT fuel_phase_sk, fuel_phase
+FROM operations.fuel_phase
+ORDER BY fuel_phase_sk
+`
+
+func (q *Queries) LookupFuelPhases(ctx context.Context) ([]OperationsFuelPhase, error) {
+	rows, err := q.db.Query(ctx, lookupFuelPhases)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OperationsFuelPhase
+	for rows.Next() {
+		var i OperationsFuelPhase
+		if err := rows.Scan(&i.FuelPhaseSk, &i.FuelPhase); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupFuelPlaces = `-- name: LookupFuelPlaces :many
+
+SELECT fuel_place_sk, fuel_place_name, fuel_place_type
+FROM operations.fuel_place
+ORDER BY fuel_place_name
+`
+
+// ===== Catálogos de combustible (globales, sin escuadrilla) =====
+func (q *Queries) LookupFuelPlaces(ctx context.Context) ([]OperationsFuelPlace, error) {
+	rows, err := q.db.Query(ctx, lookupFuelPlaces)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OperationsFuelPlace
+	for rows.Next() {
+		var i OperationsFuelPlace
+		if err := rows.Scan(&i.FuelPlaceSk, &i.FuelPlaceName, &i.FuelPlaceType); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupFuelTypes = `-- name: LookupFuelTypes :many
+SELECT fuel_type_sk, fuel_type
+FROM operations.fuel_type
+ORDER BY fuel_type
+`
+
+func (q *Queries) LookupFuelTypes(ctx context.Context) ([]OperationsFuelType, error) {
+	rows, err := q.db.Query(ctx, lookupFuelTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OperationsFuelType
+	for rows.Next() {
+		var i OperationsFuelType
+		if err := rows.Scan(&i.FuelTypeSk, &i.FuelType); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

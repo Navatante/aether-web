@@ -142,6 +142,71 @@ func (s *Service) Authorities(ctx context.Context) ([]Authority, error) {
 	return out, nil
 }
 
+// ===== Catálogos de combustible (globales) =====
+
+func (s *Service) FuelPlaces(ctx context.Context) ([]FuelPlace, error) {
+	rows, err := s.q.LookupFuelPlaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FuelPlace, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, FuelPlace{FuelPlaceSk: r.FuelPlaceSk, FuelPlaceName: r.FuelPlaceName, FuelPlaceType: r.FuelPlaceType})
+	}
+	return out, nil
+}
+
+func (s *Service) FuelPayers(ctx context.Context) ([]FuelPayer, error) {
+	rows, err := s.q.LookupFuelPayers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FuelPayer, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, FuelPayer{
+			FuelPayerSk:     r.FuelPayerSk,
+			FuelPayerAbbrev: r.FuelPayerAssignmentTypeAbbrev,
+			FuelPayerType:   r.FuelPayerAssignmentType,
+			FuelPayerName:   r.FuelPayerName,
+		})
+	}
+	return out, nil
+}
+
+func (s *Service) FuelPhases(ctx context.Context) ([]FuelPhase, error) {
+	rows, err := s.q.LookupFuelPhases(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FuelPhase, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, FuelPhase{FuelPhaseSk: r.FuelPhaseSk, FuelPhase: r.FuelPhase})
+	}
+	return out, nil
+}
+
+func (s *Service) FuelTypes(ctx context.Context) ([]FuelType, error) {
+	rows, err := s.q.LookupFuelTypes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]FuelType, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, FuelType{FuelTypeSk: r.FuelTypeSk, FuelType: r.FuelType})
+	}
+	return out, nil
+}
+
+// validFuelPlaceTypes es la lista fija del CHECK chk_fuel_place_type. El alta de
+// un lugar (AddFuelPlace) valida contra ella antes de insertar.
+var validFuelPlaceTypes = map[string]bool{
+	"Aeropuerto nacional":      true,
+	"Aeropuerto internacional": true,
+	"Buque nacional":           true,
+	"Buque internacional":      true,
+	"Base Naval de Rota":       true,
+}
+
 func (s *Service) Capbas(ctx context.Context, esc int32) ([]Capba, error) {
 	rows, err := s.q.LookupCapbas(ctx, esc)
 	if err != nil {
@@ -376,6 +441,24 @@ func (s *Service) DeleteDepartureArrivalPlace(ctx context.Context, id int32) err
 		return ErrNotFound
 	}
 	return nil
+}
+
+// AddFuelPlace da de alta un lugar de repostaje (catálogo global). El nombre es
+// UNIQUE; el tipo debe pertenecer a la lista fija del CHECK del schema.
+func (s *Service) AddFuelPlace(ctx context.Context, req AddFuelPlaceReq) error {
+	name := strings.TrimSpace(req.Name)
+	typ := strings.TrimSpace(req.Type)
+	if name == "" || typ == "" {
+		return ErrInvalidInput
+	}
+	if !validFuelPlaceTypes[typ] {
+		return ErrInvalidInput
+	}
+	err := s.q.AddFuelPlace(ctx, queries.AddFuelPlaceParams{
+		FuelPlaceName: name, FuelPlaceType: typ,
+	})
+	// Solo hay UNIQUE sobre el nombre → mapear cualquier 23505 a ErrUniqueName.
+	return mapUniqueErr(err, "__no_code_constraint__", "fuel_place_name")
 }
 
 // AddAircraftModel crea un modelo nuevo en el catálogo global y devuelve su sk.

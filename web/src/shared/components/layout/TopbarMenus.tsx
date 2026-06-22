@@ -2,7 +2,7 @@ import {
     BookOpen,
     CalendarPlus,
     FileBarChart,
-    FileText, Helicopter,
+    FileText, Fuel, Helicopter,
     Luggage,
     Presentation,
     UserMinus,
@@ -24,6 +24,10 @@ import { queryKeys } from "@/lib/queryKeys"
 import { RegisterFlightDialog } from "@/features/flights"
 import { RegisterGroundSchoolDialog } from "@/features/groundschool"
 import { RegisterExtraHoursDialog } from "@/features/extrahours"
+// Import directo del archivo (no del barrel @/features/combustible): el barrel
+// re-exporta la página Combustible (lazy en App.tsx), y traerla por el barrel la
+// arrastraría al bundle principal anulando el code-split.
+import RegisterFuelDialog from "@/features/combustible/components/dialogs/RegisterFuelDialog"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
@@ -34,6 +38,7 @@ export function TopbarMenus() {
     const [registerFlightOpen, setRegisterFlightOpen] = useState(false)
     const [registerGroundSchoolOpen, setRegisterGroundSchoolOpen] = useState(false)
     const [registerExtraHoursOpen, setRegisterExtraHoursOpen] = useState(false)
+    const [registerFuelOpen, setRegisterFuelOpen] = useState(false)
     const [registerComisionOpen, setRegisterComisionOpen] = useState(false)
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
@@ -80,6 +85,10 @@ export function TopbarMenus() {
                                     <MenubarItem onClick={() => setRegisterExtraHoursOpen(true)}>
                                         <BookOpen className="mr-2 h-4 w-4" />
                                         Horas extra
+                                    </MenubarItem>
+                                    <MenubarItem onClick={() => setRegisterFuelOpen(true)}>
+                                        <Fuel className="mr-2 h-4 w-4" />
+                                        Combustible
                                     </MenubarItem>
                                     <MenubarSeparator />
                                 </>
@@ -168,6 +177,15 @@ export function TopbarMenus() {
                 <RegisterExtraHoursDialog
                     open={registerExtraHoursOpen}
                     onOpenChange={setRegisterExtraHoursOpen}
+                    mode="create"
+                />
+            )}
+
+            {/* Dialog Combustible (OPERACIONAL) */}
+            {canAccessOperacional && (
+                <RegisterFuelDialog
+                    open={registerFuelOpen}
+                    onOpenChange={setRegisterFuelOpen}
                     mode="create"
                 />
             )}

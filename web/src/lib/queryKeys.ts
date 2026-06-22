@@ -42,6 +42,10 @@ export const queryKeys = {
         personRoles: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personRoles'] as const,
         persons: (escuadrillaId: number) => ['lookups', escuadrillaId, 'persons'] as const,
         personsNk: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personsNk'] as const,
+        fuelPlaces: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPlaces'] as const,
+        fuelPayers: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPayers'] as const,
+        fuelPhases: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPhases'] as const,
+        fuelTypes: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelTypes'] as const,
     },
 
     // ========================================================================
@@ -67,6 +71,14 @@ export const queryKeys = {
             ['extraHours', escuadrillaId, 'list', params] as const,
         byPerson: (escuadrillaId: number, personSk: number) =>
             ['extraHours', escuadrillaId, 'byPerson', personSk] as const,
+    },
+
+    fuel: {
+        all: (escuadrillaId: number) => ['fuel', escuadrillaId] as const,
+        list: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['fuel', escuadrillaId, 'list', params] as const,
+        summary: (escuadrillaId: number, params: Record<string, unknown>) =>
+            ['fuel', escuadrillaId, 'summary', params] as const,
     },
 
     personnel: {

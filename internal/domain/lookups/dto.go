@@ -131,11 +131,41 @@ type Person struct {
 	FullName string `json:"full_name"`
 }
 
+// ===== Catálogos de combustible =====
+
+type FuelPlace struct {
+	FuelPlaceSk   int32  `json:"fuel_place_sk"`
+	FuelPlaceName string `json:"fuel_place_name"`
+	FuelPlaceType string `json:"fuel_place_type"`
+}
+
+type FuelPayer struct {
+	FuelPayerSk     int32  `json:"fuel_payer_sk"`
+	FuelPayerAbbrev string `json:"fuel_payer_abbrev"`
+	FuelPayerType   string `json:"fuel_payer_type"`
+	FuelPayerName   string `json:"fuel_payer_name"`
+}
+
+type FuelPhase struct {
+	FuelPhaseSk int32  `json:"fuel_phase_sk"`
+	FuelPhase   string `json:"fuel_phase"`
+}
+
+type FuelType struct {
+	FuelTypeSk int32  `json:"fuel_type_sk"`
+	FuelType   string `json:"fuel_type"`
+}
+
 // ===== Request DTOs (mutaciones) =====
 
 type AddDepartureArrivalPlaceReq struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
+}
+
+type AddFuelPlaceReq struct {
+	Name string `json:"fuel_place_name"`
+	Type string `json:"fuel_place_type"`
 }
 
 type AddAircraftReq struct {

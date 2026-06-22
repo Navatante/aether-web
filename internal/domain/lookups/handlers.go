@@ -31,6 +31,9 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.POST("/lookups/departure-arrival-places", h.AddDepartureArrivalPlace, mw, operacional)
 	g.DELETE("/lookups/departure-arrival-places/:id", h.DeleteDepartureArrivalPlace, mw, operacional)
 
+	// Alta de lugar de repostaje (gestionado desde el diálogo de combustible).
+	g.POST("/lookups/fuel-places", h.AddFuelPlace, mw, operacional)
+
 	g.POST("/lookups/aircrafts", h.AddAircraft, mw, operacional)
 	g.DELETE("/lookups/aircrafts/:id", h.DeleteAircraft, mw, operacional)
 	g.PATCH("/lookups/aircrafts/:id", h.UpdateAircraftCurrentFlag, mw, operacional)
@@ -108,6 +111,14 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.ComisionTypes(ctx)
 	case "comision-lugares":
 		data, err = h.svc.ComisionLugares(ctx)
+	case "fuel-places":
+		data, err = h.svc.FuelPlaces(ctx)
+	case "fuel-payers":
+		data, err = h.svc.FuelPayers(ctx)
+	case "fuel-phases":
+		data, err = h.svc.FuelPhases(ctx)
+	case "fuel-types":
+		data, err = h.svc.FuelTypes(ctx)
 
 	// Lookups planos (vector de strings)
 	case "event-names":
@@ -157,6 +168,16 @@ func (h *Handlers) DeleteDepartureArrivalPlace(c echo.Context) error {
 	return mapErrToHTTP(h.svc.DeleteDepartureArrivalPlace(c.Request().Context(), id),
 		map[error]int{ErrNotFound: http.StatusNotFound, ErrInUse: http.StatusConflict},
 		http.StatusNoContent)
+}
+
+func (h *Handlers) AddFuelPlace(c echo.Context) error {
+	var req AddFuelPlaceReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	return mapErrToHTTP(h.svc.AddFuelPlace(c.Request().Context(), req),
+		map[error]int{ErrUniqueName: http.StatusConflict, ErrInvalidInput: http.StatusBadRequest},
+		http.StatusCreated)
 }
 
 func (h *Handlers) AddAircraft(c echo.Context) error {

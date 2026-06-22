@@ -31,6 +31,9 @@ type Querier interface {
 	AddDepartureArrivalPlace(ctx context.Context, arg AddDepartureArrivalPlaceParams) error
 	// Asigna una capba del catálogo global a la escuadrilla con su capacidad operativa.
 	AddEscuadrillaCapba(ctx context.Context, arg AddEscuadrillaCapbaParams) error
+	// Alta de un lugar de repostaje. fuel_place_type lo valida el CHECK del schema
+	// (lista fija) y el service antes de insertar. UNIQUE sobre fuel_place_name.
+	AddFuelPlace(ctx context.Context, arg AddFuelPlaceParams) error
 	// =============== CRUD notcrew_qualification ===============
 	AddNotCrewRating(ctx context.Context, arg AddNotCrewRatingParams) (int32, error)
 	// ============================================================
@@ -72,6 +75,8 @@ type Querier interface {
 	// filtro de nombre que ListExtraHourPersonTotals.
 	CountExtraHourPersons(ctx context.Context, arg CountExtraHourPersonsParams) (int32, error)
 	CountFlights(ctx context.Context, arg CountFlightsParams) (int32, error)
+	// Número de repostajes con el mismo filtro que ListFuel.
+	CountFuel(ctx context.Context, arg CountFuelParams) (int32, error)
 	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
 	CountPersons(ctx context.Context, personEscuadrillaFk int32) (int32, error)
@@ -117,6 +122,8 @@ type Querier interface {
 	DeleteFestivo(ctx context.Context, festivoSk int32) (int64, error)
 	// =============== DELETE (cascade en BD elimina hijos) ===============
 	DeleteFlight(ctx context.Context, arg DeleteFlightParams) (int64, error)
+	// Borra un repostaje solo si su aeronave pertenece a la escuadrilla ($2).
+	DeleteFuel(ctx context.Context, arg DeleteFuelParams) (int64, error)
 	DeleteGroundSchool(ctx context.Context, arg DeleteGroundSchoolParams) (int64, error)
 	DeleteNotCrewRating(ctx context.Context, arg DeleteNotCrewRatingParams) (int64, error)
 	DeletePersonComisionBySk(ctx context.Context, arg DeletePersonComisionBySkParams) (int64, error)
@@ -211,6 +218,14 @@ type Querier interface {
 	// persona → exención acotada a la RLS-por-código (solo datos propios del roster).
 	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
 	FormationPeriodHours(ctx context.Context, arg FormationPeriodHoursParams) ([]FormationPeriodHoursRow, error)
+	// ============================================================
+	// Resumen del mes. Todas acotadas a la escuadrilla ($1) vía la aeronave y al
+	// rango del mes ($2/$3).
+	// ============================================================
+	// Detalle agregado del mes por (pagador, evento, fase, lugar). El servicio lo
+	// agrupa por pagador (subtotal) para el informe seccionado. phase_sk ordena las
+	// fases por el catálogo (Preparación antes que Ejecución).
+	FuelDetailGrouped(ctx context.Context, arg FuelDetailGroupedParams) ([]FuelDetailGroupedRow, error)
 	// =============== sp_get_generalTacticalRatings ===============
 	// Métricas detalladas por persona para calcular el `state` de las
 	// calificaciones generales/tácticas (crew_ratings_fk 12-18).
@@ -341,6 +356,9 @@ type Querier interface {
 	// =============== INSERT MASTER + DEPENDIENTES ===============
 	InsertFlight(ctx context.Context, arg InsertFlightParams) (int32, error)
 	InsertFormationHour(ctx context.Context, arg InsertFormationHourParams) error
+	// Inserta solo si la aeronave ($2) pertenece a la escuadrilla de la sesión ($9);
+	// si no, no inserta ninguna fila (RETURNING vacío → ErrNoRows en el service).
+	InsertFuel(ctx context.Context, arg InsertFuelParams) (int32, error)
 	// ============================================================
 	// Ground School (operations.ground_school)
 	//
@@ -425,6 +443,23 @@ type Querier interface {
 	// =============== LIST (sp_get_flights_with_flexible_crew) ===============
 	// Paginado + filtros opcionales. $2 = flight_sk (0=sin filtro), $3/$4 = date_from/to (NULL=sin filtro).
 	ListFlights(ctx context.Context, arg ListFlightsParams) ([]ListFlightsRow, error)
+	// ============================================================
+	// Combustible (operations.fuel) — repostajes
+	//
+	// Cada fila es un repostaje: fecha, aeronave (helo), lugar, pagador, evento,
+	// fase, tipo de combustible y cantidad (litros). Los catálogos (fuel_place,
+	// fuel_payer, fuel_phase, fuel_type) son globales; operations.event también.
+	//
+	// RLS por código: operations.fuel NO tiene escuadrilla_fk. El aislamiento se
+	// hace vía la aeronave del repostaje (fuel_helo_fk → operations.aircraft.
+	// aircraft_escuadrilla_fk = $N). Todas las sentencias de abajo lo aplican, por
+	// lo que quedan acotadas a aeronaves de la escuadrilla de la sesión.
+	// ============================================================
+	// Lista paginada de repostajes, acotada a la escuadrilla de la sesión ($1) vía
+	// la aeronave. Si $2 (fuel_sk) != 0 busca ese registro concreto (ignorando el
+	// mes); si $2 = 0 filtra por el rango del mes seleccionado ($3/$4). Devuelve
+	// etiquetas resueltas + los *_fk (para precargar el formulario de edición).
+	ListFuel(ctx context.Context, arg ListFuelParams) ([]ListFuelRow, error)
 	// Paginado + filtro opcional por $2 = ground_school_sk (0=sin filtro).
 	ListGroundSchool(ctx context.Context, arg ListGroundSchoolParams) ([]ListGroundSchoolRow, error)
 	// ============================================================
@@ -497,6 +532,11 @@ type Querier interface {
 	LookupEvents(ctx context.Context) ([]LookupEventsRow, error)
 	// get_events_manage: nombre y lugar separados.
 	LookupEventsManage(ctx context.Context) ([]OperationsEvent, error)
+	LookupFuelPayers(ctx context.Context) ([]OperationsFuelPayer, error)
+	LookupFuelPhases(ctx context.Context) ([]OperationsFuelPhase, error)
+	// ===== Catálogos de combustible (globales, sin escuadrilla) =====
+	LookupFuelPlaces(ctx context.Context) ([]OperationsFuelPlace, error)
+	LookupFuelTypes(ctx context.Context) ([]OperationsFuelType, error)
 	// Papeletas para Ground School: excluye los bloques prácticos de vuelo y simulador.
 	LookupGroundSchoolPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupGroundSchoolPapeletasRow, error)
 	LookupPapeletaBloques(ctx context.Context) ([]string, error)
@@ -610,6 +650,10 @@ type Querier interface {
 	// no cambia). Acotado a registros de personas de la escuadrilla de la sesión ($11).
 	UpdateExtraHour(ctx context.Context, arg UpdateExtraHourParams) (int64, error)
 	UpdateFestivo(ctx context.Context, arg UpdateFestivoParams) (int64, error)
+	// Actualiza un repostaje, acotado a aeronaves de la escuadrilla de la sesión
+	// ($10): tanto la fila actual como la nueva aeronave ($3) deben pertenecer a
+	// la escuadrilla.
+	UpdateFuel(ctx context.Context, arg UpdateFuelParams) (int64, error)
 	UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) (int64, error)
 	UpdatePerson(ctx context.Context, arg UpdatePersonParams) (int64, error)
 	// Idempotente: si el nombre ya existe, no hace nada.

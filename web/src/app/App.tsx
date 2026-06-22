@@ -62,6 +62,7 @@ const HorasVueloPilotos = lazy(() => import("@/features/hours/pages/HorasVueloPi
 const TomasAproximacionesPilotos = lazy(() => import("@/features/hours/pages/TomasAproximacionesPilotos"));
 const ProyectilesDotaciones = lazy(() => import("@/features/hours/pages/ProyectilesDotaciones"));
 const HorasVueloDotaciones = lazy(() => import("@/features/hours/pages/HorasVueloDotaciones"));
+const Combustible = lazy(() => import("@/features/combustible/pages/Combustible"));
 
 function FullPageLoader() {
     return (
@@ -115,6 +116,7 @@ function AppContent() {
                         <Route path="flights" element={<Flights />} />
                         <Route path="ground-school" element={<GroundSchool />} />
                         <Route path="horasExtra" element={<HorasExtra />} />
+                        <Route path="combustible" element={<Combustible />} />
                         <Route path="personnel" element={<Personnel />} />
                         <Route path="papeletas" element={<Papeletas />} />
                         <Route path="calificaciones/modelRatings" element={<ModelRatings />} />

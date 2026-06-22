@@ -54,6 +54,7 @@ import (
 // escuadrilla_fk a la query y bórrala de este mapa.
 var exemptBaseline = map[string]string{
 	"AddDepartureArrivalPlace":       "placecatalog",
+	"AddFuelPlace":                   "catalog",
 	"ChangeOwnPasswordBySk":          "auth",
 	"CountEvents":                    "events",
 	"CreateSession":                  "auth",
@@ -112,6 +113,10 @@ var exemptBaseline = map[string]string{
 	"LookupEventNames":               "catalog",
 	"LookupEvents":                   "catalog",
 	"LookupEventsManage":             "catalog",
+	"LookupFuelPayers":               "catalog",
+	"LookupFuelPhases":               "catalog",
+	"LookupFuelPlaces":               "catalog",
+	"LookupFuelTypes":                "catalog",
 	"LookupPapeletaBloques":          "catalog",
 	"LookupPapeletaPlanes":           "catalog",
 	"LookupPassengerTypes":           "catalog",

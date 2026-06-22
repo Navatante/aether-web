@@ -115,6 +115,29 @@ export interface PersonLookup {
     full_name: string;
 }
 
+export interface FuelPlaceLookup {
+    fuel_place_sk: number;
+    fuel_place_name: string;
+    fuel_place_type: string;
+}
+
+export interface FuelPayerLookup {
+    fuel_payer_sk: number;
+    fuel_payer_abbrev: string;
+    fuel_payer_type: string;
+    fuel_payer_name: string;
+}
+
+export interface FuelPhaseLookup {
+    fuel_phase_sk: number;
+    fuel_phase: string;
+}
+
+export interface FuelTypeLookup {
+    fuel_type_sk: number;
+    fuel_type: string;
+}
+
 // ============================================================================
 // GENERIC LOOKUP ADAPTER
 // ============================================================================
@@ -177,6 +200,26 @@ export function useDepartureArrivalPlaces() {
 /** Obtiene lista de eventos para selector */
 export function useEventsLookup() {
     return useLookup<EventLookup>('events', queryKeys.lookups.eventsLookup);
+}
+
+/** Catálogo de lugares de repostaje (selector del diálogo de combustible) */
+export function useFuelPlaces() {
+    return useLookup<FuelPlaceLookup>('fuel-places', queryKeys.lookups.fuelPlaces);
+}
+
+/** Catálogo de pagadores de combustible */
+export function useFuelPayers() {
+    return useLookup<FuelPayerLookup>('fuel-payers', queryKeys.lookups.fuelPayers);
+}
+
+/** Catálogo de fases de combustible (Preparación / Ejecución) */
+export function useFuelPhases() {
+    return useLookup<FuelPhaseLookup>('fuel-phases', queryKeys.lookups.fuelPhases);
+}
+
+/** Catálogo de tipos de combustible (Jet A-1, JP-5, …) */
+export function useFuelTypes() {
+    return useLookup<FuelTypeLookup>('fuel-types', queryKeys.lookups.fuelTypes);
 }
 
 /** Obtiene lista de autoridades para selector */

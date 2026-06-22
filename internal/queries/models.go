@@ -373,8 +373,9 @@ type OperationsFuelPhase struct {
 }
 
 type OperationsFuelPlace struct {
-	FuelPlaceSk int32  `json:"fuel_place_sk"`
-	FuelPlace   string `json:"fuel_place"`
+	FuelPlaceSk   int32  `json:"fuel_place_sk"`
+	FuelPlaceName string `json:"fuel_place_name"`
+	FuelPlaceType string `json:"fuel_place_type"`
 }
 
 type OperationsFuelType struct {
