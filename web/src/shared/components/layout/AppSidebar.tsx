@@ -15,7 +15,7 @@ import {
     UserRoundCheck,
     School,
     Fuel,
-    ShieldPlus,
+    Cross,
     LucideIcon, BookOpen,
 } from "lucide-react"
 import {
@@ -128,7 +128,7 @@ const middleNavItems: NavItemType[] = [
 const flightSafetyNavItems: NavItemType[] = [
     {
         title: "Seguridad de vuelo",
-        icon: ShieldPlus,
+        icon: Cross,
         subItems: [
             { title: "Rec. médico", href: "/seguridad-vuelo/rec-medico" },
             { title: "Dunker", href: "/seguridad-vuelo/dunker" },
