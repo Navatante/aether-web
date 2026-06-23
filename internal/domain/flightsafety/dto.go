@@ -33,6 +33,7 @@ type MedicalSummaryItem struct {
 	ScheduledDate    string `json:"scheduled_date"`
 	ScheduledPlace   string `json:"scheduled_place"`
 	ScheduledPlaceFk int32  `json:"scheduled_place_fk"`
+	ScheduledRemark  string `json:"scheduled_remark"`
 	// Próxima cita que debe hacerse en CIMA (= último examen en CIMA + 4 años).
 	NextCimaDue string `json:"next_cima_due"`
 }

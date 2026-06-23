@@ -647,6 +647,7 @@ SELECT
     prog.medical_exam_scheduled_date AS scheduled_date,
     ppl.medical_exam_place           AS scheduled_place,
     COALESCE(prog.medical_exam_place_fk, 0)::int AS scheduled_place_fk,
+    prog.medical_exam_remark         AS scheduled_remark,
     cima.next_cima_due               AS next_cima_due
 FROM detall.v_person_ordered p
 LEFT JOIN LATERAL (
@@ -707,6 +708,7 @@ type MedicalExamSummaryRow struct {
 	ScheduledDate    pgtype.Date `json:"scheduled_date"`
 	ScheduledPlace   *string     `json:"scheduled_place"`
 	ScheduledPlaceFk int32       `json:"scheduled_place_fk"`
+	ScheduledRemark  *string     `json:"scheduled_remark"`
 	NextCimaDue      pgtype.Date `json:"next_cima_due"`
 }
 
@@ -757,6 +759,7 @@ func (q *Queries) MedicalExamSummary(ctx context.Context, arg MedicalExamSummary
 			&i.ScheduledDate,
 			&i.ScheduledPlace,
 			&i.ScheduledPlaceFk,
+			&i.ScheduledRemark,
 			&i.NextCimaDue,
 		); err != nil {
 			return nil, err

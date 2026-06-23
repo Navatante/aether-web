@@ -8,13 +8,15 @@ import { queryKeys } from '@/lib/queryKeys';
 import { useEscuadrilla, useUser, PermissionLevel } from '@/providers';
 import type { MedicalSummaryItem, ExamSummaryItem } from '@/types/generated/flightsafety';
 import {
-    EXAM_CONFIG, deriveStatus, cimaState, personLabel, personSearchText,
+    EXAM_CONFIG, deriveStatus, cimaState, personLabel, personName, personSearchText,
     type ExamType, type ExamStatus, type CimaState,
 } from '../flightsafety';
 
 export interface ExamRow {
     personSk: number;
-    label: string;
+    label: string;          // "Empleo Apellidos (NK)" — para textos en prosa (diálogos)
+    name: string;           // "Empleo Apellidos" — sin indicativo
+    nk: string;             // indicativo (person_nk)
     search: string;
     status: ExamStatus;
     doneSk: number;
@@ -25,6 +27,7 @@ export interface ExamRow {
     scheduledDate: string;
     // médico
     remark: string;           // observaciones del último realizado
+    scheduledRemark: string;  // observaciones de la cita programada abierta
     place: string;            // lugar del último realizado
     scheduledPlace: string;   // lugar de la cita programada (nombre)
     scheduledPlaceFk: number; // lugar de la cita programada (fk, 0 = ninguno)
@@ -69,6 +72,8 @@ export function useExamTracking(type: ExamType) {
         return {
             personSk: it.person_sk,
             label: personLabel(it),
+            name: personName(it),
+            nk: it.person_nk,
             search: personSearchText(it),
             status,
             doneSk: it.done_sk,
@@ -78,6 +83,7 @@ export function useExamTracking(type: ExamType) {
             scheduledSk: it.scheduled_sk,
             scheduledDate: it.scheduled_date,
             remark: medical ? medical.remark : '',
+            scheduledRemark: medical ? medical.scheduled_remark : '',
             place: medical ? medical.place : '',
             scheduledPlace: medical ? medical.scheduled_place : '',
             scheduledPlaceFk: medical ? medical.scheduled_place_fk : 0,

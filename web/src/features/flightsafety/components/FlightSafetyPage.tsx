@@ -15,10 +15,6 @@ import {
     formatDateDisplay,
 } from '@/shared/components/common';
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
@@ -106,20 +102,6 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                 placeholder="Buscar por persona o indicativo..."
                             />
                         </div>
-                        <Select value={statusFilter} onValueChange={(v) => v && setStatusFilter(v as ExamStatus | 'ALL')}>
-                            <SelectTrigger className="w-44"><SelectValue placeholder="Estado" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ALL">Todos los estados</SelectItem>
-                                {SUMMARY_ORDER.concat('SIN_DATOS').map((st) => (
-                                    <SelectItem key={st} value={st}>{STATUS_META[st].label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {canWrite && (
-                            <Button className="cursor-pointer" onClick={() => setDialog({ mode: 'create' })}>
-                                <CalendarPlus className="w-4 h-4 mr-1" />Programar
-                            </Button>
-                        )}
                         <ActionButton
                             variant="refresh"
                             icon={RefreshCw}
@@ -156,7 +138,12 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                 ) : (
                                     rows.map((r, idx) => (
                                         <TableRow key={r.personSk} index={idx} className={`cursor-default ${STATUS_META[r.status].row}`}>
-                                            <td className="p-4 text-sm text-foreground">{r.label}</td>
+                                            <td className="p-4">
+                                                <span className="text-sm text-foreground">{r.name}</span>
+                                                {r.nk && (
+                                                    <span className="text-xs text-muted-foreground ml-2">{r.nk}</span>
+                                                )}
+                                            </td>
                                             <td className="p-4 text-sm"><ExpiryCell date={r.expiryDate} /></td>
                                             <td className="p-4 text-center"><StatusBadge status={r.status} /></td>
                                             <td className="p-4 text-center text-sm text-muted-foreground">{r.resultText || '—'}</td>
@@ -183,11 +170,16 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                                     )}
                                                 </td>
                                             )}
-                                            {isMedical && (
-                                                <td className="p-4 text-sm text-muted-foreground max-w-[16rem] truncate" title={r.remark}>
-                                                    {r.remark || '—'}
-                                                </td>
-                                            )}
+                                            {isMedical && (() => {
+                                                // En una cita PROGRAMADA la observación relevante es la de la cita;
+                                                // si no tiene, cae a la del último realizado.
+                                                const obs = r.scheduledRemark || r.remark;
+                                                return (
+                                                    <td className="p-4 text-sm text-muted-foreground max-w-[16rem] truncate" title={obs}>
+                                                        {obs || '—'}
+                                                    </td>
+                                                );
+                                            })()}
                                             {canWrite && (
                                                 <td className="p-4">
                                                     <div className="flex items-center justify-end gap-3">

@@ -31,6 +31,7 @@ export interface MedicalSummaryItem {
   scheduled_date: string;
   scheduled_place: string;
   scheduled_place_fk: number /* int32 */;
+  scheduled_remark: string;
   /**
    * Próxima cita que debe hacerse en CIMA (= último examen en CIMA + 4 años).
    */

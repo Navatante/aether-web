@@ -66,6 +66,7 @@ func (s *Service) MedicalSummary(ctx context.Context, esc, personFilter int32) (
 			ScheduledDate:    formatDate(r.ScheduledDate),
 			ScheduledPlace:   strVal(r.ScheduledPlace),
 			ScheduledPlaceFk: r.ScheduledPlaceFk,
+			ScheduledRemark:  strVal(r.ScheduledRemark),
 			NextCimaDue:      formatDate(r.NextCimaDue),
 		})
 	}
