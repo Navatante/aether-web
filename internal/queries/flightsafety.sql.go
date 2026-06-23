@@ -641,7 +641,9 @@ SELECT
     done.medical_exam_date           AS done_date,
     done.medical_exam_expiry_date    AS expiry_date,
     dres.medical_exam_result         AS result,
+    COALESCE(done.medical_exam_result_fk, 0)::int AS done_result_fk,
     dpl.medical_exam_place           AS place,
+    COALESCE(done.medical_exam_place_fk, 0)::int  AS done_place_fk,
     done.medical_exam_remark         AS remark,
     COALESCE(prog.medical_exam_sk, 0)::int AS scheduled_sk,
     prog.medical_exam_scheduled_date AS scheduled_date,
@@ -702,7 +704,9 @@ type MedicalExamSummaryRow struct {
 	DoneDate         pgtype.Date `json:"done_date"`
 	ExpiryDate       pgtype.Date `json:"expiry_date"`
 	Result           *string     `json:"result"`
+	DoneResultFk     int32       `json:"done_result_fk"`
 	Place            *string     `json:"place"`
+	DonePlaceFk      int32       `json:"done_place_fk"`
 	Remark           *string     `json:"remark"`
 	ScheduledSk      int32       `json:"scheduled_sk"`
 	ScheduledDate    pgtype.Date `json:"scheduled_date"`
@@ -753,7 +757,9 @@ func (q *Queries) MedicalExamSummary(ctx context.Context, arg MedicalExamSummary
 			&i.DoneDate,
 			&i.ExpiryDate,
 			&i.Result,
+			&i.DoneResultFk,
 			&i.Place,
+			&i.DonePlaceFk,
 			&i.Remark,
 			&i.ScheduledSk,
 			&i.ScheduledDate,

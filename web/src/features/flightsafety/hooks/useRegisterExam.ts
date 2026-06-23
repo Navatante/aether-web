@@ -33,6 +33,11 @@ export interface ExamDialogInitial {
     remark?: string;
     /** Lugar ya fijado en la cita (médico); reutilizado al registrar el resultado. */
     scheduledPlaceFk?: number;
+    /** Datos del registro realizado a preseleccionar al editar (médico). */
+    placeFk?: number;
+    resultFk?: number;
+    /** Resultado booleano a preseleccionar al editar (dunker/hiperbárica). */
+    boolResult?: BoolResult;
 }
 
 export type ExamMode = 'create' | 'edit' | 'complete';
@@ -56,6 +61,13 @@ function resultToBool(r: BoolResult): boolean | undefined {
     return undefined;
 }
 
+/** Inverso de resultToBool: del booleano del backend al valor del <Select>. */
+export function boolToResult(b: boolean | undefined): BoolResult {
+    if (b === true) return 'apto';
+    if (b === false) return 'no_apto';
+    return 'na';
+}
+
 export function useRegisterExam({ type, mode, initial, initialPersonSk, onClose, onSuccess }: UseRegisterExamArgs) {
     const log = useLogger('FlightSafetyForm');
     const { id: escId } = useEscuadrilla();
@@ -70,12 +82,17 @@ export function useRegisterExam({ type, mode, initial, initialPersonSk, onClose,
     const [scheduledDate, setScheduledDate] = useState<string>(initial?.scheduledDate ?? '');
     const [date, setDate] = useState<string>(initial?.date ?? '');
     const [expiry, setExpiry] = useState<string>(initial?.expiryDate ?? '');
-    // En 'complete' el lugar se hereda de la cita; si la cita no tenía lugar, queda null y el form lo pide.
+    // Al editar se preselecciona el lugar del realizado; en 'complete' se hereda
+    // de la cita; si ninguno aplica queda null y el form lo pide.
     const [placeFk, setPlaceFk] = useState<number | null>(
-        initial?.scheduledPlaceFk && initial.scheduledPlaceFk > 0 ? initial.scheduledPlaceFk : null,
+        initial?.placeFk && initial.placeFk > 0 ? initial.placeFk
+            : initial?.scheduledPlaceFk && initial.scheduledPlaceFk > 0 ? initial.scheduledPlaceFk
+                : null,
     );
-    const [resultFk, setResultFk] = useState<number | null>(null);
-    const [boolResult, setBoolResult] = useState<BoolResult>('apto');
+    const [resultFk, setResultFk] = useState<number | null>(
+        initial?.resultFk && initial.resultFk > 0 ? initial.resultFk : null,
+    );
+    const [boolResult, setBoolResult] = useState<BoolResult>(initial?.boolResult ?? 'apto');
     const [remark, setRemark] = useState<string>(initial?.remark ?? '');
     const [error, setError] = useState<string | null>(null);
 

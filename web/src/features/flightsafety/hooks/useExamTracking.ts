@@ -23,10 +23,13 @@ export interface ExamRow {
     doneDate: string;
     expiryDate: string;
     resultText: string;
+    doneResult: boolean | undefined; // resultado booleano del último realizado (dunker/hiperbárica)
     scheduledSk: number;
     scheduledDate: string;
     // médico
     remark: string;           // observaciones del último realizado
+    doneResultFk: number;     // fk del resultado del último realizado (0 = ninguno)
+    donePlaceFk: number;      // fk del lugar del último realizado (0 = ninguno)
     scheduledRemark: string;  // observaciones de la cita programada abierta
     place: string;            // lugar del último realizado
     scheduledPlace: string;   // lugar de la cita programada (nombre)
@@ -80,9 +83,12 @@ export function useExamTracking(type: ExamType) {
             doneDate: it.done_date,
             expiryDate: it.expiry_date,
             resultText: medical ? medical.result : boolResultLabel((it as ExamSummaryItem).result),
+            doneResult: medical ? undefined : (it as ExamSummaryItem).result,
             scheduledSk: it.scheduled_sk,
             scheduledDate: it.scheduled_date,
             remark: medical ? medical.remark : '',
+            doneResultFk: medical ? medical.done_result_fk : 0,
+            donePlaceFk: medical ? medical.done_place_fk : 0,
             scheduledRemark: medical ? medical.scheduled_remark : '',
             place: medical ? medical.place : '',
             scheduledPlace: medical ? medical.scheduled_place : '',

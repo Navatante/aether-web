@@ -23,7 +23,7 @@ import {
     STATUS_META, daysUntil, type ExamType, type ExamStatus,
 } from '../flightsafety';
 import RegisterExamDialog from './dialogs/RegisterExamDialog';
-import type { ExamDialogInitial } from '../hooks/useRegisterExam';
+import { boolToResult, type ExamDialogInitial } from '../hooks/useRegisterExam';
 
 const SUMMARY_ORDER: ExamStatus[] = ['CADUCADO', 'URGENTE', 'POR_CADUCAR', 'PROGRAMADO', 'VIGENTE'];
 
@@ -125,7 +125,7 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                     <th className="text-center p-4 font-semibold text-table-header-foreground">Resultado</th>
                                     <th className="text-left p-4 font-semibold text-table-header-foreground">Cita programada</th>
                                     {isMedical && <th className="text-left p-4 font-semibold text-table-header-foreground">Lugar</th>}
-                                    {isMedical && <th className="text-center p-4 font-semibold text-table-header-foreground">CIMA (4 años)</th>}
+                                    {isMedical && <th className="text-center p-4 font-semibold text-table-header-foreground">Próximo CIMA</th>}
                                     {isMedical && <th className="text-left p-4 font-semibold text-table-header-foreground">Observaciones</th>}
                                     {canWrite && <th className="p-4" />}
                                 </tr>
@@ -203,7 +203,7 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                                         </button>
                                                         {r.doneSk > 0 && (
                                                             <button
-                                                                onClick={() => setDialog({ mode: 'edit', initial: { id: r.doneSk, personSk: r.personSk, phase: 'realizado', date: r.doneDate, expiryDate: r.expiryDate } })}
+                                                                onClick={() => setDialog({ mode: 'edit', initial: { id: r.doneSk, personSk: r.personSk, phase: 'realizado', date: r.doneDate, expiryDate: r.expiryDate, remark: r.remark, placeFk: r.donePlaceFk, resultFk: r.doneResultFk, boolResult: boolToResult(r.doneResult) } })}
                                                                 className="cursor-pointer text-muted-foreground hover:text-foreground transition-all"
                                                                 aria-label="Editar último reconocimiento"
                                                                 title="Editar último"

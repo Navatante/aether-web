@@ -22,7 +22,9 @@ export interface MedicalSummaryItem {
   done_date: string;
   expiry_date: string;
   result: string;
+  done_result_fk: number /* int32 */;
   place: string;
+  done_place_fk: number /* int32 */;
   remark: string;
   /**
    * Cita PROGRAMADA abierta (0/"" si no hay).

@@ -22,12 +22,14 @@ type MedicalSummaryItem struct {
 	PersonLastName1 string `json:"person_last_name_1"`
 	PersonLastName2 string `json:"person_last_name_2"`
 	// Último reconocimiento REALIZADO (0/"" si no hay).
-	DoneSk     int32  `json:"done_sk"`
-	DoneDate   string `json:"done_date"`
-	ExpiryDate string `json:"expiry_date"`
-	Result     string `json:"result"`
-	Place      string `json:"place"`
-	Remark     string `json:"remark"`
+	DoneSk       int32  `json:"done_sk"`
+	DoneDate     string `json:"done_date"`
+	ExpiryDate   string `json:"expiry_date"`
+	Result       string `json:"result"`
+	DoneResultFk int32  `json:"done_result_fk"`
+	Place        string `json:"place"`
+	DonePlaceFk  int32  `json:"done_place_fk"`
+	Remark       string `json:"remark"`
 	// Cita PROGRAMADA abierta (0/"" si no hay).
 	ScheduledSk      int32  `json:"scheduled_sk"`
 	ScheduledDate    string `json:"scheduled_date"`
