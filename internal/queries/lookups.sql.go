@@ -87,6 +87,18 @@ func (q *Queries) AddFuelPlace(ctx context.Context, arg AddFuelPlaceParams) erro
 	return err
 }
 
+const addMedicalExamPlace = `-- name: AddMedicalExamPlace :exec
+INSERT INTO flightsafety.medical_exam_place (medical_exam_place)
+VALUES ($1)
+`
+
+// Alta de un lugar de reconocimiento médico (catálogo global). UNIQUE sobre
+// medical_exam_place. Gestionado desde el diálogo de Seguridad de vuelo.
+func (q *Queries) AddMedicalExamPlace(ctx context.Context, medicalExamPlace string) error {
+	_, err := q.db.Exec(ctx, addMedicalExamPlace, medicalExamPlace)
+	return err
+}
+
 const deleteAircraft = `-- name: DeleteAircraft :execrows
 DELETE FROM operations.aircraft
 WHERE aircraft_sk = $1 AND aircraft_escuadrilla_fk = $2
@@ -802,6 +814,60 @@ func (q *Queries) LookupGroundSchoolPapeletas(ctx context.Context, papeletaEscua
 	for rows.Next() {
 		var i LookupGroundSchoolPapeletasRow
 		if err := rows.Scan(&i.PapeletaSk, &i.PapeletaName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupMedicalExamPlaces = `-- name: LookupMedicalExamPlaces :many
+
+SELECT medical_exam_place_sk, medical_exam_place
+FROM flightsafety.medical_exam_place
+ORDER BY medical_exam_place
+`
+
+// ===== Catálogos de Seguridad de vuelo (globales, sin escuadrilla) =====
+func (q *Queries) LookupMedicalExamPlaces(ctx context.Context) ([]FlightsafetyMedicalExamPlace, error) {
+	rows, err := q.db.Query(ctx, lookupMedicalExamPlaces)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlightsafetyMedicalExamPlace
+	for rows.Next() {
+		var i FlightsafetyMedicalExamPlace
+		if err := rows.Scan(&i.MedicalExamPlaceSk, &i.MedicalExamPlace); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lookupMedicalExamResults = `-- name: LookupMedicalExamResults :many
+SELECT medical_exam_result_sk, medical_exam_result
+FROM flightsafety.medical_exam_result
+ORDER BY medical_exam_result
+`
+
+func (q *Queries) LookupMedicalExamResults(ctx context.Context) ([]FlightsafetyMedicalExamResult, error) {
+	rows, err := q.db.Query(ctx, lookupMedicalExamResults)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FlightsafetyMedicalExamResult
+	for rows.Next() {
+		var i FlightsafetyMedicalExamResult
+		if err := rows.Scan(&i.MedicalExamResultSk, &i.MedicalExamResult); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

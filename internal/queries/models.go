@@ -181,26 +181,32 @@ type DetallVPersonOrdered struct {
 }
 
 type FlightsafetyDunker struct {
-	DunkerSk       int32       `json:"dunker_sk"`
-	DunkerDate     pgtype.Date `json:"dunker_date"`
-	DunkerPersonFk int32       `json:"dunker_person_fk"`
-	DunkerResult   *bool       `json:"dunker_result"`
+	DunkerSk            int32       `json:"dunker_sk"`
+	DunkerDate          pgtype.Date `json:"dunker_date"`
+	DunkerPersonFk      int32       `json:"dunker_person_fk"`
+	DunkerResult        *bool       `json:"dunker_result"`
+	DunkerScheduledDate pgtype.Date `json:"dunker_scheduled_date"`
+	DunkerExpiryDate    pgtype.Date `json:"dunker_expiry_date"`
 }
 
 type FlightsafetyHyperbaric struct {
-	HyperbaricSk       int32       `json:"hyperbaric_sk"`
-	HyperbaricDate     pgtype.Date `json:"hyperbaric_date"`
-	HyperbaricPersonFk int32       `json:"hyperbaric_person_fk"`
-	HyperbaricResult   *bool       `json:"hyperbaric_result"`
+	HyperbaricSk            int32       `json:"hyperbaric_sk"`
+	HyperbaricDate          pgtype.Date `json:"hyperbaric_date"`
+	HyperbaricPersonFk      int32       `json:"hyperbaric_person_fk"`
+	HyperbaricResult        *bool       `json:"hyperbaric_result"`
+	HyperbaricScheduledDate pgtype.Date `json:"hyperbaric_scheduled_date"`
+	HyperbaricExpiryDate    pgtype.Date `json:"hyperbaric_expiry_date"`
 }
 
 type FlightsafetyMedicalExam struct {
-	MedicalExamSk       int32       `json:"medical_exam_sk"`
-	MedicalExamDate     pgtype.Date `json:"medical_exam_date"`
-	MedicalExamPersonFk int32       `json:"medical_exam_person_fk"`
-	MedicalExamPlaceFk  int32       `json:"medical_exam_place_fk"`
-	MedicalExamResultFk int32       `json:"medical_exam_result_fk"`
-	MedicalExamRemark   *string     `json:"medical_exam_remark"`
+	MedicalExamSk            int32       `json:"medical_exam_sk"`
+	MedicalExamDate          pgtype.Date `json:"medical_exam_date"`
+	MedicalExamPersonFk      int32       `json:"medical_exam_person_fk"`
+	MedicalExamPlaceFk       *int32      `json:"medical_exam_place_fk"`
+	MedicalExamResultFk      *int32      `json:"medical_exam_result_fk"`
+	MedicalExamRemark        *string     `json:"medical_exam_remark"`
+	MedicalExamScheduledDate pgtype.Date `json:"medical_exam_scheduled_date"`
+	MedicalExamExpiryDate    pgtype.Date `json:"medical_exam_expiry_date"`
 }
 
 type FlightsafetyMedicalExamPlace struct {

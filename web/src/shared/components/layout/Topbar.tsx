@@ -5,6 +5,7 @@ import OutlineGradientButton from "@/shared/components/common/OutlineGradientBut
 import { SuperuserButton } from "@/features/superuser"
 import { ChangePasswordDialog } from "@/features/auth"
 import { useUser, useUserData, PermissionLevel } from "@/providers"
+import { CrewSafetyPanel } from "@/features/flightsafety/components/CrewSafetyPanel"
 import { KeyRound, LogOut } from "lucide-react"
 import {
   Sheet,
@@ -64,12 +65,9 @@ export function Topbar() {
                         </SheetDescription>
                       </SheetHeader>
 
-                      <div className="mt-6 space-y-6 m-12">
+                      <div className="mt-6 space-y-6 m-12 overflow-y-auto">
                         <div className="space-y-6">
-                          <div>
-                            <h3 className="text-lg font-semibold mb-2">Usuario Actual</h3>
-                            <p className="text-sm text-muted-foreground">Currate los galones en illustrator y pon galones, empleo y apellidos {nk}</p>
-                          </div>
+                          <CrewSafetyPanel />
 
                           <div>
                             <h3 className="text-lg font-semibold mb-2">Configuración</h3>

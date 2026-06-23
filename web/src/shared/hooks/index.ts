@@ -35,6 +35,8 @@ export {
     useFuelPayers,
     useFuelPhases,
     useFuelTypes,
+    useMedicalExamPlaces,
+    useMedicalExamResults,
 } from './useLookups'
 export type {
     AircraftLookup,
@@ -57,4 +59,6 @@ export type {
     FuelPayerLookup,
     FuelPhaseLookup,
     FuelTypeLookup,
+    MedicalExamPlaceLookup,
+    MedicalExamResultLookup,
 } from './useLookups'

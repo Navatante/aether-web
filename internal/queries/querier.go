@@ -34,6 +34,9 @@ type Querier interface {
 	// Alta de un lugar de repostaje. fuel_place_type lo valida el CHECK del schema
 	// (lista fija) y el service antes de insertar. UNIQUE sobre fuel_place_name.
 	AddFuelPlace(ctx context.Context, arg AddFuelPlaceParams) error
+	// Alta de un lugar de reconocimiento médico (catálogo global). UNIQUE sobre
+	// medical_exam_place. Gestionado desde el diálogo de Seguridad de vuelo.
+	AddMedicalExamPlace(ctx context.Context, medicalExamPlace string) error
 	// =============== CRUD notcrew_qualification ===============
 	AddNotCrewRating(ctx context.Context, arg AddNotCrewRatingParams) (int32, error)
 	// ============================================================
@@ -78,6 +81,14 @@ type Querier interface {
 	// Número de repostajes con el mismo filtro que ListFuel.
 	CountFuel(ctx context.Context, arg CountFuelParams) (int32, error)
 	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
+	CountOpenDunkerSchedule(ctx context.Context, arg CountOpenDunkerScheduleParams) (int32, error)
+	CountOpenHyperbaricSchedule(ctx context.Context, arg CountOpenHyperbaricScheduleParams) (int32, error)
+	// ============================================================
+	// Comprobación de cita PROGRAMADA abierta (date NULL, scheduled_date NOT NULL).
+	// El service la usa para impedir programar una segunda cita a quien ya tiene una.
+	// Acotado a la escuadrilla ($1) y persona ($2).
+	// ============================================================
+	CountOpenMedicalSchedule(ctx context.Context, arg CountOpenMedicalScheduleParams) (int32, error)
 	CountPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) (int32, error)
 	CountPersons(ctx context.Context, personEscuadrillaFk int32) (int32, error)
 	CountSuperusersInEscuadrilla(ctx context.Context, personEscuadrillaFk int32) (int32, error)
@@ -115,6 +126,7 @@ type Querier interface {
 	DeleteComisionLugar(ctx context.Context, comisionLugarSk int32) (int64, error)
 	DeleteCrewRating(ctx context.Context, arg DeleteCrewRatingParams) (int64, error)
 	DeleteDepartureArrivalPlace(ctx context.Context, departureArrivalPlaceSk int32) (int64, error)
+	DeleteDunker(ctx context.Context, arg DeleteDunkerParams) (int64, error)
 	// Desasigna una capba de la escuadrilla.
 	DeleteEscuadrillaCapba(ctx context.Context, arg DeleteEscuadrillaCapbaParams) (int64, error)
 	DeleteEvent(ctx context.Context, eventSk int32) (int64, error)
@@ -125,6 +137,11 @@ type Querier interface {
 	// Borra un repostaje solo si su aeronave pertenece a la escuadrilla ($2).
 	DeleteFuel(ctx context.Context, arg DeleteFuelParams) (int64, error)
 	DeleteGroundSchool(ctx context.Context, arg DeleteGroundSchoolParams) (int64, error)
+	DeleteHyperbaric(ctx context.Context, arg DeleteHyperbaricParams) (int64, error)
+	// ============================================================
+	// Borrado. Acotado a personal de la escuadrilla ($2).
+	// ============================================================
+	DeleteMedicalExam(ctx context.Context, arg DeleteMedicalExamParams) (int64, error)
 	DeleteNotCrewRating(ctx context.Context, arg DeleteNotCrewRatingParams) (int64, error)
 	DeletePersonComisionBySk(ctx context.Context, arg DeletePersonComisionBySkParams) (int64, error)
 	DeletePersonFromComision(ctx context.Context, arg DeletePersonFromComisionParams) (int64, error)
@@ -135,6 +152,10 @@ type Querier interface {
 	//   - Categorías "no caducan": SUMA días totales históricos.
 	//   - Categorías "sí caducan" (OMP/UNADEST/UNAEMB): SUMA solapamiento con [fechaInicio, fechaFin].
 	DiasComision(ctx context.Context, arg DiasComisionParams) ([]DiasComisionRow, error)
+	DunkerHistory(ctx context.Context, arg DunkerHistoryParams) ([]DunkerHistoryRow, error)
+	// Estado actual del dunker por persona (anual). Acotado a la escuadrilla ($1);
+	// ($2 = 0 → todas las personas).
+	DunkerSummary(ctx context.Context, arg DunkerSummaryParams) ([]DunkerSummaryRow, error)
 	// ============================================================
 	// Hours (Hito 4, lote 6)
 	//
@@ -291,6 +312,10 @@ type Querier interface {
 	// vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
 	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
 	GvntypeHours(ctx context.Context, arg GvntypeHoursParams) ([]GvntypeHoursRow, error)
+	HyperbaricHistory(ctx context.Context, arg HyperbaricHistoryParams) ([]HyperbaricHistoryRow, error)
+	// Estado actual de la hiperbárica por persona (cada 5 años). Acotado a la
+	// escuadrilla ($1); ($2 = 0 → todas las personas).
+	HyperbaricSummary(ctx context.Context, arg HyperbaricSummaryParams) ([]HyperbaricSummaryRow, error)
 	// Horas de vuelo por instrumentos (operations.ift_hour), una fila por persona del
 	// roster.
 	//
@@ -318,6 +343,7 @@ type Querier interface {
 	InsertComision(ctx context.Context, arg InsertComisionParams) (int32, error)
 	InsertComisionLugar(ctx context.Context, comisionName string) (DetallComisionLugar, error)
 	InsertCupoHour(ctx context.Context, arg InsertCupoHourParams) error
+	InsertDunker(ctx context.Context, arg InsertDunkerParams) (int32, error)
 	// Devuelve el sk para que el frontend pueda redirigir / seleccionar.
 	InsertEvent(ctx context.Context, arg InsertEventParams) (int32, error)
 	// ============================================================
@@ -368,9 +394,18 @@ type Querier interface {
 	// ============================================================
 	InsertGroundSchool(ctx context.Context, arg InsertGroundSchoolParams) (int32, error)
 	InsertGvntypeHour(ctx context.Context, arg InsertGvntypeHourParams) error
+	InsertHyperbaric(ctx context.Context, arg InsertHyperbaricParams) (int32, error)
 	InsertIftHour(ctx context.Context, arg InsertIftHourParams) error
 	InsertInstructorHour(ctx context.Context, arg InsertInstructorHourParams) error
 	InsertLanding(ctx context.Context, arg InsertLandingParams) error
+	// ============================================================
+	// Altas. Solo insertan si la persona ($N) pertenece a la escuadrilla ($M) de la
+	// sesión (RETURNING vacío → ErrNoRows en el service).
+	// ============================================================
+	// Alta de un reconocimiento médico. Sirve tanto para PROGRAMADO (date/result
+	// NULL, scheduled_date set) como REALIZADO (date/expiry/result set). El service
+	// valida la coherencia. $8 = escuadrilla de la sesión.
+	InsertMedicalExam(ctx context.Context, arg InsertMedicalExamParams) (int32, error)
 	InsertPapeleta(ctx context.Context, arg InsertPapeletaParams) (int32, error)
 	InsertPapeletaCrewCount(ctx context.Context, arg InsertPapeletaCrewCountParams) error
 	InsertPassenger(ctx context.Context, arg InsertPassengerParams) error
@@ -539,6 +574,9 @@ type Querier interface {
 	LookupFuelTypes(ctx context.Context) ([]OperationsFuelType, error)
 	// Papeletas para Ground School: excluye los bloques prácticos de vuelo y simulador.
 	LookupGroundSchoolPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupGroundSchoolPapeletasRow, error)
+	// ===== Catálogos de Seguridad de vuelo (globales, sin escuadrilla) =====
+	LookupMedicalExamPlaces(ctx context.Context) ([]FlightsafetyMedicalExamPlace, error)
+	LookupMedicalExamResults(ctx context.Context) ([]FlightsafetyMedicalExamResult, error)
 	LookupPapeletaBloques(ctx context.Context) ([]string, error)
 	LookupPapeletaPlanes(ctx context.Context) ([]string, error)
 	LookupPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]LookupPapeletasRow, error)
@@ -564,6 +602,32 @@ type Querier interface {
 	LugarExistsByName(ctx context.Context, lower string) (bool, error)
 	LugarExistsByNameOther(ctx context.Context, arg LugarExistsByNameOtherParams) (bool, error)
 	LugarUsageCount(ctx context.Context, comisionLugarFk int32) (int32, error)
+	// ============================================================
+	// Historial por persona (drill-down). Acotado a la escuadrilla ($1) y persona ($2).
+	// ============================================================
+	MedicalExamHistory(ctx context.Context, arg MedicalExamHistoryParams) ([]MedicalExamHistoryRow, error)
+	// ============================================================
+	// Seguridad de vuelo (flightsafety.medical_exam / dunker / hyperbaric)
+	//
+	// Cada fila es un reconocimiento con ciclo de vida: PROGRAMADO (solo
+	// *_scheduled_date; *_date NULL) → REALIZADO (*_date + resultado + caducidad).
+	// El estado se deriva en el frontend a partir de las fechas.
+	//
+	// RLS por código: estas tablas NO tienen escuadrilla_fk. El aislamiento es
+	// person-centric: todas las sentencias filtran por detall.person.
+	// person_escuadrilla_fk = $1 (vía JOIN o EXISTS), igual que extra_hour. Así el
+	// queryguard encuentra el literal `escuadrilla_fk` y la consulta queda acotada
+	// a personal de la escuadrilla de la sesión.
+	//
+	// Las queries *Summary aceptan un filtro de persona opcional ($2): 0 = todas
+	// las personas (página de seguimiento); un person_sk concreto = solo esa
+	// persona (panel del tripulante, endpoint /me).
+	// ============================================================
+	// Estado actual del reconocimiento médico por persona: último REALIZADO (fecha,
+	// resultado, lugar, caducidad), la cita PROGRAMADA abierta si existe, y la
+	// próxima cita-CIMA (último examen en 'CIMA' + 4 años) para el aviso de los 4
+	// años. Acotado a la escuadrilla ($1); ($2 = 0 → todas las personas).
+	MedicalExamSummary(ctx context.Context, arg MedicalExamSummaryParams) ([]MedicalExamSummaryRow, error)
 	// Horas extra reales por persona, sobre la tabla unificada operations.extra_hour.
 	// Por escuadrilla ($5=false): solo el modelo de la escuadrilla (NH-90) en rango
 	// de fechas. Totales ($5=true): todos los modelos (incluido el arrastre "otros
@@ -643,6 +707,7 @@ type Querier interface {
 	UpdateAircraftCurrentFlag(ctx context.Context, arg UpdateAircraftCurrentFlagParams) (bool, error)
 	UpdateComision(ctx context.Context, arg UpdateComisionParams) (int64, error)
 	UpdateComisionLugar(ctx context.Context, arg UpdateComisionLugarParams) (int64, error)
+	UpdateDunker(ctx context.Context, arg UpdateDunkerParams) (int64, error)
 	// Actualiza la capacidad operativa de una asignación de la escuadrilla.
 	UpdateEscuadrillaCapba(ctx context.Context, arg UpdateEscuadrillaCapbaParams) (int64, error)
 	UpdateEvent(ctx context.Context, arg UpdateEventParams) (int64, error)
@@ -654,6 +719,12 @@ type Querier interface {
 	// ($10): tanto la fila actual como la nueva aeronave ($3) deben pertenecer a
 	// la escuadrilla.
 	UpdateFuel(ctx context.Context, arg UpdateFuelParams) (int64, error)
+	UpdateHyperbaric(ctx context.Context, arg UpdateHyperbaricParams) (int64, error)
+	// ============================================================
+	// Completar (rellenar el resultado de una cita PROGRAMADA) / actualizar.
+	// Acotado a personal de la escuadrilla ($N) vía detall.person.
+	// ============================================================
+	UpdateMedicalExam(ctx context.Context, arg UpdateMedicalExamParams) (int64, error)
 	UpdatePapeleta(ctx context.Context, arg UpdatePapeletaParams) (int64, error)
 	UpdatePerson(ctx context.Context, arg UpdatePersonParams) (int64, error)
 	// Idempotente: si el nombre ya existe, no hace nada.

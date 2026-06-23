@@ -229,6 +229,18 @@ SELECT fuel_type_sk, fuel_type
 FROM operations.fuel_type
 ORDER BY fuel_type;
 
+-- ===== Catálogos de Seguridad de vuelo (globales, sin escuadrilla) =====
+
+-- name: LookupMedicalExamPlaces :many
+SELECT medical_exam_place_sk, medical_exam_place
+FROM flightsafety.medical_exam_place
+ORDER BY medical_exam_place;
+
+-- name: LookupMedicalExamResults :many
+SELECT medical_exam_result_sk, medical_exam_result
+FROM flightsafety.medical_exam_result
+ORDER BY medical_exam_result;
+
 
 -- =============== Mutaciones ===============
 
@@ -245,6 +257,12 @@ DELETE FROM operations.departure_arrival_place WHERE departure_arrival_place_sk 
 -- (lista fija) y el service antes de insertar. UNIQUE sobre fuel_place_name.
 INSERT INTO operations.fuel_place (fuel_place_name, fuel_place_type)
 VALUES ($1, $2);
+
+-- name: AddMedicalExamPlace :exec
+-- Alta de un lugar de reconocimiento médico (catálogo global). UNIQUE sobre
+-- medical_exam_place. Gestionado desde el diálogo de Seguridad de vuelo.
+INSERT INTO flightsafety.medical_exam_place (medical_exam_place)
+VALUES ($1);
 
 -- name: InsertAircraftModel :one
 -- Crea un modelo nuevo en el catálogo global (sin escuadrilla_fk). El UNIQUE

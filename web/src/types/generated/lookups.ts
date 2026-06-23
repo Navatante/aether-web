@@ -139,6 +139,14 @@ export interface FuelType {
   fuel_type_sk: number /* int32 */;
   fuel_type: string;
 }
+export interface MedicalExamPlace {
+  medical_exam_place_sk: number /* int32 */;
+  medical_exam_place: string;
+}
+export interface MedicalExamResult {
+  medical_exam_result_sk: number /* int32 */;
+  medical_exam_result: string;
+}
 export interface AddDepartureArrivalPlaceReq {
   code: string;
   name: string;
@@ -146,6 +154,9 @@ export interface AddDepartureArrivalPlaceReq {
 export interface AddFuelPlaceReq {
   fuel_place_name: string;
   fuel_place_type: string;
+}
+export interface AddMedicalExamPlaceReq {
+  medical_exam_place: string;
 }
 export interface AddAircraftReq {
   registration: string;

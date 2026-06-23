@@ -36,6 +36,7 @@ import { Personnel } from "@/features/personnel";
 import { Papeletas } from "@/features/papeletas";
 import { Comisiones, DiasDeComision } from "@/features/comisiones";
 import { Disponibilidad } from "@/features/availability";
+import { RecMedico, Dunker, Hipobarica } from "@/features/flightsafety";
 import {
     AdiestramientoPilotos,
     AdiestramientoDotaciones,
@@ -128,6 +129,9 @@ function AppContent() {
                         <Route path="diasDeComision" element={<DiasDeComision />} />
                         <Route path="disponibilidad" element={<Disponibilidad />} />
                         <Route path="esfuerzo" element={<Effort />} />
+                        <Route path="seguridad-vuelo/rec-medico" element={<RecMedico />} />
+                        <Route path="seguridad-vuelo/dunker" element={<Dunker />} />
+                        <Route path="seguridad-vuelo/hipobarica" element={<Hipobarica />} />
                     </Route>
                     {/* Ruta de impresión: hermana de MainLayout (sin sidebar/topbar). */}
                     <Route

@@ -3,9 +3,12 @@ import {
     CalendarPlus,
     FileBarChart,
     FileText, Fuel, Helicopter,
+    HeartPulse,
     Luggage,
     Presentation,
     UserMinus,
+    Waves,
+    Wind,
 } from "lucide-react"
 import {
     Menubar,
@@ -28,6 +31,8 @@ import { RegisterExtraHoursDialog } from "@/features/extrahours"
 // re-exporta la página Combustible (lazy en App.tsx), y traerla por el barrel la
 // arrastraría al bundle principal anulando el code-split.
 import RegisterFuelDialog from "@/features/combustible/components/dialogs/RegisterFuelDialog"
+// Import directo del archivo (no del barrel @/features/flightsafety).
+import RegisterExamDialog from "@/features/flightsafety/components/dialogs/RegisterExamDialog"
 import { PermissionLevel, useUser } from "@/providers"
 import { RegisterComisionDialog, RegisterPersonToComisionDialog } from "@/features/comisiones"
 import { RegisterAbsenceDialog } from "@/features/availability"
@@ -43,6 +48,9 @@ export function TopbarMenus() {
     const [registerPersonToComisionOpen, setRegisterPersonToComisionOpen] = useState(false)
     const [registerAusenciaOpen, setRegisterAusenciaOpen] = useState(false)
     const [generateReportOpen, setGenerateReportOpen] = useState(false)
+    const [registerMedicalOpen, setRegisterMedicalOpen] = useState(false)
+    const [registerDunkerOpen, setRegisterDunkerOpen] = useState(false)
+    const [registerHyperbaricOpen, setRegisterHyperbaricOpen] = useState(false)
 
     // === CONTEXTO DE USUARIO ===
     const { hasPermission, escuadrillaId } = useUser();
@@ -52,6 +60,8 @@ export function TopbarMenus() {
     const canAccessOperacional = hasPermission(PermissionLevel.OPERACIONAL);
     const canAccessAdministrativo = hasPermission(PermissionLevel.ADMINISTRATIVO);
     const canAccessOperacionalAndAdministrativo = canAccessOperacional || canAccessAdministrativo;
+    const canAccessSeguridad = hasPermission(PermissionLevel.SEGURIDAD);
+    const canRegister = canAccessOperacionalAndAdministrativo || canAccessSeguridad;
 
     // === HANDLERS ===
     // Tras registrar una ausencia desde la topbar (diálogo global), invalida la
@@ -61,12 +71,18 @@ export function TopbarMenus() {
         queryClient.invalidateQueries({ queryKey: queryKeys.availability.all(escuadrillaId ?? 0) });
     };
 
+    // Tras registrar un reconocimiento desde la topbar, refresca las páginas de
+    // Seguridad de vuelo si están montadas.
+    const handleFlightSafetySuccess = () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.flightSafety.all(escuadrillaId ?? 0) });
+    };
+
     return (
         <>
             <Menubar className="hidden lg:flex border-none bg-transparent [&>*]:hover:bg-accent [&>*]:hover:text-accent-foreground">
 
                 {/* ========== MENÚ REGISTRAR ========== */}
-                {canAccessOperacionalAndAdministrativo && (
+                {canRegister && (
                     <MenubarMenu>
                         <MenubarTrigger>Registrar</MenubarTrigger>
                         <MenubarContent>
@@ -110,10 +126,31 @@ export function TopbarMenus() {
                             )}
 
                             {/* --- Ausencias (OPERACIONAL y ADMINISTRATIVO) --- */}
-                            <MenubarItem onClick={() => setRegisterAusenciaOpen(true)}>
-                                <UserMinus className="mr-2 h-4 w-4" />
-                                Ausencia
-                            </MenubarItem>
+                            {canAccessOperacionalAndAdministrativo && (
+                                <MenubarItem onClick={() => setRegisterAusenciaOpen(true)}>
+                                    <UserMinus className="mr-2 h-4 w-4" />
+                                    Ausencia
+                                </MenubarItem>
+                            )}
+
+                            {/* --- Seguridad de vuelo (Solo SEGURIDAD) --- */}
+                            {canAccessSeguridad && (
+                                <>
+                                    {canAccessOperacionalAndAdministrativo && <MenubarSeparator />}
+                                    <MenubarItem onClick={() => setRegisterMedicalOpen(true)}>
+                                        <HeartPulse className="mr-2 h-4 w-4" />
+                                        Rec. médico
+                                    </MenubarItem>
+                                    <MenubarItem onClick={() => setRegisterDunkerOpen(true)}>
+                                        <Waves className="mr-2 h-4 w-4" />
+                                        Dunker
+                                    </MenubarItem>
+                                    <MenubarItem onClick={() => setRegisterHyperbaricOpen(true)}>
+                                        <Wind className="mr-2 h-4 w-4" />
+                                        Hipobárica
+                                    </MenubarItem>
+                                </>
+                            )}
 
                         </MenubarContent>
                     </MenubarMenu>
@@ -212,6 +249,33 @@ export function TopbarMenus() {
                     mode="create"
                     onSuccess={handleAbsenceSuccess}
                 />
+            )}
+
+            {/* Dialogs Seguridad de vuelo (SEGURIDAD) */}
+            {canAccessSeguridad && (
+                <>
+                    <RegisterExamDialog
+                        type="medical"
+                        open={registerMedicalOpen}
+                        onOpenChange={setRegisterMedicalOpen}
+                        mode="create"
+                        onSuccess={handleFlightSafetySuccess}
+                    />
+                    <RegisterExamDialog
+                        type="dunker"
+                        open={registerDunkerOpen}
+                        onOpenChange={setRegisterDunkerOpen}
+                        mode="create"
+                        onSuccess={handleFlightSafetySuccess}
+                    />
+                    <RegisterExamDialog
+                        type="hyperbaric"
+                        open={registerHyperbaricOpen}
+                        onOpenChange={setRegisterHyperbaricOpen}
+                        mode="create"
+                        onSuccess={handleFlightSafetySuccess}
+                    />
+                </>
             )}
 
             {/* Dialog Generar Reporte PDF (Documentos) */}

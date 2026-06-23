@@ -1,0 +1,333 @@
+package flightsafety
+
+import (
+	"errors"
+	"net/http"
+	"strconv"
+
+	"github.com/labstack/echo/v4"
+
+	"github.com/14esc/aether-web/internal/auth"
+)
+
+type Handlers struct{ svc *Service }
+
+func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
+
+// Register monta los endpoints bajo /flight-safety/*.
+//
+// La feature es Seguridad-only: tanto las lecturas de página como las escrituras
+// exigen el nivel Seguridad (Superusuario pasa por god-mode). La única excepción
+// es GET /flight-safety/me, accesible a cualquier autenticado: devuelve solo los
+// datos de la propia persona de la sesión.
+func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
+	mw := auth.RequireAuth(authSvc)
+	seguridad := auth.RequirePermission(auth.PermSeguridad)
+
+	// Panel del tripulante: datos propios (cualquier autenticado).
+	g.GET("/flight-safety/me", h.Me, mw)
+
+	// Resúmenes por persona (página de seguimiento, Seguridad).
+	g.GET("/flight-safety/medical", h.MedicalList, mw, seguridad)
+	g.GET("/flight-safety/dunker", h.DunkerList, mw, seguridad)
+	g.GET("/flight-safety/hyperbaric", h.HyperbaricList, mw, seguridad)
+
+	// Historial por persona.
+	g.GET("/flight-safety/medical/history/:personSk", h.MedicalHistory, mw, seguridad)
+	g.GET("/flight-safety/dunker/history/:personSk", h.DunkerHistory, mw, seguridad)
+	g.GET("/flight-safety/hyperbaric/history/:personSk", h.HyperbaricHistory, mw, seguridad)
+
+	// Altas / completar / borrar.
+	g.POST("/flight-safety/medical", h.MedicalInsert, mw, seguridad)
+	g.PUT("/flight-safety/medical/:id", h.MedicalUpdate, mw, seguridad)
+	g.DELETE("/flight-safety/medical/:id", h.MedicalDelete, mw, seguridad)
+
+	g.POST("/flight-safety/dunker", h.DunkerInsert, mw, seguridad)
+	g.PUT("/flight-safety/dunker/:id", h.DunkerUpdate, mw, seguridad)
+	g.DELETE("/flight-safety/dunker/:id", h.DunkerDelete, mw, seguridad)
+
+	g.POST("/flight-safety/hyperbaric", h.HyperbaricInsert, mw, seguridad)
+	g.PUT("/flight-safety/hyperbaric/:id", h.HyperbaricUpdate, mw, seguridad)
+	g.DELETE("/flight-safety/hyperbaric/:id", h.HyperbaricDelete, mw, seguridad)
+}
+
+// ============================================================
+// Panel del tripulante
+// ============================================================
+
+func (h *Handlers) Me(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	res, err := h.svc.Me(c.Request().Context(), int32(u.EscuadrillaID), int32(u.ID))
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, res)
+}
+
+// ============================================================
+// Resúmenes (página)
+// ============================================================
+
+func (h *Handlers) MedicalList(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	items, err := h.svc.MedicalSummary(c.Request().Context(), int32(u.EscuadrillaID), allPersons)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+func (h *Handlers) DunkerList(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	items, err := h.svc.DunkerSummary(c.Request().Context(), int32(u.EscuadrillaID), allPersons)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+func (h *Handlers) HyperbaricList(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	items, err := h.svc.HyperbaricSummary(c.Request().Context(), int32(u.EscuadrillaID), allPersons)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+// ============================================================
+// Historial
+// ============================================================
+
+func (h *Handlers) MedicalHistory(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	person, err := parsePathID(c, "personSk")
+	if err != nil {
+		return err
+	}
+	items, err := h.svc.MedicalHistory(c.Request().Context(), int32(u.EscuadrillaID), person)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+func (h *Handlers) DunkerHistory(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	person, err := parsePathID(c, "personSk")
+	if err != nil {
+		return err
+	}
+	items, err := h.svc.DunkerHistory(c.Request().Context(), int32(u.EscuadrillaID), person)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+func (h *Handlers) HyperbaricHistory(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	person, err := parsePathID(c, "personSk")
+	if err != nil {
+		return err
+	}
+	items, err := h.svc.HyperbaricHistory(c.Request().Context(), int32(u.EscuadrillaID), person)
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, items)
+}
+
+// ============================================================
+// Altas / completar / borrar — médico
+// ============================================================
+
+func (h *Handlers) MedicalInsert(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	var p MedicalPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	res, err := h.svc.InsertMedical(c.Request().Context(), int32(u.EscuadrillaID), p)
+	return writeInsert(c, res, err)
+}
+
+func (h *Handlers) MedicalUpdate(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	var p MedicalPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	return mapWrite(c, h.svc.UpdateMedical(c.Request().Context(), int32(u.EscuadrillaID), id, p))
+}
+
+func (h *Handlers) MedicalDelete(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	return mapWrite(c, h.svc.DeleteMedical(c.Request().Context(), int32(u.EscuadrillaID), id))
+}
+
+// ============================================================
+// Altas / completar / borrar — dunker
+// ============================================================
+
+func (h *Handlers) DunkerInsert(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	var p ExamPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	res, err := h.svc.InsertDunker(c.Request().Context(), int32(u.EscuadrillaID), p)
+	return writeInsert(c, res, err)
+}
+
+func (h *Handlers) DunkerUpdate(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	var p ExamPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	return mapWrite(c, h.svc.UpdateDunker(c.Request().Context(), int32(u.EscuadrillaID), id, p))
+}
+
+func (h *Handlers) DunkerDelete(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	return mapWrite(c, h.svc.DeleteDunker(c.Request().Context(), int32(u.EscuadrillaID), id))
+}
+
+// ============================================================
+// Altas / completar / borrar — hiperbárica
+// ============================================================
+
+func (h *Handlers) HyperbaricInsert(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	var p ExamPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	res, err := h.svc.InsertHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), p)
+	return writeInsert(c, res, err)
+}
+
+func (h *Handlers) HyperbaricUpdate(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	var p ExamPayload
+	if err := c.Bind(&p); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	return mapWrite(c, h.svc.UpdateHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), id, p))
+}
+
+func (h *Handlers) HyperbaricDelete(c echo.Context) error {
+	u := auth.CurrentUser(c)
+	if u == nil {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	id, err := parsePathID(c, "id")
+	if err != nil {
+		return err
+	}
+	return mapWrite(c, h.svc.DeleteHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), id))
+}
+
+// ============================================================
+// Util
+// ============================================================
+
+func parsePathID(c echo.Context, name string) (int32, error) {
+	n, err := strconv.ParseInt(c.Param(name), 10, 32)
+	if err != nil || n <= 0 {
+		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid "+name)
+	}
+	return int32(n), nil
+}
+
+// writeInsert mapea el resultado de un alta a HTTP.
+func writeInsert(c echo.Context, res InsertResult, err error) error {
+	switch {
+	case errors.Is(err, ErrInvalidInput):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case err != nil:
+		return err
+	}
+	return c.JSON(http.StatusCreated, res)
+}
+
+// mapWrite mapea el error de un update/delete a HTTP (204 si nil).
+func mapWrite(c echo.Context, err error) error {
+	switch {
+	case errors.Is(err, ErrInvalidInput):
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	case errors.Is(err, ErrNotFound):
+		return echo.NewHTTPError(http.StatusNotFound, err.Error())
+	case err != nil:
+		return err
+	}
+	return c.NoContent(http.StatusNoContent)
+}

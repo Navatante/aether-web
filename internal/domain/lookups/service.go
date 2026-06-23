@@ -197,6 +197,43 @@ func (s *Service) FuelTypes(ctx context.Context) ([]FuelType, error) {
 	return out, nil
 }
 
+// ===== Catálogos de Seguridad de vuelo (globales) =====
+
+func (s *Service) MedicalExamPlaces(ctx context.Context) ([]MedicalExamPlace, error) {
+	rows, err := s.q.LookupMedicalExamPlaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]MedicalExamPlace, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, MedicalExamPlace{MedicalExamPlaceSk: r.MedicalExamPlaceSk, MedicalExamPlace: r.MedicalExamPlace})
+	}
+	return out, nil
+}
+
+func (s *Service) MedicalExamResults(ctx context.Context) ([]MedicalExamResult, error) {
+	rows, err := s.q.LookupMedicalExamResults(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]MedicalExamResult, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, MedicalExamResult{MedicalExamResultSk: r.MedicalExamResultSk, MedicalExamResult: r.MedicalExamResult})
+	}
+	return out, nil
+}
+
+// AddMedicalExamPlace da de alta un lugar de reconocimiento médico (catálogo
+// global). El nombre es UNIQUE.
+func (s *Service) AddMedicalExamPlace(ctx context.Context, req AddMedicalExamPlaceReq) error {
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return ErrInvalidInput
+	}
+	err := s.q.AddMedicalExamPlace(ctx, name)
+	return mapUniqueErr(err, "__no_code_constraint__", "medical_exam_place")
+}
+
 // validFuelPlaceTypes es la lista fija del CHECK chk_fuel_place_type. El alta de
 // un lugar (AddFuelPlace) valida contra ella antes de insertar.
 var validFuelPlaceTypes = map[string]bool{

@@ -22,6 +22,11 @@ packages:
     include_files: ["dto.go"]
     frontmatter: |
       // Código generado por tygo desde internal/domain/fuel/dto.go. NO EDITAR.
+  - path: "github.com/14esc/aether-web/internal/domain/flightsafety"
+    output_path: "web/src/types/generated/flightsafety.ts"
+    include_files: ["dto.go"]
+    frontmatter: |
+      // Código generado por tygo desde internal/domain/flightsafety/dto.go. NO EDITAR.
   - path: "github.com/14esc/aether-web/internal/domain/comisiones"
     output_path: "web/src/types/generated/comisiones.ts"
     include_files: ["dto.go"]

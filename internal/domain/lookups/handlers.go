@@ -34,6 +34,10 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	// Alta de lugar de repostaje (gestionado desde el diálogo de combustible).
 	g.POST("/lookups/fuel-places", h.AddFuelPlace, mw, operacional)
 
+	// Alta de lugar de reconocimiento médico (gestionado desde el diálogo de
+	// Seguridad de vuelo).
+	g.POST("/lookups/medical-exam-places", h.AddMedicalExamPlace, mw, auth.RequirePermission(auth.PermSeguridad))
+
 	g.POST("/lookups/aircrafts", h.AddAircraft, mw, operacional)
 	g.DELETE("/lookups/aircrafts/:id", h.DeleteAircraft, mw, operacional)
 	g.PATCH("/lookups/aircrafts/:id", h.UpdateAircraftCurrentFlag, mw, operacional)
@@ -119,6 +123,10 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.FuelPhases(ctx)
 	case "fuel-types":
 		data, err = h.svc.FuelTypes(ctx)
+	case "medical-exam-places":
+		data, err = h.svc.MedicalExamPlaces(ctx)
+	case "medical-exam-results":
+		data, err = h.svc.MedicalExamResults(ctx)
 
 	// Lookups planos (vector de strings)
 	case "event-names":
@@ -176,6 +184,16 @@ func (h *Handlers) AddFuelPlace(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
 	return mapErrToHTTP(h.svc.AddFuelPlace(c.Request().Context(), req),
+		map[error]int{ErrUniqueName: http.StatusConflict, ErrInvalidInput: http.StatusBadRequest},
+		http.StatusCreated)
+}
+
+func (h *Handlers) AddMedicalExamPlace(c echo.Context) error {
+	var req AddMedicalExamPlaceReq
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
+	}
+	return mapErrToHTTP(h.svc.AddMedicalExamPlace(c.Request().Context(), req),
 		map[error]int{ErrUniqueName: http.StatusConflict, ErrInvalidInput: http.StatusBadRequest},
 		http.StatusCreated)
 }

@@ -15,6 +15,7 @@ import {
     UserRoundCheck,
     School,
     Fuel,
+    ShieldPlus,
     LucideIcon, BookOpen,
 } from "lucide-react"
 import {
@@ -39,6 +40,7 @@ import {
     CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { ConnectionIndicatorSidebar } from "./ConnectionIndicatorSidebar"
+import { useHasPermission, PermissionLevel } from "@/providers"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -119,6 +121,20 @@ const middleNavItems: NavItemType[] = [
         ],
     },
     { title: "Combustible", href: "/combustible", icon: Fuel },
+]
+
+// Solo visible para personal con nivel Seguridad (gating cosmético; el backend
+// devuelve 403 en las rutas de datos). Superusuario pasa por god-mode.
+const flightSafetyNavItems: NavItemType[] = [
+    {
+        title: "Seguridad de vuelo",
+        icon: ShieldPlus,
+        subItems: [
+            { title: "Rec. médico", href: "/seguridad-vuelo/rec-medico" },
+            { title: "Dunker", href: "/seguridad-vuelo/dunker" },
+            { title: "Hipobárica", href: "/seguridad-vuelo/hipobarica" },
+        ],
+    },
 ]
 
 const bottomNavItems: NavItemType[] = [
@@ -287,6 +303,7 @@ function NavGroup({
 
 // Main sidebar component - No longer needs useSidebar since CSS handles visibility
 export function AppSidebar() {
+    const canSeeFlightSafety = useHasPermission(PermissionLevel.SEGURIDAD)
     return (
         <Sidebar collapsible="icon">
             <SidebarHeader className="border-b-1 border-secondary p-1 ">
@@ -327,6 +344,18 @@ export function AppSidebar() {
                         <NavGroup items={bottomNavItems} />
                     </SidebarGroupContent>
                 </SidebarGroup>
+
+                {/* Seguridad de vuelo (solo nivel Seguridad / Superusuario) */}
+                {canSeeFlightSafety && (
+                    <>
+                        <SidebarSeparator />
+                        <SidebarGroup>
+                            <SidebarGroupContent>
+                                <NavGroup items={flightSafetyNavItems} />
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    </>
+                )}
             </SidebarContent>
 
             <SidebarFooter className="border-t-1 border-secondary">

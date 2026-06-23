@@ -46,6 +46,8 @@ export const queryKeys = {
         fuelPayers: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPayers'] as const,
         fuelPhases: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPhases'] as const,
         fuelTypes: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelTypes'] as const,
+        medicalExamPlaces: (escuadrillaId: number) => ['lookups', escuadrillaId, 'medicalExamPlaces'] as const,
+        medicalExamResults: (escuadrillaId: number) => ['lookups', escuadrillaId, 'medicalExamResults'] as const,
     },
 
     // ========================================================================
@@ -79,6 +81,16 @@ export const queryKeys = {
             ['fuel', escuadrillaId, 'list', params] as const,
         summary: (escuadrillaId: number, params: Record<string, unknown>) =>
             ['fuel', escuadrillaId, 'summary', params] as const,
+    },
+
+    flightSafety: {
+        all: (escuadrillaId: number) => ['flightSafety', escuadrillaId] as const,
+        medical: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'medical'] as const,
+        dunker: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'dunker'] as const,
+        hyperbaric: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'hyperbaric'] as const,
+        history: (escuadrillaId: number, type: string, personSk: number) =>
+            ['flightSafety', escuadrillaId, 'history', type, personSk] as const,
+        me: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'me'] as const,
     },
 
     personnel: {

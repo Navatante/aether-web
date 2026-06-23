@@ -138,6 +138,16 @@ export interface FuelTypeLookup {
     fuel_type: string;
 }
 
+export interface MedicalExamPlaceLookup {
+    medical_exam_place_sk: number;
+    medical_exam_place: string;
+}
+
+export interface MedicalExamResultLookup {
+    medical_exam_result_sk: number;
+    medical_exam_result: string;
+}
+
 // ============================================================================
 // GENERIC LOOKUP ADAPTER
 // ============================================================================
@@ -220,6 +230,16 @@ export function useFuelPhases() {
 /** Catálogo de tipos de combustible (Jet A-1, JP-5, …) */
 export function useFuelTypes() {
     return useLookup<FuelTypeLookup>('fuel-types', queryKeys.lookups.fuelTypes);
+}
+
+/** Catálogo de lugares de reconocimiento médico (Seguridad de vuelo) */
+export function useMedicalExamPlaces() {
+    return useLookup<MedicalExamPlaceLookup>('medical-exam-places', queryKeys.lookups.medicalExamPlaces);
+}
+
+/** Catálogo de resultados de reconocimiento médico (Apto, No apto, …) */
+export function useMedicalExamResults() {
+    return useLookup<MedicalExamResultLookup>('medical-exam-results', queryKeys.lookups.medicalExamResults);
 }
 
 /** Obtiene lista de autoridades para selector */

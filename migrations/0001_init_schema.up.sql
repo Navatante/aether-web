@@ -422,27 +422,40 @@ CREATE TABLE detall.festivos (
     CONSTRAINT uq_festivo UNIQUE (festivo_dia, festivo_motivo)
 );
 
+-- Reconocimientos de Seguridad de vuelo (médico, dunker, hiperbárica). Cada fila
+-- tiene ciclo de vida: nace PROGRAMADO (solo *_scheduled_date, la cita futura;
+-- *_date NULL) y pasa a REALIZADO cuando se rellenan *_date, resultado y
+-- *_expiry_date (caducidad). Por eso *_date y los campos de resultado son
+-- nullable. El estado (vigente/por caducar/caducado/programado) se DERIVA de las
+-- fechas en el frontend, no se persiste. SIN escuadrilla_fk: aislamiento
+-- person-centric vía detall.person.person_escuadrilla_fk (igual que extra_hour).
 CREATE TABLE flightsafety.medical_exam (
-    medical_exam_sk          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    medical_exam_date        DATE         NOT NULL,
-    medical_exam_person_fk   INTEGER      NOT NULL REFERENCES detall.person(person_sk),
-    medical_exam_place_fk    INTEGER      NOT NULL REFERENCES flightsafety.medical_exam_place(medical_exam_place_sk),
-    medical_exam_result_fk   INTEGER      NOT NULL REFERENCES flightsafety.medical_exam_result(medical_exam_result_sk),
-    medical_exam_remark      VARCHAR(200)
+    medical_exam_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    medical_exam_date           DATE,         -- NULL mientras PROGRAMADO (no realizado aún)
+    medical_exam_person_fk      INTEGER      NOT NULL REFERENCES detall.person(person_sk),
+    medical_exam_place_fk       INTEGER      REFERENCES flightsafety.medical_exam_place(medical_exam_place_sk),
+    medical_exam_result_fk      INTEGER      REFERENCES flightsafety.medical_exam_result(medical_exam_result_sk),
+    medical_exam_remark         VARCHAR(200),
+    medical_exam_scheduled_date DATE,         -- día asignado para renovar (cita)
+    medical_exam_expiry_date    DATE          -- caducidad (= fecha + 1 año por defecto)
 );
 
 CREATE TABLE flightsafety.dunker (
-    dunker_sk         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    dunker_date       DATE    NOT NULL,
-    dunker_person_fk  INTEGER NOT NULL REFERENCES detall.person(person_sk),
-    dunker_result     BOOLEAN
+    dunker_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    dunker_date           DATE,            -- NULL mientras PROGRAMADO
+    dunker_person_fk      INTEGER NOT NULL REFERENCES detall.person(person_sk),
+    dunker_result         BOOLEAN,
+    dunker_scheduled_date DATE,            -- día asignado para renovar (cita)
+    dunker_expiry_date    DATE             -- caducidad (= fecha + 1 año por defecto)
 );
 
 CREATE TABLE flightsafety.hyperbaric (
-    hyperbaric_sk         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    hyperbaric_date       DATE    NOT NULL,
-    hyperbaric_person_fk  INTEGER NOT NULL REFERENCES detall.person(person_sk),
-    hyperbaric_result     BOOLEAN
+    hyperbaric_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    hyperbaric_date           DATE,        -- NULL mientras PROGRAMADO
+    hyperbaric_person_fk      INTEGER NOT NULL REFERENCES detall.person(person_sk),
+    hyperbaric_result         BOOLEAN,
+    hyperbaric_scheduled_date DATE,        -- día asignado para renovar (cita)
+    hyperbaric_expiry_date    DATE         -- caducidad (= fecha + 5 años por defecto)
 );
 
 CREATE TABLE operations.fuel (

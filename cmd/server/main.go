@@ -28,6 +28,7 @@ import (
 	"github.com/14esc/aether-web/internal/domain/extrahours"
 	"github.com/14esc/aether-web/internal/domain/festivos"
 	"github.com/14esc/aether-web/internal/domain/flights"
+	"github.com/14esc/aether-web/internal/domain/flightsafety"
 	"github.com/14esc/aether-web/internal/domain/fuel"
 	"github.com/14esc/aether-web/internal/domain/groundschool"
 	"github.com/14esc/aether-web/internal/domain/hours"
@@ -118,6 +119,7 @@ func run(logger *slog.Logger) error {
 	groundSchoolHandlers := groundschool.NewHandlers(groundschool.NewService(pool))
 	extraHoursHandlers := extrahours.NewHandlers(extrahours.NewService(pool))
 	fuelHandlers := fuel.NewHandlers(fuel.NewService(pool))
+	flightSafetyHandlers := flightsafety.NewHandlers(flightsafety.NewService(pool))
 
 	api := e.Group("/api/v1")
 	api.GET("/health", healthHandler(pool))
@@ -141,6 +143,7 @@ func run(logger *slog.Logger) error {
 	groundSchoolHandlers.Register(api, authSvc)
 	extraHoursHandlers.Register(api, authSvc)
 	fuelHandlers.Register(api, authSvc)
+	flightSafetyHandlers.Register(api, authSvc)
 
 	e.GET("/*", spaHandler(distFS))
 

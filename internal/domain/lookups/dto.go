@@ -156,6 +156,18 @@ type FuelType struct {
 	FuelType   string `json:"fuel_type"`
 }
 
+// ===== Catálogos de Seguridad de vuelo =====
+
+type MedicalExamPlace struct {
+	MedicalExamPlaceSk int32  `json:"medical_exam_place_sk"`
+	MedicalExamPlace   string `json:"medical_exam_place"`
+}
+
+type MedicalExamResult struct {
+	MedicalExamResultSk int32  `json:"medical_exam_result_sk"`
+	MedicalExamResult   string `json:"medical_exam_result"`
+}
+
 // ===== Request DTOs (mutaciones) =====
 
 type AddDepartureArrivalPlaceReq struct {
@@ -166,6 +178,10 @@ type AddDepartureArrivalPlaceReq struct {
 type AddFuelPlaceReq struct {
 	Name string `json:"fuel_place_name"`
 	Type string `json:"fuel_place_type"`
+}
+
+type AddMedicalExamPlaceReq struct {
+	Name string `json:"medical_exam_place"`
 }
 
 type AddAircraftReq struct {
