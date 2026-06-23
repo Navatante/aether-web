@@ -69,10 +69,6 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
         <div className="h-full p-3 sm:p-6 pb-8 flex flex-col">
             <div className="mb-6 text-center flex-shrink-0">
                 <GradientTitle>{cfg.label}</GradientTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                    Seguimiento de caducidades y citas de renovación
-                    {cfg.validityYears === 1 ? ' · validez anual' : ` · validez ${cfg.validityYears} años`}
-                </p>
             </div>
 
             <div className="w-full mx-auto flex flex-col flex-1 min-h-0">
