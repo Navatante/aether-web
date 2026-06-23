@@ -86,7 +86,9 @@ export default function ExamForm(props: ExamFormProps) {
                 <div className="grid gap-2">
                     <Label className="text-foreground">Estado</Label>
                     <TypeSelect value={phase} onValueChange={(v) => v && setPhase(v as ExamPhase)}>
-                        <SelectTrigger className="w-full bg-background"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full bg-background">
+                            <SelectValue>{(v: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : '')}</SelectValue>
+                        </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="programado">Programar cita (renovación futura)</SelectItem>
                             <SelectItem value="realizado">Registrar realizado (con resultado)</SelectItem>

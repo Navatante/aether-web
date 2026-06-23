@@ -185,12 +185,12 @@ type PersonLike = Pick<
     'person_nk' | 'person_rank' | 'person_name' | 'person_last_name_1' | 'person_last_name_2'
 >;
 
-/** Nombre para mostrar sin indicativo: "Empleo Apellido1 Apellido2". */
+/** Nombre para mostrar sin indicativo: "Empleo Nombre Apellido1 Apellido2". */
 export function personName(p: PersonLike): string {
-    return [p.person_rank, p.person_last_name_1, p.person_last_name_2].filter(Boolean).join(' ');
+    return [p.person_rank, p.person_name, p.person_last_name_1, p.person_last_name_2].filter(Boolean).join(' ');
 }
 
-/** Nombre para mostrar: "Empleo Apellido1 Apellido2 (NK)". */
+/** Nombre para mostrar: "Empleo Nombre Apellido1 Apellido2 (NK)". */
 export function personLabel(p: PersonLike): string {
     const name = personName(p);
     return p.person_nk ? `${name} (${p.person_nk})` : name;
