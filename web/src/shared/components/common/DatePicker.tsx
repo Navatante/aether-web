@@ -84,7 +84,10 @@ export function DatePicker({
                         mode="single"
                         selected={selectedDate}
                         onSelect={handleDateSelect}
+                        defaultMonth={selectedDate ?? new Date()}
                         captionLayout="dropdown"
+                        startMonth={new Date(new Date().getFullYear() - 10, 0)}
+                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
                         locale={es}
                         initialFocus
                     />
