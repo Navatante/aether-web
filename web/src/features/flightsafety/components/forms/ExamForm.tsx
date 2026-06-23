@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { DatePicker, formatDateDisplay } from '@/shared/components/common';
 import { getSelectClassNames, menuPortalStyles } from '@/lib/reactSelectClassNames';
-import { useRegisterExam, type ExamDialogInitial, type ExamPhase, type BoolResult, type ExamMode } from '../../hooks/useRegisterExam';
+import { useRegisterExam, type ExamDialogInitial, type BoolResult, type ExamMode } from '../../hooks/useRegisterExam';
 import type { ExamType } from '../../flightsafety';
 
 interface ExamFormProps {
@@ -35,7 +35,7 @@ interface Option {
 export default function ExamForm(props: ExamFormProps) {
     const {
         cfg, isMedical, mode, isComplete,
-        personSk, setPersonSk, phase, setPhase,
+        personSk, setPersonSk, phase,
         scheduledDate, setScheduledDate, date, setDate, expiry, setExpiry,
         placeFk, setPlaceFk, resultFk, setResultFk, boolResult, setBoolResult,
         remark, setRemark, error, isSubmitting, canSubmit,
@@ -78,22 +78,6 @@ export default function ExamForm(props: ExamFormProps) {
                         styles={menuPortalStyles}
                         noOptionsMessage={() => 'Sin personas'}
                     />
-                </div>
-            )}
-
-            {/* Fase del ciclo de vida (no en 'complete': la cita ya está programada) */}
-            {!isComplete && (
-                <div className="grid gap-2">
-                    <Label className="text-foreground">Estado</Label>
-                    <TypeSelect value={phase} onValueChange={(v) => v && setPhase(v as ExamPhase)}>
-                        <SelectTrigger className="w-full bg-background">
-                            <SelectValue>{(v: string) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : '')}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="programado">Programar cita (renovación futura)</SelectItem>
-                            <SelectItem value="realizado">Registrar realizado (con resultado)</SelectItem>
-                        </SelectContent>
-                    </TypeSelect>
                 </div>
             )}
 

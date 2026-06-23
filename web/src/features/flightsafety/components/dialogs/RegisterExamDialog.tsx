@@ -20,7 +20,7 @@ interface RegisterExamDialogProps {
 }
 
 const TITLE: Record<ExamMode, string> = {
-    create: 'Nuevo',
+    create: 'Programar',
     edit: 'Editar',
     complete: 'Registrar resultado',
 };

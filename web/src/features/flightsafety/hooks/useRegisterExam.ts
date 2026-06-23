@@ -26,7 +26,6 @@ export type BoolResult = 'apto' | 'no_apto' | 'na';
 export interface ExamDialogInitial {
     id: number;
     personSk: number;
-    phase: ExamPhase;
     date?: string;
     scheduledDate?: string;
     expiryDate?: string;
@@ -76,9 +75,12 @@ export function useRegisterExam({ type, mode, initial, initialPersonSk, onClose,
 
     const isComplete = mode === 'complete';
 
+    // Fase determinada por el modo: un alta siempre nace PROGRAMADA; editar y
+    // registrar resultado operan sobre un REALIZADO. No es elegible por el usuario.
+    const phase: ExamPhase = mode === 'create' ? 'programado' : 'realizado';
+
     // Estado del formulario.
     const [personSk, setPersonSk] = useState<number | null>(initial?.personSk ?? initialPersonSk ?? null);
-    const [phase, setPhase] = useState<ExamPhase>(isComplete ? 'realizado' : (initial?.phase ?? 'programado'));
     const [scheduledDate, setScheduledDate] = useState<string>(initial?.scheduledDate ?? '');
     const [date, setDate] = useState<string>(initial?.date ?? '');
     const [expiry, setExpiry] = useState<string>(initial?.expiryDate ?? '');
@@ -200,7 +202,7 @@ export function useRegisterExam({ type, mode, initial, initialPersonSk, onClose,
     return {
         cfg, isMedical, mode, isComplete,
         // estado
-        personSk, setPersonSk, phase, setPhase,
+        personSk, setPersonSk, phase,
         scheduledDate, setScheduledDate, date, setDate,
         expiry, setExpiry: (v: string) => { setExpiryTouched(true); setExpiry(v); },
         placeFk, setPlaceFk, resultFk, setResultFk, boolResult, setBoolResult,

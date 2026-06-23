@@ -227,6 +227,9 @@ func (s *Service) InsertMedical(ctx context.Context, esc int32, p MedicalPayload
 	if err != nil {
 		return InsertResult{}, err
 	}
+	if err := requireSchedule(date); err != nil {
+		return InsertResult{}, err
+	}
 	// No permitir programar una segunda cita si ya hay una abierta.
 	if isSchedule(date, scheduled) {
 		n, cerr := s.q.CountOpenMedicalSchedule(ctx, queries.CountOpenMedicalScheduleParams{PersonEscuadrillaFk: esc, MedicalExamPersonFk: p.PersonSk})
@@ -303,6 +306,9 @@ func (s *Service) InsertDunker(ctx context.Context, esc int32, p ExamPayload) (I
 	if err != nil {
 		return InsertResult{}, err
 	}
+	if err := requireSchedule(date); err != nil {
+		return InsertResult{}, err
+	}
 	if isSchedule(date, scheduled) {
 		n, cerr := s.q.CountOpenDunkerSchedule(ctx, queries.CountOpenDunkerScheduleParams{PersonEscuadrillaFk: esc, DunkerPersonFk: p.PersonSk})
 		if cerr != nil {
@@ -372,6 +378,9 @@ func (s *Service) InsertHyperbaric(ctx context.Context, esc int32, p ExamPayload
 	}
 	date, scheduled, expiry, err := s.parseExam(p)
 	if err != nil {
+		return InsertResult{}, err
+	}
+	if err := requireSchedule(date); err != nil {
 		return InsertResult{}, err
 	}
 	if isSchedule(date, scheduled) {
@@ -493,6 +502,16 @@ func (s *Service) parseExam(p ExamPayload) (date, scheduled, expiry pgtype.Date,
 // realización): es el caso en que no se permite duplicar si ya hay una abierta.
 func isSchedule(date, scheduled pgtype.Date) bool {
 	return scheduled.Valid && !date.Valid
+}
+
+// requireSchedule rechaza un alta que traiga fecha de realización: todo
+// reconocimiento nace PROGRAMADO y pasa a REALIZADO al registrar su resultado
+// (vía Update*, no vía alta).
+func requireSchedule(date pgtype.Date) error {
+	if date.Valid {
+		return fmt.Errorf("%w: un alta debe ser una cita programada (sin fecha de realización)", ErrInvalidInput)
+	}
+	return nil
 }
 
 // parseDateOpt convierte "" en fecha NULL y una fecha "YYYY-MM-DD" en pgtype.Date.

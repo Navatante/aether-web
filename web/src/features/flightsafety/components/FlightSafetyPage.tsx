@@ -181,7 +181,7 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                                     <div className="flex items-center justify-end gap-3">
                                                         {r.scheduledSk > 0 && (
                                                             <button
-                                                                onClick={() => setDialog({ mode: 'complete', initial: { id: r.scheduledSk, personSk: r.personSk, phase: 'realizado', date: r.scheduledDate, scheduledDate: r.scheduledDate, scheduledPlaceFk: r.scheduledPlaceFk } })}
+                                                                onClick={() => setDialog({ mode: 'complete', initial: { id: r.scheduledSk, personSk: r.personSk, date: r.scheduledDate, scheduledDate: r.scheduledDate, scheduledPlaceFk: r.scheduledPlaceFk } })}
                                                                 className="cursor-pointer text-success hover:text-success/80 transition-all"
                                                                 aria-label="Registrar resultado de la cita"
                                                                 title="Registrar resultado"
@@ -199,7 +199,7 @@ export default function FlightSafetyPage({ type }: { type: ExamType }) {
                                                         </button>
                                                         {r.doneSk > 0 && (
                                                             <button
-                                                                onClick={() => setDialog({ mode: 'edit', initial: { id: r.doneSk, personSk: r.personSk, phase: 'realizado', date: r.doneDate, expiryDate: r.expiryDate, remark: r.remark, placeFk: r.donePlaceFk, resultFk: r.doneResultFk, boolResult: boolToResult(r.doneResult) } })}
+                                                                onClick={() => setDialog({ mode: 'edit', initial: { id: r.doneSk, personSk: r.personSk, date: r.doneDate, expiryDate: r.expiryDate, remark: r.remark, placeFk: r.donePlaceFk, resultFk: r.doneResultFk, boolResult: boolToResult(r.doneResult) } })}
                                                                 className="cursor-pointer text-muted-foreground hover:text-foreground transition-all"
                                                                 aria-label="Editar último reconocimiento"
                                                                 title="Editar último"
