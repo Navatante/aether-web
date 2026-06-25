@@ -27,8 +27,7 @@ export function MainLayout() {
             {/* Topbar arriba del toddo */}
             <Topbar />
 
-            {/* Sidebar + Contenido debajo, defaultOpen={false} hace que este colapsada por defecto */}
-            <SidebarProvider defaultOpen={false} className="h-auto flex-1 min-h-0">
+            <SidebarProvider defaultOpen={true} className="h-auto flex-1 min-h-0">
                 <div className="flex flex-1 overflow-hidden">
                     <AppSidebar />
                     <main className="flex-1 overflow-hidden">
