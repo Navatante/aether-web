@@ -8,7 +8,7 @@ import type { MedicalSummaryItem, ExamSummaryItem } from '@/types/generated/flig
 // Tipos de reconocimiento + configuración
 // ============================================================
 
-export type ExamType = 'medical' | 'dunker' | 'hyperbaric';
+export type ExamType = 'medical' | 'dunker' | 'hypobaric';
 
 export interface ExamConfig {
     key: ExamType;
@@ -24,7 +24,7 @@ export interface ExamConfig {
     amberDays: number;
     /** Umbral rojo: faltan <= redDays días (o ya caducado). */
     redDays: number;
-    /** medical lleva lugar + resultado de catálogo; dunker/hiperbárica resultado booleano. */
+    /** medical lleva lugar + resultado de catálogo; dunker/hipobárica resultado booleano. */
     booleanResult: boolean;
 }
 
@@ -49,11 +49,11 @@ export const EXAM_CONFIG: Record<ExamType, ExamConfig> = {
         redDays: 30,
         booleanResult: true,
     },
-    hyperbaric: {
-        key: 'hyperbaric',
-        label: 'Hiperbárica',
-        short: 'Hiperbárica',
-        apiPath: '/flight-safety/hyperbaric',
+    hypobaric: {
+        key: 'hypobaric',
+        label: 'Hipobárica',
+        short: 'Hipobárica',
+        apiPath: '/flight-safety/hypobaric',
         validityYears: 5,
         amberDays: 120,
         redDays: 60,

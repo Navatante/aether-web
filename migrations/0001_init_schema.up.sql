@@ -422,7 +422,7 @@ CREATE TABLE detall.festivos (
     CONSTRAINT uq_festivo UNIQUE (festivo_dia, festivo_motivo)
 );
 
--- Reconocimientos de Seguridad de vuelo (médico, dunker, hiperbárica). Cada fila
+-- Reconocimientos de Seguridad de vuelo (médico, dunker, hipobárica). Cada fila
 -- tiene ciclo de vida: nace PROGRAMADO (solo *_scheduled_date, la cita futura;
 -- *_date NULL) y pasa a REALIZADO cuando se rellenan *_date, resultado y
 -- *_expiry_date (caducidad). Por eso *_date y los campos de resultado son
@@ -449,13 +449,13 @@ CREATE TABLE flightsafety.dunker (
     dunker_expiry_date    DATE             -- caducidad (= fecha + 1 año por defecto)
 );
 
-CREATE TABLE flightsafety.hyperbaric (
-    hyperbaric_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    hyperbaric_date           DATE,        -- NULL mientras PROGRAMADO
-    hyperbaric_person_fk      INTEGER NOT NULL REFERENCES detall.person(person_sk),
-    hyperbaric_result         BOOLEAN,
-    hyperbaric_scheduled_date DATE,        -- día asignado para renovar (cita)
-    hyperbaric_expiry_date    DATE         -- caducidad (= fecha + 5 años por defecto)
+CREATE TABLE flightsafety.hypobaric (
+    hypobaric_sk             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    hypobaric_date           DATE,        -- NULL mientras PROGRAMADO
+    hypobaric_person_fk      INTEGER NOT NULL REFERENCES detall.person(person_sk),
+    hypobaric_result         BOOLEAN,
+    hypobaric_scheduled_date DATE,        -- día asignado para renovar (cita)
+    hypobaric_expiry_date    DATE         -- caducidad (= fecha + 5 años por defecto)
 );
 
 CREATE TABLE operations.fuel (

@@ -2,7 +2,7 @@ package flightsafety
 
 // DTOs del dominio Seguridad de vuelo (contrato JSON; lo lee tygo).
 //
-// Cada reconocimiento (médico, dunker, hiperbárica) tiene ciclo de vida:
+// Cada reconocimiento (médico, dunker, hipobárica) tiene ciclo de vida:
 // PROGRAMADO (solo scheduled_date) → REALIZADO (date + resultado + expiry). El
 // estado (vigente/por caducar/caducado/programado) se DERIVA en el frontend a
 // partir de estas fechas; el backend solo entrega los datos crudos.
@@ -41,7 +41,7 @@ type MedicalSummaryItem struct {
 }
 
 // ExamSummaryItem es el estado actual de un reconocimiento con resultado
-// booleano (dunker, hiperbárica).
+// booleano (dunker, hipobárica).
 type ExamSummaryItem struct {
 	PersonSk        int32  `json:"person_sk"`
 	PersonNk        string `json:"person_nk"`
@@ -82,7 +82,7 @@ type ExamHistoryItem struct {
 type MeResponse struct {
 	Medical    *MedicalSummaryItem `json:"medical"`
 	Dunker     *ExamSummaryItem    `json:"dunker"`
-	Hyperbaric *ExamSummaryItem    `json:"hyperbaric"`
+	Hypobaric *ExamSummaryItem    `json:"hypobaric"`
 }
 
 // ===== DTOs de entrada (altas / completar) =====
@@ -99,7 +99,7 @@ type MedicalPayload struct {
 	Remark        string `json:"remark"`
 }
 
-// ExamPayload sirve para programar o registrar un dunker/hiperbárica.
+// ExamPayload sirve para programar o registrar un dunker/hipobárica.
 type ExamPayload struct {
 	PersonSk      int32  `json:"person_sk"`
 	Date          string `json:"date"`

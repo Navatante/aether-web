@@ -87,7 +87,7 @@ export const queryKeys = {
         all: (escuadrillaId: number) => ['flightSafety', escuadrillaId] as const,
         medical: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'medical'] as const,
         dunker: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'dunker'] as const,
-        hyperbaric: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'hyperbaric'] as const,
+        hypobaric: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'hypobaric'] as const,
         history: (escuadrillaId: number, type: string, personSk: number) =>
             ['flightSafety', escuadrillaId, 'history', type, personSk] as const,
         me: (escuadrillaId: number) => ['flightSafety', escuadrillaId, 'me'] as const,

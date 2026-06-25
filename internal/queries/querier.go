@@ -82,7 +82,7 @@ type Querier interface {
 	CountFuel(ctx context.Context, arg CountFuelParams) (int32, error)
 	CountGroundSchool(ctx context.Context, arg CountGroundSchoolParams) (int32, error)
 	CountOpenDunkerSchedule(ctx context.Context, arg CountOpenDunkerScheduleParams) (int32, error)
-	CountOpenHyperbaricSchedule(ctx context.Context, arg CountOpenHyperbaricScheduleParams) (int32, error)
+	CountOpenHypobaricSchedule(ctx context.Context, arg CountOpenHypobaricScheduleParams) (int32, error)
 	// ============================================================
 	// Comprobación de cita PROGRAMADA abierta (date NULL, scheduled_date NOT NULL).
 	// El service la usa para impedir programar una segunda cita a quien ya tiene una.
@@ -137,7 +137,7 @@ type Querier interface {
 	// Borra un repostaje solo si su aeronave pertenece a la escuadrilla ($2).
 	DeleteFuel(ctx context.Context, arg DeleteFuelParams) (int64, error)
 	DeleteGroundSchool(ctx context.Context, arg DeleteGroundSchoolParams) (int64, error)
-	DeleteHyperbaric(ctx context.Context, arg DeleteHyperbaricParams) (int64, error)
+	DeleteHypobaric(ctx context.Context, arg DeleteHypobaricParams) (int64, error)
 	// ============================================================
 	// Borrado. Acotado a personal de la escuadrilla ($2).
 	// ============================================================
@@ -312,10 +312,10 @@ type Querier interface {
 	// vuelos de la escuadrilla actual (f.flight_escuadrilla_fk = $3).
 	// $1/$2 = rango de fechas (resuelto en Go). $4 = roles permitidos (vacío = todos).
 	GvntypeHours(ctx context.Context, arg GvntypeHoursParams) ([]GvntypeHoursRow, error)
-	HyperbaricHistory(ctx context.Context, arg HyperbaricHistoryParams) ([]HyperbaricHistoryRow, error)
+	HypobaricHistory(ctx context.Context, arg HypobaricHistoryParams) ([]HypobaricHistoryRow, error)
 	// Estado actual de la hiperbárica por persona (cada 5 años). Acotado a la
 	// escuadrilla ($1); ($2 = 0 → todas las personas).
-	HyperbaricSummary(ctx context.Context, arg HyperbaricSummaryParams) ([]HyperbaricSummaryRow, error)
+	HypobaricSummary(ctx context.Context, arg HypobaricSummaryParams) ([]HypobaricSummaryRow, error)
 	// Horas de vuelo por instrumentos (operations.ift_hour), una fila por persona del
 	// roster.
 	//
@@ -394,7 +394,7 @@ type Querier interface {
 	// ============================================================
 	InsertGroundSchool(ctx context.Context, arg InsertGroundSchoolParams) (int32, error)
 	InsertGvntypeHour(ctx context.Context, arg InsertGvntypeHourParams) error
-	InsertHyperbaric(ctx context.Context, arg InsertHyperbaricParams) (int32, error)
+	InsertHypobaric(ctx context.Context, arg InsertHypobaricParams) (int32, error)
 	InsertIftHour(ctx context.Context, arg InsertIftHourParams) error
 	InsertInstructorHour(ctx context.Context, arg InsertInstructorHourParams) error
 	InsertLanding(ctx context.Context, arg InsertLandingParams) error
@@ -607,7 +607,7 @@ type Querier interface {
 	// ============================================================
 	MedicalExamHistory(ctx context.Context, arg MedicalExamHistoryParams) ([]MedicalExamHistoryRow, error)
 	// ============================================================
-	// Seguridad de vuelo (flightsafety.medical_exam / dunker / hyperbaric)
+	// Seguridad de vuelo (flightsafety.medical_exam / dunker / hypobaric)
 	//
 	// Cada fila es un reconocimiento con ciclo de vida: PROGRAMADO (solo
 	// *_scheduled_date; *_date NULL) → REALIZADO (*_date + resultado + caducidad).
@@ -719,7 +719,7 @@ type Querier interface {
 	// ($10): tanto la fila actual como la nueva aeronave ($3) deben pertenecer a
 	// la escuadrilla.
 	UpdateFuel(ctx context.Context, arg UpdateFuelParams) (int64, error)
-	UpdateHyperbaric(ctx context.Context, arg UpdateHyperbaricParams) (int64, error)
+	UpdateHypobaric(ctx context.Context, arg UpdateHypobaricParams) (int64, error)
 	// ============================================================
 	// Completar (rellenar el resultado de una cita PROGRAMADA) / actualizar.
 	// Acotado a personal de la escuadrilla ($N) vía detall.person.

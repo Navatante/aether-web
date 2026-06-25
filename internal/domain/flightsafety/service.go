@@ -50,20 +50,20 @@ func (s *Service) MedicalSummary(ctx context.Context, esc, personFilter int32) (
 	out := make([]MedicalSummaryItem, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, MedicalSummaryItem{
-			PersonSk:        r.PersonSk,
-			PersonNk:        strVal(r.PersonNk),
-			PersonRank:      r.PersonRank,
-			PersonName:      r.PersonName,
-			PersonLastName1: r.PersonLastName1,
-			PersonLastName2: r.PersonLastName2,
-			DoneSk:          r.DoneSk,
-			DoneDate:        formatDate(r.DoneDate),
-			ExpiryDate:      formatDate(r.ExpiryDate),
-			Result:          strVal(r.Result),
-			DoneResultFk:    r.DoneResultFk,
-			Place:           strVal(r.Place),
-			DonePlaceFk:     r.DonePlaceFk,
-			Remark:          strVal(r.Remark),
+			PersonSk:         r.PersonSk,
+			PersonNk:         strVal(r.PersonNk),
+			PersonRank:       r.PersonRank,
+			PersonName:       r.PersonName,
+			PersonLastName1:  r.PersonLastName1,
+			PersonLastName2:  r.PersonLastName2,
+			DoneSk:           r.DoneSk,
+			DoneDate:         formatDate(r.DoneDate),
+			ExpiryDate:       formatDate(r.ExpiryDate),
+			Result:           strVal(r.Result),
+			DoneResultFk:     r.DoneResultFk,
+			Place:            strVal(r.Place),
+			DonePlaceFk:      r.DonePlaceFk,
+			Remark:           strVal(r.Remark),
 			ScheduledSk:      r.ScheduledSk,
 			ScheduledDate:    formatDate(r.ScheduledDate),
 			ScheduledPlace:   strVal(r.ScheduledPlace),
@@ -75,7 +75,7 @@ func (s *Service) MedicalSummary(ctx context.Context, esc, personFilter int32) (
 	return out, nil
 }
 
-// DunkerSummary y HyperbaricSummary devuelven el estado por persona de cada
+// DunkerSummary y HypobaricSummary devuelven el estado por persona de cada
 // reconocimiento de resultado booleano.
 func (s *Service) DunkerSummary(ctx context.Context, esc, personFilter int32) ([]ExamSummaryItem, error) {
 	rows, err := s.q.DunkerSummary(ctx, queries.DunkerSummaryParams{PersonEscuadrillaFk: esc, Column2: personFilter})
@@ -102,8 +102,8 @@ func (s *Service) DunkerSummary(ctx context.Context, esc, personFilter int32) ([
 	return out, nil
 }
 
-func (s *Service) HyperbaricSummary(ctx context.Context, esc, personFilter int32) ([]ExamSummaryItem, error) {
-	rows, err := s.q.HyperbaricSummary(ctx, queries.HyperbaricSummaryParams{PersonEscuadrillaFk: esc, Column2: personFilter})
+func (s *Service) HypobaricSummary(ctx context.Context, esc, personFilter int32) ([]ExamSummaryItem, error) {
+	rows, err := s.q.HypobaricSummary(ctx, queries.HypobaricSummaryParams{PersonEscuadrillaFk: esc, Column2: personFilter})
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (s *Service) Me(ctx context.Context, esc, personID int32) (MeResponse, erro
 	if err != nil {
 		return MeResponse{}, err
 	}
-	hyp, err := s.HyperbaricSummary(ctx, esc, personID)
+	hyp, err := s.HypobaricSummary(ctx, esc, personID)
 	if err != nil {
 		return MeResponse{}, err
 	}
@@ -150,7 +150,7 @@ func (s *Service) Me(ctx context.Context, esc, personID int32) (MeResponse, erro
 		res.Dunker = &dun[0]
 	}
 	if len(hyp) > 0 {
-		res.Hyperbaric = &hyp[0]
+		res.Hypobaric = &hyp[0]
 	}
 	return res, nil
 }
@@ -197,19 +197,19 @@ func (s *Service) DunkerHistory(ctx context.Context, esc, person int32) ([]ExamH
 	return out, nil
 }
 
-func (s *Service) HyperbaricHistory(ctx context.Context, esc, person int32) ([]ExamHistoryItem, error) {
-	rows, err := s.q.HyperbaricHistory(ctx, queries.HyperbaricHistoryParams{PersonEscuadrillaFk: esc, HyperbaricPersonFk: person})
+func (s *Service) HypobaricHistory(ctx context.Context, esc, person int32) ([]ExamHistoryItem, error) {
+	rows, err := s.q.HypobaricHistory(ctx, queries.HypobaricHistoryParams{PersonEscuadrillaFk: esc, HypobaricPersonFk: person})
 	if err != nil {
 		return nil, err
 	}
 	out := make([]ExamHistoryItem, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, ExamHistoryItem{
-			ID:            r.HyperbaricSk,
-			Date:          formatDate(r.HyperbaricDate),
-			ScheduledDate: formatDate(r.HyperbaricScheduledDate),
-			ExpiryDate:    formatDate(r.HyperbaricExpiryDate),
-			Result:        r.HyperbaricResult,
+			ID:            r.HypobaricSk,
+			Date:          formatDate(r.HypobaricDate),
+			ScheduledDate: formatDate(r.HypobaricScheduledDate),
+			ExpiryDate:    formatDate(r.HypobaricExpiryDate),
+			Result:        r.HypobaricResult,
 		})
 	}
 	return out, nil
@@ -369,10 +369,10 @@ func (s *Service) DeleteDunker(ctx context.Context, esc, id int32) error {
 }
 
 // ============================================================
-// WRITES — hiperbárica
+// WRITES — hipobárica
 // ============================================================
 
-func (s *Service) InsertHyperbaric(ctx context.Context, esc int32, p ExamPayload) (InsertResult, error) {
+func (s *Service) InsertHypobaric(ctx context.Context, esc int32, p ExamPayload) (InsertResult, error) {
 	if p.PersonSk <= 0 {
 		return InsertResult{}, fmt.Errorf("%w: falta la persona", ErrInvalidInput)
 	}
@@ -384,20 +384,20 @@ func (s *Service) InsertHyperbaric(ctx context.Context, esc int32, p ExamPayload
 		return InsertResult{}, err
 	}
 	if isSchedule(date, scheduled) {
-		n, cerr := s.q.CountOpenHyperbaricSchedule(ctx, queries.CountOpenHyperbaricScheduleParams{PersonEscuadrillaFk: esc, HyperbaricPersonFk: p.PersonSk})
+		n, cerr := s.q.CountOpenHypobaricSchedule(ctx, queries.CountOpenHypobaricScheduleParams{PersonEscuadrillaFk: esc, HypobaricPersonFk: p.PersonSk})
 		if cerr != nil {
 			return InsertResult{}, cerr
 		}
 		if n > 0 {
-			return InsertResult{}, fmt.Errorf("%w: esta persona ya tiene una hiperbárica programada", ErrInvalidInput)
+			return InsertResult{}, fmt.Errorf("%w: esta persona ya tiene una hipobárica programada", ErrInvalidInput)
 		}
 	}
-	sk, err := s.q.InsertHyperbaric(ctx, queries.InsertHyperbaricParams{
-		HyperbaricDate:          date,
-		HyperbaricPersonFk:      p.PersonSk,
-		HyperbaricResult:        p.Result,
-		HyperbaricScheduledDate: scheduled,
-		HyperbaricExpiryDate:    expiry,
+	sk, err := s.q.InsertHypobaric(ctx, queries.InsertHypobaricParams{
+		HypobaricDate:          date,
+		HypobaricPersonFk:      p.PersonSk,
+		HypobaricResult:        p.Result,
+		HypobaricScheduledDate: scheduled,
+		HypobaricExpiryDate:    expiry,
 		PersonEscuadrillaFk:     esc,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -406,20 +406,20 @@ func (s *Service) InsertHyperbaric(ctx context.Context, esc int32, p ExamPayload
 	if err != nil {
 		return InsertResult{}, err
 	}
-	return InsertResult{ID: sk, Success: true, Message: "Hiperbárica registrada con éxito."}, nil
+	return InsertResult{ID: sk, Success: true, Message: "Hipobárica registrada con éxito."}, nil
 }
 
-func (s *Service) UpdateHyperbaric(ctx context.Context, esc, id int32, p ExamPayload) error {
+func (s *Service) UpdateHypobaric(ctx context.Context, esc, id int32, p ExamPayload) error {
 	date, scheduled, expiry, err := s.parseExam(p)
 	if err != nil {
 		return err
 	}
-	n, err := s.q.UpdateHyperbaric(ctx, queries.UpdateHyperbaricParams{
-		HyperbaricSk:            id,
-		HyperbaricDate:          date,
-		HyperbaricResult:        p.Result,
-		HyperbaricScheduledDate: scheduled,
-		HyperbaricExpiryDate:    expiry,
+	n, err := s.q.UpdateHypobaric(ctx, queries.UpdateHypobaricParams{
+		HypobaricSk:            id,
+		HypobaricDate:          date,
+		HypobaricResult:        p.Result,
+		HypobaricScheduledDate: scheduled,
+		HypobaricExpiryDate:    expiry,
 		PersonEscuadrillaFk:     esc,
 	})
 	if err != nil {
@@ -431,8 +431,8 @@ func (s *Service) UpdateHyperbaric(ctx context.Context, esc, id int32, p ExamPay
 	return nil
 }
 
-func (s *Service) DeleteHyperbaric(ctx context.Context, esc, id int32) error {
-	n, err := s.q.DeleteHyperbaric(ctx, queries.DeleteHyperbaricParams{HyperbaricSk: id, PersonEscuadrillaFk: esc})
+func (s *Service) DeleteHypobaric(ctx context.Context, esc, id int32) error {
+	n, err := s.q.DeleteHypobaric(ctx, queries.DeleteHypobaricParams{HypobaricSk: id, PersonEscuadrillaFk: esc})
 	if err != nil {
 		return err
 	}

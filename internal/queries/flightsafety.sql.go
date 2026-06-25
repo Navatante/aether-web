@@ -33,23 +33,23 @@ func (q *Queries) CountOpenDunkerSchedule(ctx context.Context, arg CountOpenDunk
 	return total, err
 }
 
-const countOpenHyperbaricSchedule = `-- name: CountOpenHyperbaricSchedule :one
+const countOpenHypobaricSchedule = `-- name: CountOpenHypobaricSchedule :one
 SELECT COUNT(*)::int AS total
-FROM flightsafety.hyperbaric h
-JOIN detall.person p ON p.person_sk = h.hyperbaric_person_fk
+FROM flightsafety.hypobaric h
+JOIN detall.person p ON p.person_sk = h.hypobaric_person_fk
 WHERE p.person_escuadrilla_fk = $1
-  AND h.hyperbaric_person_fk = $2
-  AND h.hyperbaric_date IS NULL
-  AND h.hyperbaric_scheduled_date IS NOT NULL
+  AND h.hypobaric_person_fk = $2
+  AND h.hypobaric_date IS NULL
+  AND h.hypobaric_scheduled_date IS NOT NULL
 `
 
-type CountOpenHyperbaricScheduleParams struct {
+type CountOpenHypobaricScheduleParams struct {
 	PersonEscuadrillaFk int32 `json:"person_escuadrilla_fk"`
-	HyperbaricPersonFk  int32 `json:"hyperbaric_person_fk"`
+	HypobaricPersonFk   int32 `json:"hypobaric_person_fk"`
 }
 
-func (q *Queries) CountOpenHyperbaricSchedule(ctx context.Context, arg CountOpenHyperbaricScheduleParams) (int32, error) {
-	row := q.db.QueryRow(ctx, countOpenHyperbaricSchedule, arg.PersonEscuadrillaFk, arg.HyperbaricPersonFk)
+func (q *Queries) CountOpenHypobaricSchedule(ctx context.Context, arg CountOpenHypobaricScheduleParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countOpenHypobaricSchedule, arg.PersonEscuadrillaFk, arg.HypobaricPersonFk)
 	var total int32
 	err := row.Scan(&total)
 	return total, err
@@ -104,21 +104,21 @@ func (q *Queries) DeleteDunker(ctx context.Context, arg DeleteDunkerParams) (int
 	return result.RowsAffected(), nil
 }
 
-const deleteHyperbaric = `-- name: DeleteHyperbaric :execrows
-DELETE FROM flightsafety.hyperbaric h
+const deleteHypobaric = `-- name: DeleteHypobaric :execrows
+DELETE FROM flightsafety.hypobaric h
 USING detall.person p
-WHERE h.hyperbaric_sk = $1
-  AND p.person_sk = h.hyperbaric_person_fk
+WHERE h.hypobaric_sk = $1
+  AND p.person_sk = h.hypobaric_person_fk
   AND p.person_escuadrilla_fk = $2
 `
 
-type DeleteHyperbaricParams struct {
-	HyperbaricSk        int32 `json:"hyperbaric_sk"`
+type DeleteHypobaricParams struct {
+	HypobaricSk         int32 `json:"hypobaric_sk"`
 	PersonEscuadrillaFk int32 `json:"person_escuadrilla_fk"`
 }
 
-func (q *Queries) DeleteHyperbaric(ctx context.Context, arg DeleteHyperbaricParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteHyperbaric, arg.HyperbaricSk, arg.PersonEscuadrillaFk)
+func (q *Queries) DeleteHypobaric(ctx context.Context, arg DeleteHypobaricParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteHypobaric, arg.HypobaricSk, arg.PersonEscuadrillaFk)
 	if err != nil {
 		return 0, err
 	}
@@ -297,48 +297,48 @@ func (q *Queries) DunkerSummary(ctx context.Context, arg DunkerSummaryParams) ([
 	return items, nil
 }
 
-const hyperbaricHistory = `-- name: HyperbaricHistory :many
+const hypobaricHistory = `-- name: HypobaricHistory :many
 SELECT
-    h.hyperbaric_sk,
-    h.hyperbaric_date,
-    h.hyperbaric_scheduled_date,
-    h.hyperbaric_expiry_date,
-    h.hyperbaric_result
-FROM flightsafety.hyperbaric h
-JOIN detall.person p ON p.person_sk = h.hyperbaric_person_fk
+    h.hypobaric_sk,
+    h.hypobaric_date,
+    h.hypobaric_scheduled_date,
+    h.hypobaric_expiry_date,
+    h.hypobaric_result
+FROM flightsafety.hypobaric h
+JOIN detall.person p ON p.person_sk = h.hypobaric_person_fk
 WHERE p.person_escuadrilla_fk = $1
-  AND h.hyperbaric_person_fk = $2
-ORDER BY COALESCE(h.hyperbaric_date, h.hyperbaric_scheduled_date) DESC, h.hyperbaric_sk DESC
+  AND h.hypobaric_person_fk = $2
+ORDER BY COALESCE(h.hypobaric_date, h.hypobaric_scheduled_date) DESC, h.hypobaric_sk DESC
 `
 
-type HyperbaricHistoryParams struct {
+type HypobaricHistoryParams struct {
 	PersonEscuadrillaFk int32 `json:"person_escuadrilla_fk"`
-	HyperbaricPersonFk  int32 `json:"hyperbaric_person_fk"`
+	HypobaricPersonFk   int32 `json:"hypobaric_person_fk"`
 }
 
-type HyperbaricHistoryRow struct {
-	HyperbaricSk            int32       `json:"hyperbaric_sk"`
-	HyperbaricDate          pgtype.Date `json:"hyperbaric_date"`
-	HyperbaricScheduledDate pgtype.Date `json:"hyperbaric_scheduled_date"`
-	HyperbaricExpiryDate    pgtype.Date `json:"hyperbaric_expiry_date"`
-	HyperbaricResult        *bool       `json:"hyperbaric_result"`
+type HypobaricHistoryRow struct {
+	HypobaricSk            int32       `json:"hypobaric_sk"`
+	HypobaricDate          pgtype.Date `json:"hypobaric_date"`
+	HypobaricScheduledDate pgtype.Date `json:"hypobaric_scheduled_date"`
+	HypobaricExpiryDate    pgtype.Date `json:"hypobaric_expiry_date"`
+	HypobaricResult        *bool       `json:"hypobaric_result"`
 }
 
-func (q *Queries) HyperbaricHistory(ctx context.Context, arg HyperbaricHistoryParams) ([]HyperbaricHistoryRow, error) {
-	rows, err := q.db.Query(ctx, hyperbaricHistory, arg.PersonEscuadrillaFk, arg.HyperbaricPersonFk)
+func (q *Queries) HypobaricHistory(ctx context.Context, arg HypobaricHistoryParams) ([]HypobaricHistoryRow, error) {
+	rows, err := q.db.Query(ctx, hypobaricHistory, arg.PersonEscuadrillaFk, arg.HypobaricPersonFk)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []HyperbaricHistoryRow
+	var items []HypobaricHistoryRow
 	for rows.Next() {
-		var i HyperbaricHistoryRow
+		var i HypobaricHistoryRow
 		if err := rows.Scan(
-			&i.HyperbaricSk,
-			&i.HyperbaricDate,
-			&i.HyperbaricScheduledDate,
-			&i.HyperbaricExpiryDate,
-			&i.HyperbaricResult,
+			&i.HypobaricSk,
+			&i.HypobaricDate,
+			&i.HypobaricScheduledDate,
+			&i.HypobaricExpiryDate,
+			&i.HypobaricResult,
 		); err != nil {
 			return nil, err
 		}
@@ -350,7 +350,7 @@ func (q *Queries) HyperbaricHistory(ctx context.Context, arg HyperbaricHistoryPa
 	return items, nil
 }
 
-const hyperbaricSummary = `-- name: HyperbaricSummary :many
+const hypobaricSummary = `-- name: HypobaricSummary :many
 SELECT
     p.person_sk,
     p.person_nk,
@@ -358,28 +358,28 @@ SELECT
     p.person_name,
     p.person_last_name_1,
     p.person_last_name_2,
-    COALESCE(done.hyperbaric_sk, 0)::int AS done_sk,
-    done.hyperbaric_date           AS done_date,
-    done.hyperbaric_expiry_date    AS expiry_date,
-    done.hyperbaric_result         AS result,
-    COALESCE(prog.hyperbaric_sk, 0)::int AS scheduled_sk,
-    prog.hyperbaric_scheduled_date AS scheduled_date
+    COALESCE(done.hypobaric_sk, 0)::int AS done_sk,
+    done.hypobaric_date           AS done_date,
+    done.hypobaric_expiry_date    AS expiry_date,
+    done.hypobaric_result         AS result,
+    COALESCE(prog.hypobaric_sk, 0)::int AS scheduled_sk,
+    prog.hypobaric_scheduled_date AS scheduled_date
 FROM detall.v_person_ordered p
 LEFT JOIN LATERAL (
-    SELECT h.hyperbaric_sk, h.hyperbaric_date, h.hyperbaric_person_fk, h.hyperbaric_result, h.hyperbaric_scheduled_date, h.hyperbaric_expiry_date
-    FROM flightsafety.hyperbaric h
-    WHERE h.hyperbaric_person_fk = p.person_sk
-      AND h.hyperbaric_date IS NOT NULL
-    ORDER BY h.hyperbaric_date DESC, h.hyperbaric_sk DESC
+    SELECT h.hypobaric_sk, h.hypobaric_date, h.hypobaric_person_fk, h.hypobaric_result, h.hypobaric_scheduled_date, h.hypobaric_expiry_date
+    FROM flightsafety.hypobaric h
+    WHERE h.hypobaric_person_fk = p.person_sk
+      AND h.hypobaric_date IS NOT NULL
+    ORDER BY h.hypobaric_date DESC, h.hypobaric_sk DESC
     LIMIT 1
 ) done ON true
 LEFT JOIN LATERAL (
-    SELECT h.hyperbaric_sk, h.hyperbaric_date, h.hyperbaric_person_fk, h.hyperbaric_result, h.hyperbaric_scheduled_date, h.hyperbaric_expiry_date
-    FROM flightsafety.hyperbaric h
-    WHERE h.hyperbaric_person_fk = p.person_sk
-      AND h.hyperbaric_date IS NULL
-      AND h.hyperbaric_scheduled_date IS NOT NULL
-    ORDER BY h.hyperbaric_scheduled_date ASC, h.hyperbaric_sk DESC
+    SELECT h.hypobaric_sk, h.hypobaric_date, h.hypobaric_person_fk, h.hypobaric_result, h.hypobaric_scheduled_date, h.hypobaric_expiry_date
+    FROM flightsafety.hypobaric h
+    WHERE h.hypobaric_person_fk = p.person_sk
+      AND h.hypobaric_date IS NULL
+      AND h.hypobaric_scheduled_date IS NOT NULL
+    ORDER BY h.hypobaric_scheduled_date ASC, h.hypobaric_sk DESC
     LIMIT 1
 ) prog ON true
 WHERE p.person_escuadrilla_fk = $1
@@ -389,12 +389,12 @@ WHERE p.person_escuadrilla_fk = $1
 ORDER BY p.order_position
 `
 
-type HyperbaricSummaryParams struct {
+type HypobaricSummaryParams struct {
 	PersonEscuadrillaFk int32       `json:"person_escuadrilla_fk"`
 	Column2             interface{} `json:"column_2"`
 }
 
-type HyperbaricSummaryRow struct {
+type HypobaricSummaryRow struct {
 	PersonSk        int32       `json:"person_sk"`
 	PersonNk        *string     `json:"person_nk"`
 	PersonRank      string      `json:"person_rank"`
@@ -411,15 +411,15 @@ type HyperbaricSummaryRow struct {
 
 // Estado actual de la hiperbárica por persona (cada 5 años). Acotado a la
 // escuadrilla ($1); ($2 = 0 → todas las personas).
-func (q *Queries) HyperbaricSummary(ctx context.Context, arg HyperbaricSummaryParams) ([]HyperbaricSummaryRow, error) {
-	rows, err := q.db.Query(ctx, hyperbaricSummary, arg.PersonEscuadrillaFk, arg.Column2)
+func (q *Queries) HypobaricSummary(ctx context.Context, arg HypobaricSummaryParams) ([]HypobaricSummaryRow, error) {
+	rows, err := q.db.Query(ctx, hypobaricSummary, arg.PersonEscuadrillaFk, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []HyperbaricSummaryRow
+	var items []HypobaricSummaryRow
 	for rows.Next() {
-		var i HyperbaricSummaryRow
+		var i HypobaricSummaryRow
 		if err := rows.Scan(
 			&i.PersonSk,
 			&i.PersonNk,
@@ -479,39 +479,39 @@ func (q *Queries) InsertDunker(ctx context.Context, arg InsertDunkerParams) (int
 	return dunker_sk, err
 }
 
-const insertHyperbaric = `-- name: InsertHyperbaric :one
-INSERT INTO flightsafety.hyperbaric (
-    hyperbaric_date, hyperbaric_person_fk, hyperbaric_result, hyperbaric_scheduled_date, hyperbaric_expiry_date
+const insertHypobaric = `-- name: InsertHypobaric :one
+INSERT INTO flightsafety.hypobaric (
+    hypobaric_date, hypobaric_person_fk, hypobaric_result, hypobaric_scheduled_date, hypobaric_expiry_date
 )
 SELECT $1, $2, $3, $4, $5
 WHERE EXISTS (
     SELECT 1 FROM detall.person
     WHERE person_sk = $2 AND person_escuadrilla_fk = $6
 )
-RETURNING hyperbaric_sk
+RETURNING hypobaric_sk
 `
 
-type InsertHyperbaricParams struct {
-	HyperbaricDate          pgtype.Date `json:"hyperbaric_date"`
-	HyperbaricPersonFk      int32       `json:"hyperbaric_person_fk"`
-	HyperbaricResult        *bool       `json:"hyperbaric_result"`
-	HyperbaricScheduledDate pgtype.Date `json:"hyperbaric_scheduled_date"`
-	HyperbaricExpiryDate    pgtype.Date `json:"hyperbaric_expiry_date"`
-	PersonEscuadrillaFk     int32       `json:"person_escuadrilla_fk"`
+type InsertHypobaricParams struct {
+	HypobaricDate          pgtype.Date `json:"hypobaric_date"`
+	HypobaricPersonFk      int32       `json:"hypobaric_person_fk"`
+	HypobaricResult        *bool       `json:"hypobaric_result"`
+	HypobaricScheduledDate pgtype.Date `json:"hypobaric_scheduled_date"`
+	HypobaricExpiryDate    pgtype.Date `json:"hypobaric_expiry_date"`
+	PersonEscuadrillaFk    int32       `json:"person_escuadrilla_fk"`
 }
 
-func (q *Queries) InsertHyperbaric(ctx context.Context, arg InsertHyperbaricParams) (int32, error) {
-	row := q.db.QueryRow(ctx, insertHyperbaric,
-		arg.HyperbaricDate,
-		arg.HyperbaricPersonFk,
-		arg.HyperbaricResult,
-		arg.HyperbaricScheduledDate,
-		arg.HyperbaricExpiryDate,
+func (q *Queries) InsertHypobaric(ctx context.Context, arg InsertHypobaricParams) (int32, error) {
+	row := q.db.QueryRow(ctx, insertHypobaric,
+		arg.HypobaricDate,
+		arg.HypobaricPersonFk,
+		arg.HypobaricResult,
+		arg.HypobaricScheduledDate,
+		arg.HypobaricExpiryDate,
 		arg.PersonEscuadrillaFk,
 	)
-	var hyperbaric_sk int32
-	err := row.Scan(&hyperbaric_sk)
-	return hyperbaric_sk, err
+	var hypobaric_sk int32
+	err := row.Scan(&hypobaric_sk)
+	return hypobaric_sk, err
 }
 
 const insertMedicalExam = `-- name: InsertMedicalExam :one
@@ -717,7 +717,7 @@ type MedicalExamSummaryRow struct {
 }
 
 // ============================================================
-// Seguridad de vuelo (flightsafety.medical_exam / dunker / hyperbaric)
+// Seguridad de vuelo (flightsafety.medical_exam / dunker / hypobaric)
 //
 // Cada fila es un reconocimiento con ciclo de vida: PROGRAMADO (solo
 // *_scheduled_date; *_date NULL) → REALIZADO (*_date + resultado + caducidad).
@@ -814,34 +814,34 @@ func (q *Queries) UpdateDunker(ctx context.Context, arg UpdateDunkerParams) (int
 	return result.RowsAffected(), nil
 }
 
-const updateHyperbaric = `-- name: UpdateHyperbaric :execrows
-UPDATE flightsafety.hyperbaric h
-SET hyperbaric_date           = $2,
-    hyperbaric_result         = $3,
-    hyperbaric_scheduled_date = $4,
-    hyperbaric_expiry_date    = $5
+const updateHypobaric = `-- name: UpdateHypobaric :execrows
+UPDATE flightsafety.hypobaric h
+SET hypobaric_date           = $2,
+    hypobaric_result         = $3,
+    hypobaric_scheduled_date = $4,
+    hypobaric_expiry_date    = $5
 FROM detall.person p
-WHERE h.hyperbaric_sk = $1
-  AND p.person_sk = h.hyperbaric_person_fk
+WHERE h.hypobaric_sk = $1
+  AND p.person_sk = h.hypobaric_person_fk
   AND p.person_escuadrilla_fk = $6
 `
 
-type UpdateHyperbaricParams struct {
-	HyperbaricSk            int32       `json:"hyperbaric_sk"`
-	HyperbaricDate          pgtype.Date `json:"hyperbaric_date"`
-	HyperbaricResult        *bool       `json:"hyperbaric_result"`
-	HyperbaricScheduledDate pgtype.Date `json:"hyperbaric_scheduled_date"`
-	HyperbaricExpiryDate    pgtype.Date `json:"hyperbaric_expiry_date"`
-	PersonEscuadrillaFk     int32       `json:"person_escuadrilla_fk"`
+type UpdateHypobaricParams struct {
+	HypobaricSk            int32       `json:"hypobaric_sk"`
+	HypobaricDate          pgtype.Date `json:"hypobaric_date"`
+	HypobaricResult        *bool       `json:"hypobaric_result"`
+	HypobaricScheduledDate pgtype.Date `json:"hypobaric_scheduled_date"`
+	HypobaricExpiryDate    pgtype.Date `json:"hypobaric_expiry_date"`
+	PersonEscuadrillaFk    int32       `json:"person_escuadrilla_fk"`
 }
 
-func (q *Queries) UpdateHyperbaric(ctx context.Context, arg UpdateHyperbaricParams) (int64, error) {
-	result, err := q.db.Exec(ctx, updateHyperbaric,
-		arg.HyperbaricSk,
-		arg.HyperbaricDate,
-		arg.HyperbaricResult,
-		arg.HyperbaricScheduledDate,
-		arg.HyperbaricExpiryDate,
+func (q *Queries) UpdateHypobaric(ctx context.Context, arg UpdateHypobaricParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateHypobaric,
+		arg.HypobaricSk,
+		arg.HypobaricDate,
+		arg.HypobaricResult,
+		arg.HypobaricScheduledDate,
+		arg.HypobaricExpiryDate,
 		arg.PersonEscuadrillaFk,
 	)
 	if err != nil {

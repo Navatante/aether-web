@@ -1,5 +1,5 @@
 // Lógica del formulario de alta / programación / registro de un reconocimiento
-// de Seguridad de vuelo (médico, dunker, hiperbárica). El componente ExamForm
+// de Seguridad de vuelo (médico, dunker, hipobárica). El componente ExamForm
 // queda solo con el render.
 //
 // Un mismo formulario cubre dos fases del ciclo de vida:
@@ -20,7 +20,7 @@ import { EXAM_CONFIG, computeExpiry, type ExamType } from '../flightsafety';
 
 export type ExamPhase = 'programado' | 'realizado';
 
-// Resultado booleano de dunker/hiperbárica como string para el <Select>.
+// Resultado booleano de dunker/hipobárica como string para el <Select>.
 export type BoolResult = 'apto' | 'no_apto' | 'na';
 
 export interface ExamDialogInitial {
@@ -35,7 +35,7 @@ export interface ExamDialogInitial {
     /** Datos del registro realizado a preseleccionar al editar (médico). */
     placeFk?: number;
     resultFk?: number;
-    /** Resultado booleano a preseleccionar al editar (dunker/hiperbárica). */
+    /** Resultado booleano a preseleccionar al editar (dunker/hipobárica). */
     boolResult?: BoolResult;
 }
 

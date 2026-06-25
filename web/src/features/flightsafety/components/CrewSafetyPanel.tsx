@@ -16,7 +16,7 @@ import {
 const ICONS: Record<ExamType, typeof HeartPulse> = {
     medical: HeartPulse,
     dunker: Waves,
-    hyperbaric: Wind,
+    hypobaric: Wind,
 };
 
 function relDays(date: string): string {
@@ -105,7 +105,7 @@ export function CrewSafetyPanel() {
                 <div className="space-y-3">
                     <ExamCard type="medical" item={data?.medical} />
                     <ExamCard type="dunker" item={data?.dunker} />
-                    <ExamCard type="hyperbaric" item={data?.hyperbaric} />
+                    <ExamCard type="hypobaric" item={data?.hypobaric} />
                 </div>
             )}
         </div>

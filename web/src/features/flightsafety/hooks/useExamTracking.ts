@@ -23,7 +23,7 @@ export interface ExamRow {
     doneDate: string;
     expiryDate: string;
     resultText: string;
-    doneResult: boolean | undefined; // resultado booleano del último realizado (dunker/hiperbárica)
+    doneResult: boolean | undefined; // resultado booleano del último realizado (dunker/hipobárica)
     scheduledSk: number;
     scheduledDate: string;
     // médico
@@ -49,7 +49,7 @@ function boolResultLabel(r: boolean | undefined): string {
 const queryKeyFor = (escId: number, type: ExamType) =>
     type === 'medical' ? queryKeys.flightSafety.medical(escId)
         : type === 'dunker' ? queryKeys.flightSafety.dunker(escId)
-            : queryKeys.flightSafety.hyperbaric(escId);
+            : queryKeys.flightSafety.hypobaric(escId);
 
 export function useExamTracking(type: ExamType) {
     const cfg = EXAM_CONFIG[type];

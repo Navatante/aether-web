@@ -41,7 +41,7 @@ export interface MedicalSummaryItem {
 }
 /**
  * ExamSummaryItem es el estado actual de un reconocimiento con resultado
- * booleano (dunker, hiperbárica).
+ * booleano (dunker, hipobárica).
  */
 export interface ExamSummaryItem {
   person_sk: number /* int32 */;
@@ -80,7 +80,7 @@ export interface ExamHistoryItem {
 export interface MeResponse {
   medical?: MedicalSummaryItem;
   dunker?: ExamSummaryItem;
-  hyperbaric?: ExamSummaryItem;
+  hypobaric?: ExamSummaryItem;
 }
 /**
  * MedicalPayload sirve para programar (solo scheduled_date) o registrar un
@@ -96,7 +96,7 @@ export interface MedicalPayload {
   remark: string;
 }
 /**
- * ExamPayload sirve para programar o registrar un dunker/hiperbárica.
+ * ExamPayload sirve para programar o registrar un dunker/hipobárica.
  */
 export interface ExamPayload {
   person_sk: number /* int32 */;

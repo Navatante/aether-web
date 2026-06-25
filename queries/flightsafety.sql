@@ -1,5 +1,5 @@
 -- ============================================================
--- Seguridad de vuelo (flightsafety.medical_exam / dunker / hyperbaric)
+-- Seguridad de vuelo (flightsafety.medical_exam / dunker / hypobaric)
 --
 -- Cada fila es un reconocimiento con ciclo de vida: PROGRAMADO (solo
 -- *_scheduled_date; *_date NULL) → REALIZADO (*_date + resultado + caducidad).
@@ -118,7 +118,7 @@ WHERE p.person_escuadrilla_fk = $1
   AND ($2 = 0 OR p.person_sk = $2)
 ORDER BY p.order_position;
 
--- name: HyperbaricSummary :many
+-- name: HypobaricSummary :many
 -- Estado actual de la hiperbárica por persona (cada 5 años). Acotado a la
 -- escuadrilla ($1); ($2 = 0 → todas las personas).
 SELECT
@@ -128,28 +128,28 @@ SELECT
     p.person_name,
     p.person_last_name_1,
     p.person_last_name_2,
-    COALESCE(done.hyperbaric_sk, 0)::int AS done_sk,
-    done.hyperbaric_date           AS done_date,
-    done.hyperbaric_expiry_date    AS expiry_date,
-    done.hyperbaric_result         AS result,
-    COALESCE(prog.hyperbaric_sk, 0)::int AS scheduled_sk,
-    prog.hyperbaric_scheduled_date AS scheduled_date
+    COALESCE(done.hypobaric_sk, 0)::int AS done_sk,
+    done.hypobaric_date           AS done_date,
+    done.hypobaric_expiry_date    AS expiry_date,
+    done.hypobaric_result         AS result,
+    COALESCE(prog.hypobaric_sk, 0)::int AS scheduled_sk,
+    prog.hypobaric_scheduled_date AS scheduled_date
 FROM detall.v_person_ordered p
 LEFT JOIN LATERAL (
     SELECT h.*
-    FROM flightsafety.hyperbaric h
-    WHERE h.hyperbaric_person_fk = p.person_sk
-      AND h.hyperbaric_date IS NOT NULL
-    ORDER BY h.hyperbaric_date DESC, h.hyperbaric_sk DESC
+    FROM flightsafety.hypobaric h
+    WHERE h.hypobaric_person_fk = p.person_sk
+      AND h.hypobaric_date IS NOT NULL
+    ORDER BY h.hypobaric_date DESC, h.hypobaric_sk DESC
     LIMIT 1
 ) done ON true
 LEFT JOIN LATERAL (
     SELECT h.*
-    FROM flightsafety.hyperbaric h
-    WHERE h.hyperbaric_person_fk = p.person_sk
-      AND h.hyperbaric_date IS NULL
-      AND h.hyperbaric_scheduled_date IS NOT NULL
-    ORDER BY h.hyperbaric_scheduled_date ASC, h.hyperbaric_sk DESC
+    FROM flightsafety.hypobaric h
+    WHERE h.hypobaric_person_fk = p.person_sk
+      AND h.hypobaric_date IS NULL
+      AND h.hypobaric_scheduled_date IS NOT NULL
+    ORDER BY h.hypobaric_scheduled_date ASC, h.hypobaric_sk DESC
     LIMIT 1
 ) prog ON true
 WHERE p.person_escuadrilla_fk = $1
@@ -192,18 +192,18 @@ WHERE p.person_escuadrilla_fk = $1
   AND d.dunker_person_fk = $2
 ORDER BY COALESCE(d.dunker_date, d.dunker_scheduled_date) DESC, d.dunker_sk DESC;
 
--- name: HyperbaricHistory :many
+-- name: HypobaricHistory :many
 SELECT
-    h.hyperbaric_sk,
-    h.hyperbaric_date,
-    h.hyperbaric_scheduled_date,
-    h.hyperbaric_expiry_date,
-    h.hyperbaric_result
-FROM flightsafety.hyperbaric h
-JOIN detall.person p ON p.person_sk = h.hyperbaric_person_fk
+    h.hypobaric_sk,
+    h.hypobaric_date,
+    h.hypobaric_scheduled_date,
+    h.hypobaric_expiry_date,
+    h.hypobaric_result
+FROM flightsafety.hypobaric h
+JOIN detall.person p ON p.person_sk = h.hypobaric_person_fk
 WHERE p.person_escuadrilla_fk = $1
-  AND h.hyperbaric_person_fk = $2
-ORDER BY COALESCE(h.hyperbaric_date, h.hyperbaric_scheduled_date) DESC, h.hyperbaric_sk DESC;
+  AND h.hypobaric_person_fk = $2
+ORDER BY COALESCE(h.hypobaric_date, h.hypobaric_scheduled_date) DESC, h.hypobaric_sk DESC;
 
 -- ============================================================
 -- Comprobación de cita PROGRAMADA abierta (date NULL, scheduled_date NOT NULL).
@@ -229,14 +229,14 @@ WHERE p.person_escuadrilla_fk = $1
   AND d.dunker_date IS NULL
   AND d.dunker_scheduled_date IS NOT NULL;
 
--- name: CountOpenHyperbaricSchedule :one
+-- name: CountOpenHypobaricSchedule :one
 SELECT COUNT(*)::int AS total
-FROM flightsafety.hyperbaric h
-JOIN detall.person p ON p.person_sk = h.hyperbaric_person_fk
+FROM flightsafety.hypobaric h
+JOIN detall.person p ON p.person_sk = h.hypobaric_person_fk
 WHERE p.person_escuadrilla_fk = $1
-  AND h.hyperbaric_person_fk = $2
-  AND h.hyperbaric_date IS NULL
-  AND h.hyperbaric_scheduled_date IS NOT NULL;
+  AND h.hypobaric_person_fk = $2
+  AND h.hypobaric_date IS NULL
+  AND h.hypobaric_scheduled_date IS NOT NULL;
 
 -- ============================================================
 -- Altas. Solo insertan si la persona ($N) pertenece a la escuadrilla ($M) de la
@@ -270,16 +270,16 @@ WHERE EXISTS (
 )
 RETURNING dunker_sk;
 
--- name: InsertHyperbaric :one
-INSERT INTO flightsafety.hyperbaric (
-    hyperbaric_date, hyperbaric_person_fk, hyperbaric_result, hyperbaric_scheduled_date, hyperbaric_expiry_date
+-- name: InsertHypobaric :one
+INSERT INTO flightsafety.hypobaric (
+    hypobaric_date, hypobaric_person_fk, hypobaric_result, hypobaric_scheduled_date, hypobaric_expiry_date
 )
 SELECT $1, $2, $3, $4, $5
 WHERE EXISTS (
     SELECT 1 FROM detall.person
     WHERE person_sk = $2 AND person_escuadrilla_fk = $6
 )
-RETURNING hyperbaric_sk;
+RETURNING hypobaric_sk;
 
 -- ============================================================
 -- Completar (rellenar el resultado de una cita PROGRAMADA) / actualizar.
@@ -310,15 +310,15 @@ WHERE d.dunker_sk = $1
   AND p.person_sk = d.dunker_person_fk
   AND p.person_escuadrilla_fk = $6;
 
--- name: UpdateHyperbaric :execrows
-UPDATE flightsafety.hyperbaric h
-SET hyperbaric_date           = $2,
-    hyperbaric_result         = $3,
-    hyperbaric_scheduled_date = $4,
-    hyperbaric_expiry_date    = $5
+-- name: UpdateHypobaric :execrows
+UPDATE flightsafety.hypobaric h
+SET hypobaric_date           = $2,
+    hypobaric_result         = $3,
+    hypobaric_scheduled_date = $4,
+    hypobaric_expiry_date    = $5
 FROM detall.person p
-WHERE h.hyperbaric_sk = $1
-  AND p.person_sk = h.hyperbaric_person_fk
+WHERE h.hypobaric_sk = $1
+  AND p.person_sk = h.hypobaric_person_fk
   AND p.person_escuadrilla_fk = $6;
 
 -- ============================================================
@@ -339,9 +339,9 @@ WHERE d.dunker_sk = $1
   AND p.person_sk = d.dunker_person_fk
   AND p.person_escuadrilla_fk = $2;
 
--- name: DeleteHyperbaric :execrows
-DELETE FROM flightsafety.hyperbaric h
+-- name: DeleteHypobaric :execrows
+DELETE FROM flightsafety.hypobaric h
 USING detall.person p
-WHERE h.hyperbaric_sk = $1
-  AND p.person_sk = h.hyperbaric_person_fk
+WHERE h.hypobaric_sk = $1
+  AND p.person_sk = h.hypobaric_person_fk
   AND p.person_escuadrilla_fk = $2;

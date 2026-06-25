@@ -50,7 +50,7 @@ export function TopbarMenus() {
     const [generateReportOpen, setGenerateReportOpen] = useState(false)
     const [registerMedicalOpen, setRegisterMedicalOpen] = useState(false)
     const [registerDunkerOpen, setRegisterDunkerOpen] = useState(false)
-    const [registerHyperbaricOpen, setRegisterHyperbaricOpen] = useState(false)
+    const [registerHypobaricOpen, setRegisterHypobaricOpen] = useState(false)
 
     // === CONTEXTO DE USUARIO ===
     const { hasPermission, escuadrillaId } = useUser();
@@ -145,7 +145,7 @@ export function TopbarMenus() {
                                         <Waves className="mr-2 h-4 w-4" />
                                         Dunker
                                     </MenubarItem>
-                                    <MenubarItem onClick={() => setRegisterHyperbaricOpen(true)}>
+                                    <MenubarItem onClick={() => setRegisterHypobaricOpen(true)}>
                                         <Wind className="mr-2 h-4 w-4" />
                                         Hipobárica
                                     </MenubarItem>
@@ -269,9 +269,9 @@ export function TopbarMenus() {
                         onSuccess={handleFlightSafetySuccess}
                     />
                     <RegisterExamDialog
-                        type="hyperbaric"
-                        open={registerHyperbaricOpen}
-                        onOpenChange={setRegisterHyperbaricOpen}
+                        type="hypobaric"
+                        open={registerHypobaricOpen}
+                        onOpenChange={setRegisterHypobaricOpen}
                         mode="create"
                         onSuccess={handleFlightSafetySuccess}
                     />

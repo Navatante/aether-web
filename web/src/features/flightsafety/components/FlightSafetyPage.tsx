@@ -1,4 +1,4 @@
-// Página-tablero genérica de un tipo de reconocimiento (médico/dunker/hiperbárica).
+// Página-tablero genérica de un tipo de reconocimiento (médico/dunker/hipobárica).
 // Solo render: la lógica vive en useExamTracking. Las tres páginas concretas son
 // envoltorios finos que fijan el `type`.
 

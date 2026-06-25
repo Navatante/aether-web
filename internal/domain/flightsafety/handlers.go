@@ -30,12 +30,12 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	// Resúmenes por persona (página de seguimiento, Seguridad).
 	g.GET("/flight-safety/medical", h.MedicalList, mw, seguridad)
 	g.GET("/flight-safety/dunker", h.DunkerList, mw, seguridad)
-	g.GET("/flight-safety/hyperbaric", h.HyperbaricList, mw, seguridad)
+	g.GET("/flight-safety/hypobaric", h.HypobaricList, mw, seguridad)
 
 	// Historial por persona.
 	g.GET("/flight-safety/medical/history/:personSk", h.MedicalHistory, mw, seguridad)
 	g.GET("/flight-safety/dunker/history/:personSk", h.DunkerHistory, mw, seguridad)
-	g.GET("/flight-safety/hyperbaric/history/:personSk", h.HyperbaricHistory, mw, seguridad)
+	g.GET("/flight-safety/hypobaric/history/:personSk", h.HypobaricHistory, mw, seguridad)
 
 	// Altas / completar / borrar.
 	g.POST("/flight-safety/medical", h.MedicalInsert, mw, seguridad)
@@ -46,9 +46,9 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.PUT("/flight-safety/dunker/:id", h.DunkerUpdate, mw, seguridad)
 	g.DELETE("/flight-safety/dunker/:id", h.DunkerDelete, mw, seguridad)
 
-	g.POST("/flight-safety/hyperbaric", h.HyperbaricInsert, mw, seguridad)
-	g.PUT("/flight-safety/hyperbaric/:id", h.HyperbaricUpdate, mw, seguridad)
-	g.DELETE("/flight-safety/hyperbaric/:id", h.HyperbaricDelete, mw, seguridad)
+	g.POST("/flight-safety/hypobaric", h.HypobaricInsert, mw, seguridad)
+	g.PUT("/flight-safety/hypobaric/:id", h.HypobaricUpdate, mw, seguridad)
+	g.DELETE("/flight-safety/hypobaric/:id", h.HypobaricDelete, mw, seguridad)
 }
 
 // ============================================================
@@ -95,12 +95,12 @@ func (h *Handlers) DunkerList(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-func (h *Handlers) HyperbaricList(c echo.Context) error {
+func (h *Handlers) HypobaricList(c echo.Context) error {
 	u := auth.CurrentUser(c)
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	items, err := h.svc.HyperbaricSummary(c.Request().Context(), int32(u.EscuadrillaID), allPersons)
+	items, err := h.svc.HypobaricSummary(c.Request().Context(), int32(u.EscuadrillaID), allPersons)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (h *Handlers) DunkerHistory(c echo.Context) error {
 	return c.JSON(http.StatusOK, items)
 }
 
-func (h *Handlers) HyperbaricHistory(c echo.Context) error {
+func (h *Handlers) HypobaricHistory(c echo.Context) error {
 	u := auth.CurrentUser(c)
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
@@ -152,7 +152,7 @@ func (h *Handlers) HyperbaricHistory(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	items, err := h.svc.HyperbaricHistory(c.Request().Context(), int32(u.EscuadrillaID), person)
+	items, err := h.svc.HypobaricHistory(c.Request().Context(), int32(u.EscuadrillaID), person)
 	if err != nil {
 		return err
 	}
@@ -250,10 +250,10 @@ func (h *Handlers) DunkerDelete(c echo.Context) error {
 }
 
 // ============================================================
-// Altas / completar / borrar — hiperbárica
+// Altas / completar / borrar — hipobárica
 // ============================================================
 
-func (h *Handlers) HyperbaricInsert(c echo.Context) error {
+func (h *Handlers) HypobaricInsert(c echo.Context) error {
 	u := auth.CurrentUser(c)
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
@@ -262,11 +262,11 @@ func (h *Handlers) HyperbaricInsert(c echo.Context) error {
 	if err := c.Bind(&p); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	res, err := h.svc.InsertHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), p)
+	res, err := h.svc.InsertHypobaric(c.Request().Context(), int32(u.EscuadrillaID), p)
 	return writeInsert(c, res, err)
 }
 
-func (h *Handlers) HyperbaricUpdate(c echo.Context) error {
+func (h *Handlers) HypobaricUpdate(c echo.Context) error {
 	u := auth.CurrentUser(c)
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
@@ -279,10 +279,10 @@ func (h *Handlers) HyperbaricUpdate(c echo.Context) error {
 	if err := c.Bind(&p); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
 	}
-	return mapWrite(c, h.svc.UpdateHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), id, p))
+	return mapWrite(c, h.svc.UpdateHypobaric(c.Request().Context(), int32(u.EscuadrillaID), id, p))
 }
 
-func (h *Handlers) HyperbaricDelete(c echo.Context) error {
+func (h *Handlers) HypobaricDelete(c echo.Context) error {
 	u := auth.CurrentUser(c)
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
@@ -291,7 +291,7 @@ func (h *Handlers) HyperbaricDelete(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return mapWrite(c, h.svc.DeleteHyperbaric(c.Request().Context(), int32(u.EscuadrillaID), id))
+	return mapWrite(c, h.svc.DeleteHypobaric(c.Request().Context(), int32(u.EscuadrillaID), id))
 }
 
 // ============================================================

@@ -189,13 +189,13 @@ type FlightsafetyDunker struct {
 	DunkerExpiryDate    pgtype.Date `json:"dunker_expiry_date"`
 }
 
-type FlightsafetyHyperbaric struct {
-	HyperbaricSk            int32       `json:"hyperbaric_sk"`
-	HyperbaricDate          pgtype.Date `json:"hyperbaric_date"`
-	HyperbaricPersonFk      int32       `json:"hyperbaric_person_fk"`
-	HyperbaricResult        *bool       `json:"hyperbaric_result"`
-	HyperbaricScheduledDate pgtype.Date `json:"hyperbaric_scheduled_date"`
-	HyperbaricExpiryDate    pgtype.Date `json:"hyperbaric_expiry_date"`
+type FlightsafetyHypobaric struct {
+	HypobaricSk            int32       `json:"hypobaric_sk"`
+	HypobaricDate          pgtype.Date `json:"hypobaric_date"`
+	HypobaricPersonFk      int32       `json:"hypobaric_person_fk"`
+	HypobaricResult        *bool       `json:"hypobaric_result"`
+	HypobaricScheduledDate pgtype.Date `json:"hypobaric_scheduled_date"`
+	HypobaricExpiryDate    pgtype.Date `json:"hypobaric_expiry_date"`
 }
 
 type FlightsafetyMedicalExam struct {
