@@ -32,6 +32,12 @@ interface Option {
     label: string;
 }
 
+const BOOL_RESULT_LABELS: Record<BoolResult, string> = {
+    apto: 'Apto',
+    no_apto: 'No apto',
+    na: 'No presentado / N/A',
+};
+
 export default function ExamForm(props: ExamFormProps) {
     const {
         cfg, isMedical, mode, isComplete,
@@ -124,7 +130,11 @@ export default function ExamForm(props: ExamFormProps) {
                         <div className="grid gap-2">
                             <Label className="text-foreground">Resultado</Label>
                             <TypeSelect value={boolResult} onValueChange={(v) => v && setBoolResult(v as BoolResult)}>
-                                <SelectTrigger className="w-full bg-background"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="w-full bg-background">
+                                    <SelectValue>
+                                        {(value) => (value ? BOOL_RESULT_LABELS[value as BoolResult] : '')}
+                                    </SelectValue>
+                                </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="apto">Apto</SelectItem>
                                     <SelectItem value="no_apto">No apto</SelectItem>
