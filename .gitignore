@@ -38,8 +38,8 @@ database-utils/person_users.json
 # Las plantillas .example sí van al repo.
 migrations/0002_seed_lookups.up.sql
 migrations/0002_seed_lookups.down.sql
-migrations/0004_seed_productive_data.up.sql
-migrations/0004_seed_productive_data.down.sql
+migrations/0003_seed_productive_data.up.sql
+migrations/0003_seed_productive_data.down.sql
 
 # Virtualenvs locales para los scripts Python.
 /.venv/
