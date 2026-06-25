@@ -18,6 +18,7 @@ export interface ComisionFormData {
   generaEsfuerzo: boolean;
   horaSalida: string; // HH:MM (1er día, informativa)
   horaLlegada: string; // HH:MM (último día, ajusta esfuerzo)
+  codigo: string; // código/referencia libre, opcional
 }
 export interface InsertResult {
   comision_id: number /* int32 */;
@@ -37,6 +38,7 @@ export interface ComisionListItem {
   esfuerzo: boolean;
   hora_salida: string; // HH:MM
   hora_llegada: string; // HH:MM
+  comision_code: string;
   personas_participantes: ComisionParticipante[];
 }
 export interface ComisionParticipante {

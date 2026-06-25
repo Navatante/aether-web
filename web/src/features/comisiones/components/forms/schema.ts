@@ -8,7 +8,8 @@ export const formSchema = z.object({
     lugar: z.string().min(1, "El lugar es requerido"),
     generaEsfuerzo: z.boolean(),
     horaSalida: z.string().regex(/^\d{2}:\d{2}$/, "La hora de salida es requerida"),
-    horaLlegada: z.string().regex(/^\d{2}:\d{2}$/, "La hora de llegada es requerida")
+    horaLlegada: z.string().regex(/^\d{2}:\d{2}$/, "La hora de llegada es requerida"),
+    codigo: z.string().max(50, "Máximo 50 caracteres").optional()
 }).refine((data) => {
     const inicio = new Date(data.fechaInicio);
     const fin = new Date(data.fechaFin);

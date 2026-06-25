@@ -26,8 +26,8 @@ INSERT INTO detall.comision (
     comision_start_date, comision_end_date,
     comision_type_fk, comision_lugar_fk,
     comision_escuadrilla_fk, comision_esfuerzo,
-    comision_departure_time, comision_arrival_time
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    comision_departure_time, comision_arrival_time, comision_code
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING comision_sk;
 
 -- name: UpdateComision :execrows
@@ -38,8 +38,9 @@ SET comision_start_date    = $1,
     comision_lugar_fk      = $4,
     comision_esfuerzo      = $5,
     comision_departure_time = $6,
-    comision_arrival_time   = $7
-WHERE comision_sk = $8 AND comision_escuadrilla_fk = $9;
+    comision_arrival_time   = $7,
+    comision_code           = $8
+WHERE comision_sk = $9 AND comision_escuadrilla_fk = $10;
 
 -- name: DeleteComision :execrows
 DELETE FROM detall.comision
@@ -62,7 +63,8 @@ SELECT
     ct.name                                                AS tipo,
     c.comision_esfuerzo                                    AS esfuerzo,
     c.comision_departure_time                              AS hora_salida,
-    c.comision_arrival_time                                AS hora_llegada
+    c.comision_arrival_time                                AS hora_llegada,
+    c.comision_code                                        AS codigo
 FROM detall.comision c
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 JOIN detall.comision_type  ct ON c.comision_type_fk  = ct.comision_type_sk

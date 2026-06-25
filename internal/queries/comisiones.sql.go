@@ -307,8 +307,8 @@ INSERT INTO detall.comision (
     comision_start_date, comision_end_date,
     comision_type_fk, comision_lugar_fk,
     comision_escuadrilla_fk, comision_esfuerzo,
-    comision_departure_time, comision_arrival_time
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    comision_departure_time, comision_arrival_time, comision_code
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING comision_sk
 `
 
@@ -321,6 +321,7 @@ type InsertComisionParams struct {
 	ComisionEsfuerzo      bool        `json:"comision_esfuerzo"`
 	ComisionDepartureTime pgtype.Time `json:"comision_departure_time"`
 	ComisionArrivalTime   pgtype.Time `json:"comision_arrival_time"`
+	ComisionCode          *string     `json:"comision_code"`
 }
 
 // =============== Comisión CRUD ===============
@@ -334,6 +335,7 @@ func (q *Queries) InsertComision(ctx context.Context, arg InsertComisionParams) 
 		arg.ComisionEsfuerzo,
 		arg.ComisionDepartureTime,
 		arg.ComisionArrivalTime,
+		arg.ComisionCode,
 	)
 	var comision_sk int32
 	err := row.Scan(&comision_sk)
@@ -467,7 +469,8 @@ SELECT
     ct.name                                                AS tipo,
     c.comision_esfuerzo                                    AS esfuerzo,
     c.comision_departure_time                              AS hora_salida,
-    c.comision_arrival_time                                AS hora_llegada
+    c.comision_arrival_time                                AS hora_llegada,
+    c.comision_code                                        AS codigo
 FROM detall.comision c
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 JOIN detall.comision_type  ct ON c.comision_type_fk  = ct.comision_type_sk
@@ -498,6 +501,7 @@ type ListComisionesRow struct {
 	Esfuerzo          bool        `json:"esfuerzo"`
 	HoraSalida        pgtype.Time `json:"hora_salida"`
 	HoraLlegada       pgtype.Time `json:"hora_llegada"`
+	Codigo            *string     `json:"codigo"`
 }
 
 // =============== Comisión listings ===============
@@ -532,6 +536,7 @@ func (q *Queries) ListComisiones(ctx context.Context, arg ListComisionesParams) 
 			&i.Esfuerzo,
 			&i.HoraSalida,
 			&i.HoraLlegada,
+			&i.Codigo,
 		); err != nil {
 			return nil, err
 		}
@@ -752,8 +757,9 @@ SET comision_start_date    = $1,
     comision_lugar_fk      = $4,
     comision_esfuerzo      = $5,
     comision_departure_time = $6,
-    comision_arrival_time   = $7
-WHERE comision_sk = $8 AND comision_escuadrilla_fk = $9
+    comision_arrival_time   = $7,
+    comision_code           = $8
+WHERE comision_sk = $9 AND comision_escuadrilla_fk = $10
 `
 
 type UpdateComisionParams struct {
@@ -764,6 +770,7 @@ type UpdateComisionParams struct {
 	ComisionEsfuerzo      bool        `json:"comision_esfuerzo"`
 	ComisionDepartureTime pgtype.Time `json:"comision_departure_time"`
 	ComisionArrivalTime   pgtype.Time `json:"comision_arrival_time"`
+	ComisionCode          *string     `json:"comision_code"`
 	ComisionSk            int32       `json:"comision_sk"`
 	ComisionEscuadrillaFk int32       `json:"comision_escuadrilla_fk"`
 }
@@ -777,6 +784,7 @@ func (q *Queries) UpdateComision(ctx context.Context, arg UpdateComisionParams) 
 		arg.ComisionEsfuerzo,
 		arg.ComisionDepartureTime,
 		arg.ComisionArrivalTime,
+		arg.ComisionCode,
 		arg.ComisionSk,
 		arg.ComisionEscuadrillaFk,
 	)

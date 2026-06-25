@@ -215,6 +215,7 @@ const Comisiones = () => {
                                 <th className="text-center p-4 font-semibold text-table-header-foreground">Días</th>
                                 <th className="text-center p-4 font-semibold text-table-header-foreground">Lugar</th>
                                 <th className="text-center p-4 font-semibold text-table-header-foreground">Tipo</th>
+                                <th className="text-center p-4 font-semibold text-table-header-foreground">Código</th>
                                 <th className="text-center p-4 font-semibold text-table-header-foreground">Esfuerzo</th>
                                 <th className="text-center p-4 font-semibold text-table-header-foreground"></th>
                             </tr>
@@ -222,13 +223,13 @@ const Comisiones = () => {
                             <tbody>
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                                    <td colSpan={9} className="p-8 text-center text-muted-foreground">
                                         <RefreshCw className="w-6 h-6 animate-spin mx-auto" />
                                     </td>
                                 </tr>
                             ) : comisions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                                    <td colSpan={9} className="p-8 text-center text-muted-foreground">
                                         No se encontraron comisiones
                                     </td>
                                 </tr>
@@ -263,6 +264,9 @@ const Comisiones = () => {
                                                 <span className="text-sm text-muted-foreground">{comision.tipo}</span>
                                             </td>
                                             <td className="text-center p-4">
+                                                <span className="text-sm text-muted-foreground">{comision.comision_code || '—'}</span>
+                                            </td>
+                                            <td className="text-center p-4">
                                                 <span className={`px-2 py-1 rounded-full text-xs ${
                                                     comision.esfuerzo
                                                         ? 'bg-success-muted text-success-muted-foreground'
@@ -281,7 +285,7 @@ const Comisiones = () => {
                                         </TableRow>
 
                                         {selectedComision?.comision_sk === comision.comision_sk && (
-                                            <DetailsRow colSpan={8}>
+                                            <DetailsRow colSpan={9}>
                                                         {/* Acciones */}
                                                         <div className="flex gap-4 mb-6 border-b border-details-border pb-4">
                                                             {hasPermission(PermissionLevel.ADMINISTRATIVO) && (

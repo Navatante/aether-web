@@ -106,6 +106,7 @@ func (s *Service) Create(ctx context.Context, esc int32, data ComisionFormData) 
 		ComisionEsfuerzo:      data.GeneratesEffort,
 		ComisionDepartureTime: salida,
 		ComisionArrivalTime:   llegada,
+		ComisionCode:          textOrNull(data.Codigo),
 	})
 	if err != nil {
 		return InsertResult{}, err
@@ -142,6 +143,7 @@ func (s *Service) Update(ctx context.Context, esc int32, id int32, data Comision
 		ComisionEsfuerzo:      data.GeneratesEffort,
 		ComisionDepartureTime: salida,
 		ComisionArrivalTime:   llegada,
+		ComisionCode:          textOrNull(data.Codigo),
 		ComisionSk:            id,
 		ComisionEscuadrillaFk: esc,
 	})
@@ -219,6 +221,7 @@ func (s *Service) List(ctx context.Context, esc int32, p QueryParams) (ComisionQ
 			Esfuerzo:      r.Esfuerzo,
 			HoraSalida:    formatHora(r.HoraSalida),
 			HoraLlegada:   formatHora(r.HoraLlegada),
+			ComisionCode:  deref(r.Codigo),
 			Participantes: participantes,
 		})
 	}
@@ -617,6 +620,24 @@ func parseOptionalDates(from, to string) (pgtype.Date, pgtype.Date, error) {
 		dt = pgtype.Date{Time: t, Valid: true}
 	}
 	return df, dt, nil
+}
+
+// textOrNull mapea un string opcional al *string que genera sqlc para una
+// columna nullable: vacío (tras trim) → nil (NULL en BD).
+func textOrNull(s string) *string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+// deref desreferencia un *string (NULL → "").
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func isFKViolation(err error) bool {

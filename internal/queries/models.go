@@ -45,6 +45,7 @@ type DetallComision struct {
 	ComisionEsfuerzo      bool        `json:"comision_esfuerzo"`
 	ComisionDepartureTime pgtype.Time `json:"comision_departure_time"`
 	ComisionArrivalTime   pgtype.Time `json:"comision_arrival_time"`
+	ComisionCode          *string     `json:"comision_code"`
 }
 
 type DetallComisionLugar struct {

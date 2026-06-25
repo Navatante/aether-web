@@ -151,7 +151,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                 <div className="grid grid-cols-2 gap-4">
                     {/* Hora Salida */}
                     <div className="space-y-2">
-                        <Label htmlFor="horaSalida" className="text-foreground">Hora salida (1er día)</Label>
+                        <Label htmlFor="horaSalida" className="text-foreground">Hora salida</Label>
                         <Controller
                             name="horaSalida"
                             control={control}
@@ -171,7 +171,7 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
 
                     {/* Hora Llegada */}
                     <div className="space-y-2">
-                        <Label htmlFor="horaLlegada" className="text-foreground">Hora llegada (último día)</Label>
+                        <Label htmlFor="horaLlegada" className="text-foreground">Hora llegada</Label>
                         <Controller
                             name="horaLlegada"
                             control={control}
@@ -194,6 +194,29 @@ export default function RegisterComisionForm({ onClose, editData }: RegisterComi
                 <p className="text-xs text-muted-foreground -mt-2">
                     Si la llegada es en día laborable (L-V, no festivo) y antes de las 14:00, ese último día no genera esfuerzo.
                 </p>
+
+                {/* Código (opcional) */}
+                <div className="space-y-2">
+                    <Label htmlFor="codigo" className="text-foreground">Código (opcional)</Label>
+                    <Controller
+                        name="codigo"
+                        control={control}
+                        render={({ field }) => (
+                            <Input
+                                {...field}
+                                value={field.value ?? ''}
+                                id="codigo"
+                                type="text"
+                                maxLength={50}
+                                placeholder="Código o referencia"
+                                className={cn("h-10", errors.codigo && "border-danger")}
+                            />
+                        )}
+                    />
+                    {errors.codigo && (
+                        <p className="text-sm text-danger">{errors.codigo.message}</p>
+                    )}
+                </div>
 
                 {/* Select Tipo */}
                 <div className="space-y-2">
