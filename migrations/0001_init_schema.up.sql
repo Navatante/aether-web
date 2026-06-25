@@ -596,6 +596,17 @@ CREATE TABLE detall.person_comision (
     CONSTRAINT uq_comision_person UNIQUE (comision_fk, person_fk)
 );
 
+-- Ranchería: función que SOLO algunos participantes realizan durante una
+-- comisión (no es un tipo de comisión). Tabla dispersa: existe fila únicamente
+-- para quien hizo ranchería, con sus días (puede ser un subconjunto de la
+-- duración: en una comisión de 30 días, A hace 15 y B los otros 15). El tope
+-- días ≤ duración de la comisión se valida en el servicio (cruza tablas).
+CREATE TABLE detall.person_comision_rancheria (
+    person_comision_fk  INTEGER PRIMARY KEY
+        REFERENCES detall.person_comision(person_comision_sk) ON DELETE CASCADE,
+    dias                INTEGER NOT NULL CHECK (dias > 0)
+);
+
 CREATE TABLE operations.capba_hour (
     capba_hour_sk    INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     capba_flight_fk  INTEGER      NOT NULL REFERENCES operations.flight(flight_sk) ON DELETE CASCADE,

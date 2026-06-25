@@ -200,12 +200,10 @@ SELECT
           AND fc.comision_end_date   >= w.fecha_inicio
     ), 0)::int AS dias_unaemb,
     COALESCE((
-        SELECT SUM((fc.comision_end_date - fc.comision_start_date + 1))::int
+        SELECT SUM(r.dias)::int
         FROM detall.person_comision jpc
-        JOIN detall.comision fc       ON jpc.comision_fk = fc.comision_sk
-        JOIN detall.comision_type dct ON fc.comision_type_fk = dct.comision_type_sk
+        JOIN detall.person_comision_rancheria r ON r.person_comision_fk = jpc.person_comision_sk
         WHERE jpc.person_fk = p.person_sk
-          AND dct.name = 'Ranchería'
     ), 0)::int AS dias_rancheria
 FROM detall.v_person_ordered p
 WHERE p.person_current_flag = TRUE
@@ -355,6 +353,26 @@ func (q *Queries) InsertComisionLugar(ctx context.Context, comisionName string) 
 	return i, err
 }
 
+const insertPersonComisionRancheria = `-- name: InsertPersonComisionRancheria :exec
+INSERT INTO detall.person_comision_rancheria (person_comision_fk, dias)
+SELECT pc.person_comision_sk, $1::int
+FROM detall.person_comision pc
+WHERE pc.comision_fk = $2 AND pc.person_fk = $3
+`
+
+type InsertPersonComisionRancheriaParams struct {
+	Dias       int32 `json:"dias"`
+	ComisionFk int32 `json:"comision_fk"`
+	PersonFk   int32 `json:"person_fk"`
+}
+
+// Marca con días de ranchería a un participante ya insertado, resolviendo su
+// person_comision_sk desde (comision_fk, person_fk).
+func (q *Queries) InsertPersonComisionRancheria(ctx context.Context, arg InsertPersonComisionRancheriaParams) error {
+	_, err := q.db.Exec(ctx, insertPersonComisionRancheria, arg.Dias, arg.ComisionFk, arg.PersonFk)
+	return err
+}
+
 const insertPersonToComision = `-- name: InsertPersonToComision :exec
 INSERT INTO detall.person_comision (comision_fk, person_fk) VALUES ($1, $2)
 `
@@ -373,9 +391,11 @@ const listComisionPeople = `-- name: ListComisionPeople :many
 SELECT
     pc.person_comision_sk,
     BTRIM(p.person_rank || ' ' || p.person_last_name_1 || ' ' || p.person_last_name_2)::text AS nombre,
-    p.order_position AS orden
+    p.order_position AS orden,
+    COALESCE(pcr.dias, 0)::int AS rancheria_dias
 FROM detall.person_comision pc
 JOIN detall.v_person_ordered p ON pc.person_fk = p.person_sk
+LEFT JOIN detall.person_comision_rancheria pcr ON pcr.person_comision_fk = pc.person_comision_sk
 WHERE pc.comision_fk = $1
 ORDER BY p.order_position
 `
@@ -384,9 +404,11 @@ type ListComisionPeopleRow struct {
 	PersonComisionSk int32  `json:"person_comision_sk"`
 	Nombre           string `json:"nombre"`
 	Orden            int64  `json:"orden"`
+	RancheriaDias    int32  `json:"rancheria_dias"`
 }
 
 // Personas asignadas a una comisión, ordenadas por la vista canónica.
+// rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
 func (q *Queries) ListComisionPeople(ctx context.Context, comisionFk int32) ([]ListComisionPeopleRow, error) {
 	rows, err := q.db.Query(ctx, listComisionPeople, comisionFk)
 	if err != nil {
@@ -396,7 +418,12 @@ func (q *Queries) ListComisionPeople(ctx context.Context, comisionFk int32) ([]L
 	var items []ListComisionPeopleRow
 	for rows.Next() {
 		var i ListComisionPeopleRow
-		if err := rows.Scan(&i.PersonComisionSk, &i.Nombre, &i.Orden); err != nil {
+		if err := rows.Scan(
+			&i.PersonComisionSk,
+			&i.Nombre,
+			&i.Orden,
+			&i.RancheriaDias,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

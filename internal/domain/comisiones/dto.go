@@ -42,6 +42,7 @@ type ComisionParticipante struct {
 	PersonComisionSk int32  `json:"person_comision_sk"`
 	Nombre           string `json:"nombre"`
 	Orden            int64  `json:"orden"`
+	RancheriaDias    int32  `json:"rancheria_dias"` // 0 = no hizo ranchería en esta comisión
 }
 
 type ComisionQueryResult struct {

@@ -239,6 +239,7 @@ func (s *Service) listPeople(ctx context.Context, comisionSk int32) ([]ComisionP
 			PersonComisionSk: r.PersonComisionSk,
 			Nombre:           r.Nombre,
 			Orden:            r.Orden,
+			RancheriaDias:    r.RancheriaDias,
 		})
 	}
 	return out, nil
@@ -372,7 +373,9 @@ func (s *Service) DeleteLugar(ctx context.Context, id int32) error {
 // ----- person_comision -----
 
 // AssignPeopleToComision: valida primero todas las personas, luego inserta en TX.
-func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisionSk int32, personSks []int32) (PersonToComisionInsertResult, error) {
+// rancheriaDias mapea person_sk → días de ranchería (subconjunto de personSks);
+// cada valor debe cumplir 1 ≤ días ≤ duración de la comisión.
+func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisionSk int32, personSks []int32, rancheriaDias map[int32]int32) (PersonToComisionInsertResult, error) {
 	if len(personSks) == 0 {
 		return PersonToComisionInsertResult{}, ErrInvalidInput
 	}
@@ -386,6 +389,18 @@ func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisio
 	}
 	if err != nil {
 		return PersonToComisionInsertResult{}, err
+	}
+	totalDias := int32(dates.ComisionEndDate.Time.Sub(dates.ComisionStartDate.Time).Hours()/24) + 1
+
+	// Toda clave de rancheriaDias debe ser una persona del lote.
+	personSet := make(map[int32]struct{}, len(personSks))
+	for _, ps := range personSks {
+		personSet[ps] = struct{}{}
+	}
+	for ps := range rancheriaDias {
+		if _, ok := personSet[ps]; !ok {
+			return PersonToComisionInsertResult{}, ErrInvalidInput
+		}
 	}
 
 	// RLS: los person_sk vienen del cliente. Antes de tocarlos (nombres,
@@ -452,6 +467,10 @@ func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisio
 		if abs {
 			verrs.Errors = append(verrs.Errors, fmt.Sprintf("%s tiene una ausencia en esas fechas", name))
 		}
+
+		if d, ok := rancheriaDias[ps]; ok && (d < 1 || d > totalDias) {
+			verrs.Errors = append(verrs.Errors, fmt.Sprintf("%s: días de ranchería (%d) fuera de rango (1-%d)", name, d, totalDias))
+		}
 	}
 	if len(verrs.Errors) > 0 {
 		return PersonToComisionInsertResult{}, verrs
@@ -470,6 +489,13 @@ func (s *Service) AssignPeopleToComision(ctx context.Context, esc int32, comisio
 			ComisionFk: comisionSk, PersonFk: ps,
 		}); err != nil {
 			return PersonToComisionInsertResult{}, err
+		}
+		if d, ok := rancheriaDias[ps]; ok {
+			if err := qtx.InsertPersonComisionRancheria(ctx, queries.InsertPersonComisionRancheriaParams{
+				Dias: d, ComisionFk: comisionSk, PersonFk: ps,
+			}); err != nil {
+				return PersonToComisionInsertResult{}, err
+			}
 		}
 		inserted++
 	}

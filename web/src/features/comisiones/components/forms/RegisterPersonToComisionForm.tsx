@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogger } from '@/lib/logger';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import {
     PersonToComisionFormValues,
@@ -49,11 +52,52 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
         defaultValues: {
             comision: '',
             personas: [],
+            rancheria: [],
         }
     });
 
     const selectedPersonas = watch('personas') ?? [];
     const selectedComision = watch('comision');
+    const rancheria = watch('rancheria') ?? [];
+
+    // Duración de la comisión seleccionada (tope de días de ranchería).
+    const selectedComisionObj = comisionesArray?.find(c => c.comision_sk.toString() === selectedComision);
+    const maxDias = selectedComisionObj?.fechaInicio && selectedComisionObj?.fechaFin
+        ? Math.floor(
+            (new Date(selectedComisionObj.fechaFin).getTime() - new Date(selectedComisionObj.fechaInicio).getTime())
+            / 86_400_000) + 1
+        : undefined;
+
+    // Acota los días al rango [1, duración de la comisión].
+    const clampDias = (dias: number): number =>
+        Math.min(maxDias ?? dias, Math.max(1, dias));
+
+    const getRancheriaDias = (personSk: string): number | undefined =>
+        rancheria.find(r => r.persona === personSk)?.dias;
+
+    // Si cambia la comisión y algún valor supera su nueva duración, lo recorta.
+    useEffect(() => {
+        if (maxDias === undefined || rancheria.length === 0) return;
+        if (rancheria.some(r => r.dias > maxDias)) {
+            setValue('rancheria', rancheria.map(r => r.dias > maxDias ? { ...r, dias: maxDias } : r));
+        }
+    }, [maxDias, rancheria, setValue]);
+
+    const toggleRancheria = (personSk: string, checked: boolean) => {
+        if (checked) {
+            setValue('rancheria', [...rancheria, { persona: personSk, dias: maxDias ?? 1 }], { shouldValidate: true });
+        } else {
+            setValue('rancheria', rancheria.filter(r => r.persona !== personSk), { shouldValidate: true });
+        }
+    };
+
+    const setRancheriaDias = (personSk: string, dias: number) => {
+        setValue(
+            'rancheria',
+            rancheria.map(r => r.persona === personSk ? { ...r, dias } : r),
+            { shouldValidate: true }
+        );
+    };
 
     const getPersonFullName = (person: PersonForComisionLookup): string => {
         return [
@@ -79,6 +123,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
             selectedPersonas.filter(p => p !== personSk),
             { shouldValidate: true }
         );
+        setValue('rancheria', rancheria.filter(r => r.persona !== personSk), { shouldValidate: true });
     };
 
     const availablePersons = personArray?.filter(
@@ -94,7 +139,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
     // useApiMutation cubre los fallos HTTP; la lista se refresca al navegar.
     const registerPeople = useApiMutation<
         { comision_id: number; success: boolean; message: string; personas_insertadas: number },
-        { comision: string; personas: string[] }
+        { comision: string; personas: string[]; rancheria: { persona: string; dias: number }[] }
     >('POST', (v) => `/comisiones/${v.comision}/people`, {
         invalidateKeys: [queryKeys.comisiones.all(escId ?? 0)],
         body: ({ comision, ...rest }) => rest,
@@ -102,7 +147,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
 
     const onSubmit = async (data: PersonToComisionFormValues) => {
         try {
-            const result = await registerPeople.mutateAsync({ comision: data.comision, personas: data.personas });
+            const result = await registerPeople.mutateAsync({ comision: data.comision, personas: data.personas, rancheria: data.rancheria });
 
             if (result.success) {
                 toast.success(result.message);
@@ -173,17 +218,43 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                             const person = getPersonBySk(personSk);
                             if (!person) return null;
 
+                            const dias = getRancheriaDias(personSk);
+                            const hasRancheria = dias !== undefined;
+
                             return (
                                 <Badge
                                     key={personSk}
                                     variant="secondary"
-                                    className="flex items-center justify-between px-2 py-1 w-full"
+                                    className="flex items-center gap-2 px-2 py-1 w-full"
                                 >
-                                    <span className="text-xs truncate">{getPersonFullName(person)}</span>
+                                    <span className="text-xs truncate flex-1">{getPersonFullName(person)}</span>
+
+                                    <label className="flex items-center gap-1 flex-shrink-0 cursor-pointer">
+                                        <span className="text-xs text-muted-foreground">Ranchería</span>
+                                        <Switch
+                                            checked={hasRancheria}
+                                            onCheckedChange={(checked) => toggleRancheria(personSk, checked)}
+                                            aria-label={`Ranchería de ${getPersonFullName(person)}`}
+                                        />
+                                    </label>
+
+                                    {hasRancheria && (
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={maxDias}
+                                            value={dias ?? ''}
+                                            onChange={(e) => setRancheriaDias(personSk, clampDias(parseInt(e.target.value, 10) || 1))}
+                                            className="h-6 w-16 px-1 text-xs flex-shrink-0"
+                                            title={maxDias ? `Máximo ${maxDias} día(s)` : undefined}
+                                            aria-label={`Días de ranchería de ${getPersonFullName(person)}`}
+                                        />
+                                    )}
+
                                     <button
                                         type="button"
                                         onClick={() => handleRemovePerson(personSk)}
-                                        className="ml-2 hover:bg-destructive/20 rounded-full p-0.5 flex-shrink-0"
+                                        className="hover:bg-destructive/20 rounded-full p-0.5 flex-shrink-0"
                                         aria-label={`Remover ${getPersonFullName(person)}`}
                                     >
                                         <X className="h-3 w-3" />

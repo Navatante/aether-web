@@ -98,6 +98,7 @@ var exemptBaseline = map[string]string{
 	"InsertPapeletaCrewCount":        "flightchild",
 	"InsertPassenger":                "flightchild",
 	"InsertPersonHour":               "flightchild",
+	"InsertPersonComisionRancheria":  "comisionchild",
 	"InsertPersonToComision":         "comisionchild",
 	"InsertProjectile":               "flightchild",
 	"InsertWtHour":                   "flightchild",

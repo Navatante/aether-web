@@ -45,6 +45,7 @@ export interface ComisionParticipante {
   person_comision_sk: number /* int32 */;
   nombre: string;
   orden: number /* int64 */;
+  rancheria_dias: number /* int32 */; // 0 = no hizo ranchería en esta comisión
 }
 export interface ComisionQueryResult {
   items: ComisionListItem[];

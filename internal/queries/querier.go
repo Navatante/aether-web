@@ -415,6 +415,9 @@ type Querier interface {
 	// person_password_hash + person_password_must_change: el alta deja la
 	// contraseña por defecto ('aether', hasheada en Go) y fuerza el cambio.
 	InsertPerson(ctx context.Context, arg InsertPersonParams) (int32, error)
+	// Marca con días de ranchería a un participante ya insertado, resolviendo su
+	// person_comision_sk desde (comision_fk, person_fk).
+	InsertPersonComisionRancheria(ctx context.Context, arg InsertPersonComisionRancheriaParams) error
 	InsertPersonHour(ctx context.Context, arg InsertPersonHourParams) error
 	InsertPersonToComision(ctx context.Context, arg InsertPersonToComisionParams) error
 	InsertProjectile(ctx context.Context, arg InsertProjectileParams) error
@@ -450,6 +453,7 @@ type Querier interface {
 	// ============================================================
 	LandingsApproachesByPilot(ctx context.Context, arg LandingsApproachesByPilotParams) ([]LandingsApproachesByPilotRow, error)
 	// Personas asignadas a una comisión, ordenadas por la vista canónica.
+	// rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
 	ListComisionPeople(ctx context.Context, comisionFk int32) ([]ListComisionPeopleRow, error)
 	// Variante con campos separados (espejo de get_comision_people en Rust).
 	ListComisionPeopleExpanded(ctx context.Context, comisionFk int32) ([]ListComisionPeopleExpandedRow, error)

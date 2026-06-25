@@ -68,9 +68,13 @@ export async function http<T>(method: HttpMethod, path: string, options?: HttpOp
     const payload = isJson ? await res.json().catch(() => undefined) : await res.text().catch(() => undefined);
 
     if (!res.ok) {
+        const obj = isJson && payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
+        const errorsArr = obj && Array.isArray(obj.errors)
+            ? (obj.errors as unknown[]).map(String)
+            : undefined;
         const msg =
-            (isJson && payload && typeof payload === "object" && "message" in (payload as object) &&
-                String((payload as { message: unknown }).message)) ||
+            (obj && "message" in obj && String(obj.message)) ||
+            (errorsArr && errorsArr.length > 0 && errorsArr.join(". ")) ||
             (typeof payload === "string" && payload) ||
             `HTTP ${res.status}`;
         throw new HttpError(res.status, msg, payload);

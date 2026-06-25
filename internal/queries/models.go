@@ -134,6 +134,11 @@ type DetallPersonComision struct {
 	PersonFk         int32 `json:"person_fk"`
 }
 
+type DetallPersonComisionRancherium struct {
+	PersonComisionFk int32 `json:"person_comision_fk"`
+	Dias             int32 `json:"dias"`
+}
+
 type DetallPersonRol struct {
 	PersonRolSk   int32  `json:"person_rol_sk"`
 	PersonRolName string `json:"person_rol_name"`

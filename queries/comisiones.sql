@@ -85,12 +85,15 @@ WHERE c.comision_escuadrilla_fk = $1
 
 -- name: ListComisionPeople :many
 -- Personas asignadas a una comisión, ordenadas por la vista canónica.
+-- rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
 SELECT
     pc.person_comision_sk,
     BTRIM(p.person_rank || ' ' || p.person_last_name_1 || ' ' || p.person_last_name_2)::text AS nombre,
-    p.order_position AS orden
+    p.order_position AS orden,
+    COALESCE(pcr.dias, 0)::int AS rancheria_dias
 FROM detall.person_comision pc
 JOIN detall.v_person_ordered p ON pc.person_fk = p.person_sk
+LEFT JOIN detall.person_comision_rancheria pcr ON pcr.person_comision_fk = pc.person_comision_sk
 WHERE pc.comision_fk = $1
 ORDER BY p.order_position;
 
@@ -193,6 +196,14 @@ SELECT EXISTS (
 
 -- name: InsertPersonToComision :exec
 INSERT INTO detall.person_comision (comision_fk, person_fk) VALUES ($1, $2);
+
+-- name: InsertPersonComisionRancheria :exec
+-- Marca con días de ranchería a un participante ya insertado, resolviendo su
+-- person_comision_sk desde (comision_fk, person_fk).
+INSERT INTO detall.person_comision_rancheria (person_comision_fk, dias)
+SELECT pc.person_comision_sk, sqlc.arg(dias)::int
+FROM detall.person_comision pc
+WHERE pc.comision_fk = sqlc.arg(comision_fk) AND pc.person_fk = sqlc.arg(person_fk);
 
 -- name: DeletePersonFromComision :execrows
 DELETE FROM detall.person_comision
@@ -303,12 +314,10 @@ SELECT
           AND fc.comision_end_date   >= w.fecha_inicio
     ), 0)::int AS dias_unaemb,
     COALESCE((
-        SELECT SUM((fc.comision_end_date - fc.comision_start_date + 1))::int
+        SELECT SUM(r.dias)::int
         FROM detall.person_comision jpc
-        JOIN detall.comision fc       ON jpc.comision_fk = fc.comision_sk
-        JOIN detall.comision_type dct ON fc.comision_type_fk = dct.comision_type_sk
+        JOIN detall.person_comision_rancheria r ON r.person_comision_fk = jpc.person_comision_sk
         WHERE jpc.person_fk = p.person_sk
-          AND dct.name = 'Ranchería'
     ), 0)::int AS dias_rancheria
 FROM detall.v_person_ordered p
 WHERE p.person_current_flag = TRUE

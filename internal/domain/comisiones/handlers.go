@@ -51,6 +51,23 @@ func currentEsc(c echo.Context) (int32, bool) {
 	return int32(u.EscuadrillaID), true
 }
 
+// toPersonID acepta un id de persona como número JSON (float64) o string,
+// para compatibilidad con los dos shapes históricos del payload.
+func toPersonID(v any) (int32, bool) {
+	switch x := v.(type) {
+	case float64:
+		return int32(x), true
+	case string:
+		n, err := strconv.ParseInt(x, 10, 32)
+		if err != nil {
+			return 0, false
+		}
+		return int32(n), true
+	default:
+		return 0, false
+	}
+}
+
 func parseIDParam(c echo.Context, key string) (int32, error) {
 	n, err := strconv.ParseInt(c.Param(key), 10, 32)
 	if err != nil || n <= 0 {
@@ -179,8 +196,13 @@ func (h *Handlers) AssignPeople(c echo.Context) error {
 	// Acepta dos shapes para compatibilidad:
 	//   1. {"personas": ["1","2","3"]}  (Rust original, strings)
 	//   2. {"personas": [1, 2, 3]}      (idiomático)
+	// rancheria es opcional: días de ranchería por participante.
 	var raw struct {
-		Personas []any `json:"personas"`
+		Personas  []any `json:"personas"`
+		Rancheria []struct {
+			Persona any   `json:"persona"`
+			Dias    int32 `json:"dias"`
+		} `json:"rancheria"`
 	}
 	if err := c.Bind(&raw); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid body")
@@ -190,21 +212,22 @@ func (h *Handlers) AssignPeople(c echo.Context) error {
 	}
 	personSks := make([]int32, 0, len(raw.Personas))
 	for _, v := range raw.Personas {
-		switch x := v.(type) {
-		case float64:
-			personSks = append(personSks, int32(x))
-		case string:
-			n, err := strconv.ParseInt(x, 10, 32)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusBadRequest, "invalid person id: "+x)
-			}
-			personSks = append(personSks, int32(n))
-		default:
+		sk, ok := toPersonID(v)
+		if !ok {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid persona entry")
 		}
+		personSks = append(personSks, sk)
+	}
+	rancheriaDias := make(map[int32]int32, len(raw.Rancheria))
+	for _, r := range raw.Rancheria {
+		sk, ok := toPersonID(r.Persona)
+		if !ok {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid rancheria entry")
+		}
+		rancheriaDias[sk] = r.Dias
 	}
 
-	res, err := h.svc.AssignPeopleToComision(c.Request().Context(), esc, comisionSk, personSks)
+	res, err := h.svc.AssignPeopleToComision(c.Request().Context(), esc, comisionSk, personSks, rancheriaDias)
 	var verr *ValidationError
 	switch {
 	case errors.As(err, &verr):
