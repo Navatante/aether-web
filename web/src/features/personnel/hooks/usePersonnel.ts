@@ -165,7 +165,7 @@ export function usePersonnel() {
 
         const headers = [
             "ID", "Código", "Usuario", "Empleo", "Cuerpo", "Especialidad",
-            "Nombre", "Apellido1", "Apellido2", "Teléfono", "DNI",
+            "Nombre", "Apellido1", "Apellido2", "Teléfono", "DNI", "Localidad",
             "División", "Rol", "Antigüedad", "Embarque", "Nacimiento",
             "Escalafón", "Estado"
         ];
@@ -182,6 +182,7 @@ export function usePersonnel() {
             p.person_last_name_2,
             p.person_phone,
             p.person_dni,
+            p.person_localidad,
             p.person_division,
             p.person_rol,
             formatDate(p.person_a_emp),
@@ -244,6 +245,7 @@ export function usePersonnel() {
             person_last_name_2: person.person_last_name_2,
             person_phone: person.person_phone,
             person_dni: person.person_dni ?? "",
+            person_localidad: person.person_localidad || "",
             person_division: person.person_division || "",
             person_rol: person.person_rol || "",
             person_num_escalafon: person.person_num_escalafon,

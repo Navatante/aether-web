@@ -602,6 +602,7 @@ type Querier interface {
 	// Ordenados por precedencia militar (rank_order).
 	LookupPersonEmpleos(ctx context.Context) ([]string, error)
 	LookupPersonEspecialidades(ctx context.Context) ([]string, error)
+	LookupPersonLocalidades(ctx context.Context) ([]string, error)
 	LookupPersonRoles(ctx context.Context) ([]string, error)
 	// get_persons_lookup: "rank name last_name_1 [last_name_2]".
 	LookupPersons(ctx context.Context, personEscuadrillaFk int32) ([]LookupPersonsRow, error)

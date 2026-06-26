@@ -173,6 +173,7 @@ type DetallVPersonOrdered struct {
 	PersonLastName2       string      `json:"person_last_name_2"`
 	PersonPhone           string      `json:"person_phone"`
 	PersonDni             *string     `json:"person_dni"`
+	PersonLocalidad       string      `json:"person_localidad"`
 	PersonDivision        string      `json:"person_division"`
 	PersonRol             string      `json:"person_rol"`
 	PersonAEmp            pgtype.Date `json:"person_a_emp"`

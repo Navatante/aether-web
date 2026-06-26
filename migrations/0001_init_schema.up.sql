@@ -687,6 +687,7 @@ SELECT
     p.person_last_name_2,
     p.person_phone,
     p.person_dni,
+    p.person_localidad,
     p.person_division,
     p.person_rol,
     p.person_a_emp,

@@ -29,6 +29,7 @@ export {
     usePersonEmpleosLookup,
     usePersonDivisionesLookup,
     usePersonRolesLookup,
+    usePersonLocalidadesLookup,
     usePersonsLookup,
     usePersonsNkLookup,
     useFuelPlaces,

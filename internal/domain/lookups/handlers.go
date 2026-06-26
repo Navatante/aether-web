@@ -143,6 +143,8 @@ func (h *Handlers) Get(c echo.Context) error {
 		data, err = h.svc.PersonDivisiones(ctx)
 	case "person-roles":
 		data, err = h.svc.PersonRoles(ctx)
+	case "person-localidades":
+		data, err = h.svc.PersonLocalidades(ctx)
 
 	default:
 		return echo.NewHTTPError(http.StatusNotFound, "unknown lookup: "+name)

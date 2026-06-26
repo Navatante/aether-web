@@ -40,6 +40,7 @@ export const queryKeys = {
         personEmpleos: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personEmpleos'] as const,
         personDivisiones: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personDivisiones'] as const,
         personRoles: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personRoles'] as const,
+        personLocalidades: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personLocalidades'] as const,
         persons: (escuadrillaId: number) => ['lookups', escuadrillaId, 'persons'] as const,
         personsNk: (escuadrillaId: number) => ['lookups', escuadrillaId, 'personsNk'] as const,
         fuelPlaces: (escuadrillaId: number) => ['lookups', escuadrillaId, 'fuelPlaces'] as const,

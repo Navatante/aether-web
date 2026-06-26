@@ -22,7 +22,8 @@ export function createPersonSchema(
     roles: string[],
     empleos: string[],
     especialidades: string[],
-    divisiones: string[]
+    divisiones: string[],
+    localidades: string[]
 ) {
     return z.object({
         person_nk: z
@@ -83,6 +84,11 @@ export function createPersonSchema(
                 { message: "Formato de DNI inválido" }
             )
             .optional(),
+
+        person_localidad: z.string().refine(
+            val => localidades.includes(val),
+            { message: "Selecciona una localidad válida" }
+        ),
 
         person_division: z.string().refine(
             val => divisiones.includes(val),

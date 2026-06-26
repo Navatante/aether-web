@@ -26,6 +26,7 @@ SELECT
     BTRIM(person_rank || ' ' || person_last_name_1 || ' ' || person_last_name_2)::text AS nombre_completo,
     person_phone                      AS telefono,
     person_dni                        AS dni,
+    person_localidad                  AS localidad,
     person_division                   AS division,
     person_rol                        AS rol,
     person_a_emp                      AS antiguedad_empleo,

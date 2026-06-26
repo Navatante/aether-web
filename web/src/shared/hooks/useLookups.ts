@@ -348,6 +348,11 @@ export function usePersonRolesLookup() {
     return useLookup<string>('person-roles', queryKeys.lookups.personRoles);
 }
 
+/** Obtiene lista de localidades de persona únicas para selector */
+export function usePersonLocalidadesLookup() {
+    return useLookup<string>('person-localidades', queryKeys.lookups.personLocalidades);
+}
+
 // ============================================================================
 // AVAILABILITY/ABSENCE FORM LOOKUPS
 // ============================================================================

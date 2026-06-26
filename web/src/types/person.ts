@@ -11,6 +11,7 @@ export interface Person {
     person_last_name_2: string;
     person_phone: string;
     person_dni: string | null;
+    person_localidad: string;
     person_division: string;
     person_rol: string;
     person_a_emp: string;

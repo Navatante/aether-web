@@ -207,6 +207,9 @@ SELECT division_name FROM detall.division ORDER BY division_name;
 -- name: LookupPersonRoles :many
 SELECT person_rol_name FROM detall.person_rol ORDER BY person_rol_name;
 
+-- name: LookupPersonLocalidades :many
+SELECT localidad_name FROM detall.localidad ORDER BY localidad_name;
+
 -- ===== Catálogos de combustible (globales, sin escuadrilla) =====
 
 -- name: LookupFuelPlaces :many

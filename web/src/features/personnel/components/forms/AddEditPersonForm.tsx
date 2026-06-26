@@ -37,7 +37,8 @@ import {
     usePersonEspecialidadesLookup,
     usePersonEmpleosLookup,
     usePersonDivisionesLookup,
-    usePersonRolesLookup
+    usePersonRolesLookup,
+    usePersonLocalidadesLookup
 } from "@/shared/hooks";
 
 interface AddEditPersonFormProps {
@@ -69,13 +70,14 @@ export function AddEditPersonForm({
     const { data: empleos, loading: empleosLoading } = usePersonEmpleosLookup();
     const { data: divisiones, loading: divisionesLoading } = usePersonDivisionesLookup();
     const { data: roles, loading: rolesLoading } = usePersonRolesLookup();
+    const { data: localidades, loading: localidadesLoading } = usePersonLocalidadesLookup();
 
-    const isLoadingData = especialidadesLoading || empleosLoading || divisionesLoading || rolesLoading;
+    const isLoadingData = especialidadesLoading || empleosLoading || divisionesLoading || rolesLoading || localidadesLoading;
 
     // Crear esquema dinámico con los datos cargados
     const personSchema = (() => {
         if (isLoadingData || roles.length === 0) return null;
-        return createPersonSchema(roles, empleos, especialidades, divisiones);
+        return createPersonSchema(roles, empleos, especialidades, divisiones, localidades);
     })();
 
     const {
@@ -99,6 +101,7 @@ export function AddEditPersonForm({
             person_last_name_2: "",
             person_phone: "",
             person_dni: "",
+            person_localidad: "",
             person_division: "",
             person_rol: "",
             person_num_escalafon: 0,
@@ -117,6 +120,7 @@ export function AddEditPersonForm({
         person_last_name_2: "",
         person_phone: "",
         person_dni: "",
+        person_localidad: "",
         person_division: "",
         person_rol: "",
         person_num_escalafon: 0,
@@ -337,6 +341,36 @@ export function AddEditPersonForm({
                                 />
                                 {errors.person_dni && (
                                     <p className="text-sm text-destructive">{errors.person_dni.message}</p>
+                                )}
+                            </div>
+
+                            {/* Localidad - Dinámico desde hook */}
+                            <div className="space-y-1">
+                                <Label>Localidad</Label>
+                                <Controller
+                                    name="person_localidad"
+                                    control={control}
+                                    render={({ field: { onChange, value, ...field } }) => {
+                                        const localidadOptions = localidades.map(l => ({ value: l, label: l }));
+                                        const selected = localidadOptions.find(o => o.value === value) || null;
+                                        return (
+                                            <Select
+                                                {...field}
+                                                value={selected}
+                                                onChange={(opt) => onChange(opt?.value ?? '')}
+                                                options={localidadOptions}
+                                                placeholder="Seleccionar"
+                                                isSearchable={true}
+                                                classNames={getSelectClassNames(!!errors.person_localidad, !!selected)}
+                                                classNamePrefix="react-select"
+                                                menuPortalTarget={document.body}
+                                                styles={menuPortalStyles}
+                                            />
+                                        );
+                                    }}
+                                />
+                                {errors.person_localidad && (
+                                    <p className="text-sm text-destructive">{errors.person_localidad.message}</p>
                                 )}
                             </div>
 

@@ -452,6 +452,9 @@ func (s *Service) PersonDivisiones(ctx context.Context) ([]string, error) {
 func (s *Service) PersonRoles(ctx context.Context) ([]string, error) {
 	return s.q.LookupPersonRoles(ctx)
 }
+func (s *Service) PersonLocalidades(ctx context.Context) ([]string, error) {
+	return s.q.LookupPersonLocalidades(ctx)
+}
 
 // ============================================================================
 // MUTATIONS

@@ -131,6 +131,7 @@ var exemptBaseline = map[string]string{
 	"LookupPersonEmpleos":                "catalog",
 	"LookupPersonEspecialidades":         "catalog",
 	"LookupPersonRoles":                  "catalog",
+	"LookupPersonLocalidades":            "catalog",
 	"LugarExistsByName":                  "placecatalog",
 	"LugarExistsByNameOther":             "placecatalog",
 	"LugarUsageCount":                    "placecatalog",

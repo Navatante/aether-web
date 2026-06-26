@@ -42,6 +42,7 @@ type PersonItem struct {
 	NombreCompleto   string  `json:"nombreCompleto"`
 	Telefono         string  `json:"telefono"`
 	Dni              *string `json:"dni"`
+	Localidad        string  `json:"localidad"`
 	Division         string  `json:"division"`
 	Rol              string  `json:"rol"`
 	AntiguedadEmpleo string  `json:"antiguedadEmpleo"` // YYYY-MM-DD
@@ -185,6 +186,7 @@ func (s *Service) List(ctx context.Context, esc int32) (ListResult, error) {
 			NombreCompleto:   r.NombreCompleto,
 			Telefono:         r.Telefono,
 			Dni:              r.Dni,
+			Localidad:        r.Localidad,
 			Division:         r.Division,
 			Rol:              r.Rol,
 			AntiguedadEmpleo: formatDate(r.AntiguedadEmpleo),

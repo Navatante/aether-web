@@ -236,6 +236,12 @@ const Personnel = () => {
                                                             </p>
                                                         </div>
                                                         <div>
+                                                            <PageCardLabel>Localidad</PageCardLabel>
+                                                            <p className="text-sm text-foreground">
+                                                                {person.person_localidad && person.person_localidad.trim() !== "" ? person.person_localidad : "-"}
+                                                            </p>
+                                                        </div>
+                                                        <div>
                                                             <PageCardLabel>Estado</PageCardLabel>
                                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${person.person_active ? 'bg-success-muted text-success-muted-foreground' : 'bg-danger-muted text-danger-muted-foreground'}`}>
                                                                 <span className={`w-1.5 h-1.5 rounded-full ${person.person_active ? 'bg-success' : 'bg-danger'}`}></span>

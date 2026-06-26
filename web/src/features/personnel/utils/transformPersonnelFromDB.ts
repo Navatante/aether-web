@@ -21,6 +21,7 @@ export const transformPersonnelFromDB = (raw: any[]): Person[] => {
         person_last_name_2: safeString(p.apellido2),
         person_phone: safeString(p.telefono),
         person_dni: safeString(p.dni) || null,
+        person_localidad: safeString(p.localidad),
         person_division: safeString(p.division),
         person_rol: safeString(p.rol),
         person_a_emp: safeString(p.antiguedadEmpleo),

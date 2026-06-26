@@ -1057,6 +1057,30 @@ func (q *Queries) LookupPersonEspecialidades(ctx context.Context) ([]string, err
 	return items, nil
 }
 
+const lookupPersonLocalidades = `-- name: LookupPersonLocalidades :many
+SELECT localidad_name FROM detall.localidad ORDER BY localidad_name
+`
+
+func (q *Queries) LookupPersonLocalidades(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, lookupPersonLocalidades)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var localidad_name string
+		if err := rows.Scan(&localidad_name); err != nil {
+			return nil, err
+		}
+		items = append(items, localidad_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const lookupPersonRoles = `-- name: LookupPersonRoles :many
 SELECT person_rol_name FROM detall.person_rol ORDER BY person_rol_name
 `

@@ -177,6 +177,7 @@ SELECT
     BTRIM(person_rank || ' ' || person_last_name_1 || ' ' || person_last_name_2)::text AS nombre_completo,
     person_phone                      AS telefono,
     person_dni                        AS dni,
+    person_localidad                  AS localidad,
     person_division                   AS division,
     person_rol                        AS rol,
     person_a_emp                      AS antiguedad_empleo,
@@ -203,6 +204,7 @@ type ListPersonsRow struct {
 	NombreCompleto   string      `json:"nombre_completo"`
 	Telefono         string      `json:"telefono"`
 	Dni              *string     `json:"dni"`
+	Localidad        string      `json:"localidad"`
 	Division         string      `json:"division"`
 	Rol              string      `json:"rol"`
 	AntiguedadEmpleo pgtype.Date `json:"antiguedad_empleo"`
@@ -248,6 +250,7 @@ func (q *Queries) ListPersons(ctx context.Context, personEscuadrillaFk int32) ([
 			&i.NombreCompleto,
 			&i.Telefono,
 			&i.Dni,
+			&i.Localidad,
 			&i.Division,
 			&i.Rol,
 			&i.AntiguedadEmpleo,
