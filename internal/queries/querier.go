@@ -512,6 +512,19 @@ type Querier interface {
 	//     papeletas de otra escuadrilla.
 	// ============================================================
 	ListPapeletas(ctx context.Context, papeletaEscuadrillaFk int32) ([]ListPapeletasRow, error)
+	// =============== Desglose días de comisión por persona ===============
+	// Detalle de las comisiones que componen el total de una categoría para una
+	// persona (lo que se muestra al pinchar una celda en "Días de comisión").
+	// Espejan la aritmética de DiasComision para que el sumatorio de `dias` cuadre.
+	// Categorías "no caducan": dias = duración total de la comisión.
+	// $1 = person_sk, $2 = comision_type.name.
+	ListPersonComisionesByType(ctx context.Context, arg ListPersonComisionesByTypeParams) ([]ListPersonComisionesByTypeRow, error)
+	// Categorías "sí caducan" (OMP/UNADEST/UNAEMB): dias = solapamiento con
+	// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name, $3 = fechaFin.
+	ListPersonComisionesByTypeWindowed(ctx context.Context, arg ListPersonComisionesByTypeWindowedParams) ([]ListPersonComisionesByTypeWindowedRow, error)
+	// Ranchería: dias = person_comision_rancheria.dias (independiente del tipo).
+	// $1 = person_sk.
+	ListPersonRancheria(ctx context.Context, personFk int32) ([]ListPersonRancheriaRow, error)
 	// ============================================================
 	// Persons (Hito 4, lote 3)
 	//

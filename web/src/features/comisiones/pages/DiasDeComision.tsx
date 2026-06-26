@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, CalendarIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import ViewModeToggleComisionLists, { ViewMode } from "../components/ViewModeToggleComisionLists"
+import { ComisionDiasBreakdownDialog } from "../components/dialogs"
 import { useApiPaginatedQuery } from "@/lib/apiQuery"
 import { queryKeys } from "@/lib/queryKeys"
 import { useEscuadrilla } from "@/providers"
@@ -23,6 +24,7 @@ import {
 
 // Tipos para los datos del stored procedure
 interface PersonaDiasComision {
+    person_sk: number
     person_rank: string
     full_name: string
     person_rol: string
@@ -85,6 +87,10 @@ export default function DiasDeComision() {
     const [fechaFin, setFechaFin] = useState<Date>(new Date())
     const [viewMode, setViewMode] = useState<ViewMode>('Base o de Corta duración ordenadas por COMFLOAN')
     const [calendarOpen, setCalendarOpen] = useState(false)
+
+    // Desglose por persona (dialog)
+    const [breakdownOpen, setBreakdownOpen] = useState(false)
+    const [selectedPersona, setSelectedPersona] = useState<PersonaDiasComision | null>(null)
 
     // Filtros
     const [escalaFilter, setEscalaFilter] = useState<Set<string>>(new Set())
@@ -374,11 +380,18 @@ export default function DiasDeComision() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredAndSortedData.map((persona, idx) => (
+                                    filteredAndSortedData.map((persona, idx) => {
+                                        const dias = getDias(persona)
+                                        const clickable = dias > 0
+                                        return (
                                         <TableRow
                                             key={`${persona.full_name}-${idx}`}
                                             index={idx}
-                                            className="cursor-default"
+                                            className={clickable ? "cursor-pointer" : "cursor-default"}
+                                            onClick={clickable ? () => {
+                                                setSelectedPersona(persona)
+                                                setBreakdownOpen(true)
+                                            } : undefined}
                                         >
                                             <td className="p-4">
                                                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -409,13 +422,14 @@ export default function DiasDeComision() {
                                             </td>
                                             <td className="text-right p-4">
                                                 <span className={cn("font-mono font-semibold text-lg text-foreground pr-2",
-                                                    getDias(persona) === 0 && "text-muted-foreground"
+                                                    dias === 0 && "text-muted-foreground"
                                                 )}>
-                                                    {getDias(persona)}
+                                                    {dias}
                                                 </span>
                                             </td>
                                         </TableRow>
-                                    ))
+                                        )
+                                    })
                                 )}
                                 </tbody>
                             </table>
@@ -423,6 +437,17 @@ export default function DiasDeComision() {
                     </div>
                 </div>
             </div>
+
+            <ComisionDiasBreakdownDialog
+                open={breakdownOpen}
+                onOpenChange={setBreakdownOpen}
+                persona={selectedPersona ? {
+                    person_sk: selectedPersona.person_sk,
+                    label: `${selectedPersona.person_rank} ${selectedPersona.full_name}`,
+                } : null}
+                categoria={viewMode}
+                fechaFin={queryParams.fechaFin}
+            />
         </div>
     )
 }

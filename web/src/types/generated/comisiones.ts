@@ -115,6 +115,7 @@ export interface LugarResult {
  * DiasComisionItem espeja sp_get_dias_comision.
  */
 export interface DiasComisionItem {
+  person_sk: number /* int32 */;
   person_rank: string;
   full_name: string;
   person_rol: string;
@@ -129,4 +130,16 @@ export interface DiasComisionItem {
   dias_UNADEST: number /* int32 */;
   dias_UNAEMB: number /* int32 */;
   dias_rancheria: number /* int32 */;
+}
+/**
+ * ComisionBreakdownItem es una comisión que contribuye al total de una categoría
+ * para una persona (desglose al pinchar una celda en "Días de comisión").
+ */
+export interface ComisionBreakdownItem {
+  comision_sk: number /* int32 */;
+  comision_code?: string;
+  start_date: string;
+  end_date: string;
+  lugar: string;
+  dias: number /* int32 */;
 }

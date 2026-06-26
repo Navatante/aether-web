@@ -111,6 +111,7 @@ type LugarResult struct {
 
 // DiasComisionItem espeja sp_get_dias_comision.
 type DiasComisionItem struct {
+	PersonSk              int32  `json:"person_sk"`
 	PersonRank            string `json:"person_rank"`
 	FullName              string `json:"full_name"`
 	PersonRol             string `json:"person_rol"`
@@ -125,4 +126,15 @@ type DiasComisionItem struct {
 	DiasUNADEST           int32  `json:"dias_UNADEST"`
 	DiasUNAEMB            int32  `json:"dias_UNAEMB"`
 	DiasRancheria         int32  `json:"dias_rancheria"`
+}
+
+// ComisionBreakdownItem es una comisión que contribuye al total de una categoría
+// para una persona (desglose al pinchar una celda en "Días de comisión").
+type ComisionBreakdownItem struct {
+	ComisionSk   int32   `json:"comision_sk"`
+	ComisionCode *string `json:"comision_code"`
+	StartDate    string  `json:"start_date"`
+	EndDate      string  `json:"end_date"`
+	Lugar        string  `json:"lugar"`
+	Dias         int32   `json:"dias"`
 }

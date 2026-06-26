@@ -559,6 +559,7 @@ func (s *Service) DiasComision(ctx context.Context, esc int32, fechaFin string) 
 	out := make([]DiasComisionItem, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, DiasComisionItem{
+			PersonSk:              r.PersonSk,
 			PersonRank:            r.PersonRank,
 			FullName:              r.FullName,
 			PersonRol:             r.PersonRol,
@@ -576,6 +577,84 @@ func (s *Service) DiasComision(ctx context.Context, esc int32, fechaFin string) 
 		})
 	}
 	return out, nil
+}
+
+// windowedComisionTypes son las categorías "sí caducan": sus días solo cuentan
+// dentro de la ventana de los últimos 365 días.
+var windowedComisionTypes = map[string]bool{
+	"OMP como UNAEMB o UNADEST":       true,
+	"UNADEST nacionales o extranjero": true,
+	"UNAEMB nacionales o extranjero":  true,
+}
+
+// nonWindowedComisionTypes son las categorías "no caducan": días = duración total.
+var nonWindowedComisionTypes = map[string]bool{
+	"Base o de Corta duración ordenadas por COMFLOAN":     true,
+	"Despliegues ordenados por COMFLOAN":                  true,
+	"Ofertadas por otros mandos y de carácter voluntario": true,
+}
+
+// DiasComisionBreakdown devuelve las comisiones que componen el total de una
+// categoría para una persona. Espeja la aritmética de DiasComision para que el
+// sumatorio de días cuadre con la celda mostrada.
+func (s *Service) DiasComisionBreakdown(ctx context.Context, person int32, categoria, fechaFin string) ([]ComisionBreakdownItem, error) {
+	fin := time.Now().UTC()
+	if fechaFin != "" {
+		t, err := time.Parse("2006-01-02", fechaFin)
+		if err != nil {
+			return nil, ErrInvalidInput
+		}
+		fin = t
+	}
+
+	var rows []ComisionBreakdownItem
+	switch {
+	case categoria == "Ranchería":
+		rs, err := s.q.ListPersonRancheria(ctx, person)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rs {
+			rows = append(rows, breakdownItem(r.ComisionSk, r.ComisionCode, r.ComisionStartDate, r.ComisionEndDate, r.Lugar, r.Dias))
+		}
+	case windowedComisionTypes[categoria]:
+		rs, err := s.q.ListPersonComisionesByTypeWindowed(ctx, queries.ListPersonComisionesByTypeWindowedParams{
+			PersonFk: person,
+			Name:     categoria,
+			Column3:  pgtype.Date{Time: fin, Valid: true},
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rs {
+			rows = append(rows, breakdownItem(r.ComisionSk, r.ComisionCode, r.ComisionStartDate, r.ComisionEndDate, r.Lugar, r.Dias))
+		}
+	case nonWindowedComisionTypes[categoria]:
+		rs, err := s.q.ListPersonComisionesByType(ctx, queries.ListPersonComisionesByTypeParams{
+			PersonFk: person,
+			Name:     categoria,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rs {
+			rows = append(rows, breakdownItem(r.ComisionSk, r.ComisionCode, r.ComisionStartDate, r.ComisionEndDate, r.Lugar, r.Dias))
+		}
+	default:
+		return nil, ErrInvalidInput
+	}
+	return rows, nil
+}
+
+func breakdownItem(sk int32, code *string, start, end pgtype.Date, lugar string, dias int32) ComisionBreakdownItem {
+	return ComisionBreakdownItem{
+		ComisionSk:   sk,
+		ComisionCode: code,
+		StartDate:    start.Time.Format("2006-01-02"),
+		EndDate:      end.Time.Format("2006-01-02"),
+		Lugar:        lugar,
+		Dias:         dias,
+	}
 }
 
 // ============================================================

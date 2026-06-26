@@ -26,6 +26,7 @@ func (h *Handlers) Register(g *echo.Group, authSvc *auth.Service) {
 	g.GET("/comisiones", h.List, mw)
 	g.GET("/comisiones/with-people", h.ListWithPeople, mw)
 	g.GET("/comisiones/dias", h.DiasComision, mw)
+	g.GET("/comisiones/dias/breakdown", h.DiasComisionBreakdown, mw)
 	g.POST("/comisiones", h.Create, mw, administrativo)
 	g.PUT("/comisiones/:id", h.Update, mw, administrativo)
 	g.DELETE("/comisiones/:id", h.Delete, mw, administrativo)
@@ -127,6 +128,25 @@ func (h *Handlers) DiasComision(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
 	items, err := h.svc.DiasComision(c.Request().Context(), esc, c.QueryParam("fechaFin"))
+	if errors.Is(err, ErrInvalidInput) {
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	if err != nil {
+		return err
+	}
+	return c.JSON(http.StatusOK, map[string]any{"items": items})
+}
+
+func (h *Handlers) DiasComisionBreakdown(c echo.Context) error {
+	if _, ok := currentEsc(c); !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized)
+	}
+	person, err := strconv.Atoi(c.QueryParam("person"))
+	if err != nil || person <= 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid person")
+	}
+	items, err := h.svc.DiasComisionBreakdown(
+		c.Request().Context(), int32(person), c.QueryParam("categoria"), c.QueryParam("fechaFin"))
 	if errors.Is(err, ErrInvalidInput) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

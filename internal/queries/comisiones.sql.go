@@ -114,6 +114,7 @@ WITH ventana AS (
     SELECT $1::date AS fecha_fin, ($1::date - 365) AS fecha_inicio
 )
 SELECT
+    p.person_sk,
     p.person_rank,
     BTRIM(p.person_name || ' ' || p.person_last_name_1 || ' ' || p.person_last_name_2)::text AS full_name,
     p.person_rol,
@@ -217,6 +218,7 @@ type DiasComisionParams struct {
 }
 
 type DiasComisionRow struct {
+	PersonSk              int32  `json:"person_sk"`
 	PersonRank            string `json:"person_rank"`
 	FullName              string `json:"full_name"`
 	PersonRol             string `json:"person_rol"`
@@ -248,6 +250,7 @@ func (q *Queries) DiasComision(ctx context.Context, arg DiasComisionParams) ([]D
 	for rows.Next() {
 		var i DiasComisionRow
 		if err := rows.Scan(
+			&i.PersonSk,
 			&i.PersonRank,
 			&i.FullName,
 			&i.PersonRol,
@@ -564,6 +567,193 @@ func (q *Queries) ListComisiones(ctx context.Context, arg ListComisionesParams) 
 			&i.HoraSalida,
 			&i.HoraLlegada,
 			&i.Codigo,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPersonComisionesByType = `-- name: ListPersonComisionesByType :many
+
+SELECT
+    c.comision_sk,
+    c.comision_code,
+    c.comision_start_date,
+    c.comision_end_date,
+    cl.comision_name                                       AS lugar,
+    (c.comision_end_date - c.comision_start_date + 1)::int AS dias
+FROM detall.person_comision pc
+JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
+JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
+JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
+WHERE pc.person_fk = $1
+  AND ct.name = $2
+ORDER BY c.comision_start_date DESC
+`
+
+type ListPersonComisionesByTypeParams struct {
+	PersonFk int32  `json:"person_fk"`
+	Name     string `json:"name"`
+}
+
+type ListPersonComisionesByTypeRow struct {
+	ComisionSk        int32       `json:"comision_sk"`
+	ComisionCode      *string     `json:"comision_code"`
+	ComisionStartDate pgtype.Date `json:"comision_start_date"`
+	ComisionEndDate   pgtype.Date `json:"comision_end_date"`
+	Lugar             string      `json:"lugar"`
+	Dias              int32       `json:"dias"`
+}
+
+// =============== Desglose días de comisión por persona ===============
+// Detalle de las comisiones que componen el total de una categoría para una
+// persona (lo que se muestra al pinchar una celda en "Días de comisión").
+// Espejan la aritmética de DiasComision para que el sumatorio de `dias` cuadre.
+// Categorías "no caducan": dias = duración total de la comisión.
+// $1 = person_sk, $2 = comision_type.name.
+func (q *Queries) ListPersonComisionesByType(ctx context.Context, arg ListPersonComisionesByTypeParams) ([]ListPersonComisionesByTypeRow, error) {
+	rows, err := q.db.Query(ctx, listPersonComisionesByType, arg.PersonFk, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPersonComisionesByTypeRow
+	for rows.Next() {
+		var i ListPersonComisionesByTypeRow
+		if err := rows.Scan(
+			&i.ComisionSk,
+			&i.ComisionCode,
+			&i.ComisionStartDate,
+			&i.ComisionEndDate,
+			&i.Lugar,
+			&i.Dias,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPersonComisionesByTypeWindowed = `-- name: ListPersonComisionesByTypeWindowed :many
+WITH ventana AS (
+    SELECT $3::date AS fecha_fin, ($3::date - 365) AS fecha_inicio
+)
+SELECT
+    c.comision_sk,
+    c.comision_code,
+    c.comision_start_date,
+    c.comision_end_date,
+    cl.comision_name AS lugar,
+    (LEAST(c.comision_end_date, w.fecha_fin)
+     - GREATEST(c.comision_start_date, w.fecha_inicio) + 1)::int AS dias
+FROM detall.person_comision pc
+JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
+JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
+JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
+CROSS JOIN ventana w
+WHERE pc.person_fk = $1
+  AND ct.name = $2
+  AND c.comision_start_date <= w.fecha_fin
+  AND c.comision_end_date   >= w.fecha_inicio
+ORDER BY c.comision_start_date DESC
+`
+
+type ListPersonComisionesByTypeWindowedParams struct {
+	PersonFk int32       `json:"person_fk"`
+	Name     string      `json:"name"`
+	Column3  pgtype.Date `json:"column_3"`
+}
+
+type ListPersonComisionesByTypeWindowedRow struct {
+	ComisionSk        int32       `json:"comision_sk"`
+	ComisionCode      *string     `json:"comision_code"`
+	ComisionStartDate pgtype.Date `json:"comision_start_date"`
+	ComisionEndDate   pgtype.Date `json:"comision_end_date"`
+	Lugar             string      `json:"lugar"`
+	Dias              int32       `json:"dias"`
+}
+
+// Categorías "sí caducan" (OMP/UNADEST/UNAEMB): dias = solapamiento con
+// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name, $3 = fechaFin.
+func (q *Queries) ListPersonComisionesByTypeWindowed(ctx context.Context, arg ListPersonComisionesByTypeWindowedParams) ([]ListPersonComisionesByTypeWindowedRow, error) {
+	rows, err := q.db.Query(ctx, listPersonComisionesByTypeWindowed, arg.PersonFk, arg.Name, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPersonComisionesByTypeWindowedRow
+	for rows.Next() {
+		var i ListPersonComisionesByTypeWindowedRow
+		if err := rows.Scan(
+			&i.ComisionSk,
+			&i.ComisionCode,
+			&i.ComisionStartDate,
+			&i.ComisionEndDate,
+			&i.Lugar,
+			&i.Dias,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPersonRancheria = `-- name: ListPersonRancheria :many
+SELECT
+    c.comision_sk,
+    c.comision_code,
+    c.comision_start_date,
+    c.comision_end_date,
+    cl.comision_name AS lugar,
+    r.dias::int      AS dias
+FROM detall.person_comision pc
+JOIN detall.comision       c  ON pc.comision_fk      = c.comision_sk
+JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
+JOIN detall.person_comision_rancheria r ON r.person_comision_fk = pc.person_comision_sk
+WHERE pc.person_fk = $1
+ORDER BY c.comision_start_date DESC
+`
+
+type ListPersonRancheriaRow struct {
+	ComisionSk        int32       `json:"comision_sk"`
+	ComisionCode      *string     `json:"comision_code"`
+	ComisionStartDate pgtype.Date `json:"comision_start_date"`
+	ComisionEndDate   pgtype.Date `json:"comision_end_date"`
+	Lugar             string      `json:"lugar"`
+	Dias              int32       `json:"dias"`
+}
+
+// Ranchería: dias = person_comision_rancheria.dias (independiente del tipo).
+// $1 = person_sk.
+func (q *Queries) ListPersonRancheria(ctx context.Context, personFk int32) ([]ListPersonRancheriaRow, error) {
+	rows, err := q.db.Query(ctx, listPersonRancheria, personFk)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPersonRancheriaRow
+	for rows.Next() {
+		var i ListPersonRancheriaRow
+		if err := rows.Scan(
+			&i.ComisionSk,
+			&i.ComisionCode,
+			&i.ComisionStartDate,
+			&i.ComisionEndDate,
+			&i.Lugar,
+			&i.Dias,
 		); err != nil {
 			return nil, err
 		}

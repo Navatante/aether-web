@@ -384,7 +384,7 @@ const Comisiones = () => {
                                                                                     </div>
                                                                                     <div className="flex items-center gap-2 flex-shrink-0">
                                                                                         {persona.rancheria_dias > 0 && (
-                                                                                            <span className="px-2 py-0.5 rounded-full text-xs bg-info-muted text-info-muted-foreground">
+                                                                                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs leading-none whitespace-nowrap bg-info-muted text-info-muted-foreground">
                                                                                                 Ranchería: {persona.rancheria_dias} día{persona.rancheria_dias === 1 ? '' : 's'}
                                                                                             </span>
                                                                                         )}

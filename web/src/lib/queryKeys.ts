@@ -119,6 +119,8 @@ export const queryKeys = {
             all: (escuadrillaId: number) => ['comisiones', escuadrillaId, 'dias'] as const,
             list: (escuadrillaId: number, params: Record<string, unknown>) =>
                 ['comisiones', escuadrillaId, 'dias', 'list', params] as const,
+            breakdown: (escuadrillaId: number, params: Record<string, unknown>) =>
+                ['comisiones', escuadrillaId, 'dias', 'breakdown', params] as const,
         },
     },
 

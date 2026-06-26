@@ -5,4 +5,5 @@
 export type {
     ComisionParticipante as PersonaParticipante,
     ComisionListItem as ComisionData,
+    ComisionBreakdownItem,
 } from './generated/comisiones';
