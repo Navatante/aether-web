@@ -47,11 +47,14 @@ export function FlightDeleteDialog({
                 </button>
             } />
             <AlertDialogContent>
-                <form action={() => {
-                    if (flightToDelete && confirmationText === expectedText) {
-                        onConfirm(flightToDelete);
-                    }
-                }}>
+                <form
+                    className="flex flex-col gap-5"
+                    action={() => {
+                        if (flightToDelete && confirmationText === expectedText) {
+                            onConfirm(flightToDelete);
+                        }
+                    }}
+                >
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-semibold">
                             ¿Estás absolutamente seguro?
@@ -67,7 +70,6 @@ export function FlightDeleteDialog({
                         placeholder="Escribe aquí..."
                         value={confirmationText}
                         onChange={(e) => onConfirmationChange(e.target.value)}
-                        className="mt-4"
                         disabled={isDeleting}
                     />
                     <AlertDialogFooter>
