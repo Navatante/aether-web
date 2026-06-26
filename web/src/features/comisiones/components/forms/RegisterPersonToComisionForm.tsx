@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogger } from '@/lib/logger';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRecentComisiones, usePersonsForComision, type PersonForComisionLookup, type RecentComisionLookup } from "@/shared/hooks";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
+import { ChevronsUpDown, X } from "lucide-react";
 import {
     PersonToComisionFormValues,
     personToComisionFormSchema,
@@ -32,6 +34,8 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
     const log = useLogger('RegisterPersonToComisionForm');
     const navigate = useNavigate();
     const { id: escId } = useEscuadrilla();
+
+    const [personPopoverOpen, setPersonPopoverOpen] = useState(false);
 
     const {
         data: comisionesArray,
@@ -321,43 +325,61 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     </p>
                 )}
 
-                <Select
-                    value=""
-                    onValueChange={(value) => {
-                        if (value && value !== "empty" && value !== "error") {
-                            handleAddPerson(value);
-                        }
-                    }}
-                    disabled={personLoading || availablePersons.length === 0}
-                >
-                    <SelectTrigger className={`w-full ${errors.personas ? 'border-danger' : ''}`}>
-                        <SelectValue placeholder={
-                            personLoading
-                                ? "Cargando personas..."
-                                : availablePersons.length === 0
-                                    ? "Todas las personas están seleccionadas"
-                                    : "Agregar persona..."
-                        } />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {personQueryError ? (
-                            <SelectItem value="error" disabled>Error al cargar personas</SelectItem>
-                        ) : availablePersons.length > 0 ? (
-                            availablePersons.map((person) => (
-                                <SelectItem
-                                    key={person.person_sk}
-                                    value={person.person_sk.toString()}
-                                >
-                                    {getPersonFullName(person)}
-                                </SelectItem>
-                            ))
-                        ) : (
-                            <SelectItem value="empty" disabled>
-                                No hay personas disponibles
-                            </SelectItem>
-                        )}
-                    </SelectContent>
-                </Select>
+                <Popover open={personPopoverOpen} onOpenChange={setPersonPopoverOpen}>
+                    <PopoverTrigger render={
+                        <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={personPopoverOpen}
+                            disabled={personLoading || availablePersons.length === 0}
+                            className={`w-full justify-between font-normal ${errors.personas ? 'border-danger' : ''}`}
+                        >
+                            <span className="truncate text-muted-foreground">
+                                {personLoading
+                                    ? "Cargando personas..."
+                                    : availablePersons.length === 0
+                                        ? "Todas las personas están seleccionadas"
+                                        : "Agregar persona..."}
+                            </span>
+                            <ChevronsUpDown className="h-4 w-4 opacity-50 flex-shrink-0" />
+                        </Button>
+                    } />
+                    <PopoverContent
+                        className="w-(--anchor-width) p-0"
+                        align="start"
+                    >
+                        <Command>
+                            <CommandInput placeholder="Buscar persona..." />
+                            <CommandList>
+                                {personQueryError ? (
+                                    <div className="py-6 text-center text-sm text-danger">
+                                        Error al cargar personas
+                                    </div>
+                                ) : (
+                                    <>
+                                        <CommandEmpty>No se encontró ninguna persona.</CommandEmpty>
+                                        {availablePersons.map((person) => {
+                                            const fullName = getPersonFullName(person);
+                                            return (
+                                                <CommandItem
+                                                    key={person.person_sk}
+                                                    value={`${fullName} ${person.person_sk}`}
+                                                    onSelect={() => {
+                                                        handleAddPerson(person.person_sk.toString());
+                                                        setPersonPopoverOpen(false);
+                                                    }}
+                                                >
+                                                    {fullName}
+                                                </CommandItem>
+                                            );
+                                        })}
+                                    </>
+                                )}
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
 
                 {errors.personas && (
                     <p className="text-sm text-danger">{errors.personas.message}</p>
