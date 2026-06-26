@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useLogger } from '@/lib/logger';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRecentComisiones, usePersonsForComision, type PersonForComisionLookup } from "@/shared/hooks";
+import { useRecentComisiones, usePersonsForComision, type PersonForComisionLookup, type RecentComisionLookup } from "@/shared/hooks";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,9 @@ import { useEscuadrilla } from "@/providers";
 interface RegisterPersonToComisionFormProps {
     onClose: () => void;
 }
+
+// Solo estos rangos pueden tener ranchería.
+const RANCHERIA_RANKS = ['CBO', 'SDO', 'MRO'] as const;
 
 export default function RegisterPersonToComisionForm({ onClose }: RegisterPersonToComisionFormProps) {
     const log = useLogger('RegisterPersonToComisionForm');
@@ -68,12 +71,30 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
             / 86_400_000) + 1
         : undefined;
 
-    // Acota los días al rango [1, duración de la comisión].
-    const clampDias = (dias: number): number =>
-        Math.min(maxDias ?? dias, Math.max(1, dias));
-
     const getRancheriaDias = (personSk: string): number | undefined =>
         rancheria.find(r => r.persona === personSk)?.dias;
+
+    // Suma de días de ranchería ya asignados. La duración de la comisión es el cupo
+    // total: la suma de todas las personas no puede superarla (NaN = campo vacío en edición).
+    const usedRancheriaDias = rancheria.reduce(
+        (acc, r) => acc + (Number.isFinite(r.dias) ? r.dias : 0),
+        0
+    );
+    const rancheriaExceedsMax = maxDias !== undefined && usedRancheriaDias > maxDias;
+
+    // Días que aún caben para una persona: duración de la comisión − días del resto.
+    const remainingDiasFor = (personSk: string): number | undefined => {
+        if (maxDias === undefined) return undefined;
+        const propios = getRancheriaDias(personSk);
+        const otros = usedRancheriaDias - (Number.isFinite(propios ?? NaN) ? propios! : 0);
+        return Math.max(0, maxDias - otros);
+    };
+
+    // Acota los días de una persona a [1, su cupo restante].
+    const clampDias = (personSk: string, dias: number): number => {
+        const cupo = remainingDiasFor(personSk);
+        return Math.max(1, cupo === undefined ? dias : Math.min(cupo, dias));
+    };
 
     // Si cambia la comisión y algún valor supera su nueva duración, lo recorta.
     useEffect(() => {
@@ -85,7 +106,11 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
 
     const toggleRancheria = (personSk: string, checked: boolean) => {
         if (checked) {
-            setValue('rancheria', [...rancheria, { persona: personSk, dias: maxDias ?? 1 }], { shouldValidate: true });
+            // Por defecto toma el cupo que queda (toda la comisión para la 1ª persona,
+            // lo restante para las siguientes), siempre ≥ 1.
+            const restantes = maxDias === undefined ? undefined : Math.max(0, maxDias - usedRancheriaDias);
+            const diasInicial = restantes === undefined ? 1 : Math.max(1, restantes);
+            setValue('rancheria', [...rancheria, { persona: personSk, dias: diasInicial }], { shouldValidate: true });
         } else {
             setValue('rancheria', rancheria.filter(r => r.persona !== personSk), { shouldValidate: true });
         }
@@ -98,6 +123,13 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
             { shouldValidate: true }
         );
     };
+
+    const canHaveRancheria = (person: PersonForComisionLookup): boolean =>
+        person.person_rank != null &&
+        RANCHERIA_RANKS.includes(person.person_rank as typeof RANCHERIA_RANKS[number]);
+
+    const getComisionLabel = (c: RecentComisionLookup): string =>
+        `${c.lugar} - ${c.tipo} - ${formatearFecha(c.fechaInicio)} al ${formatearFecha(c.fechaFin)} - ${c.esfuerzo ? '(Con esfuerzo)' : '(Sin esfuerzo)'}`;
 
     const getPersonFullName = (person: PersonForComisionLookup): string => {
         return [
@@ -173,9 +205,15 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                 >
                     <SelectTrigger
                         id="comision"
-                        className={errors.comision ? 'border-danger' : ''}
+                        className={`w-full ${errors.comision ? 'border-danger' : ''}`}
                     >
-                        <SelectValue placeholder={comisionesLoading ? "Cargando..." : "Seleccione una comisión"} />
+                        <SelectValue placeholder={comisionesLoading ? "Cargando..." : "Seleccione una comisión"}>
+                            {(value) => {
+                                if (!value) return comisionesLoading ? "Cargando..." : "Seleccione una comisión";
+                                const c = comisionesArray?.find(x => x.comision_sk.toString() === value);
+                                return c ? getComisionLabel(c) : value;
+                            }}
+                        </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                         {comisionesError ? (
@@ -186,7 +224,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                                     key={comision.comision_sk}
                                     value={comision.comision_sk.toString()}
                                 >
-                                    {`${comision.lugar} - ${comision.tipo} - ${formatearFecha(comision.fechaInicio)} al ${formatearFecha(comision.fechaFin)} - ${comision.esfuerzo ? '(Con esfuerzo)' : '(Sin esfuerzo)'}`}
+                                    {getComisionLabel(comision)}
                                 </SelectItem>
                             ))
                         ) : (
@@ -229,26 +267,37 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                                 >
                                     <span className="text-xs truncate flex-1">{getPersonFullName(person)}</span>
 
-                                    <label className="flex items-center gap-1 flex-shrink-0 cursor-pointer">
-                                        <span className="text-xs text-muted-foreground">Ranchería</span>
-                                        <Switch
-                                            checked={hasRancheria}
-                                            onCheckedChange={(checked) => toggleRancheria(personSk, checked)}
-                                            aria-label={`Ranchería de ${getPersonFullName(person)}`}
-                                        />
-                                    </label>
+                                    {canHaveRancheria(person) && (
+                                        <>
+                                            <label className="flex items-center gap-1 flex-shrink-0 cursor-pointer">
+                                                <span className="text-xs text-muted-foreground">Ranchería</span>
+                                                <Switch
+                                                    checked={hasRancheria}
+                                                    onCheckedChange={(checked) => toggleRancheria(personSk, checked)}
+                                                    aria-label={`Ranchería de ${getPersonFullName(person)}`}
+                                                />
+                                            </label>
 
-                                    {hasRancheria && (
-                                        <Input
-                                            type="number"
-                                            min={1}
-                                            max={maxDias}
-                                            value={dias ?? ''}
-                                            onChange={(e) => setRancheriaDias(personSk, clampDias(parseInt(e.target.value, 10) || 1))}
-                                            className="h-6 w-16 px-1 text-xs flex-shrink-0"
-                                            title={maxDias ? `Máximo ${maxDias} día(s)` : undefined}
-                                            aria-label={`Días de ranchería de ${getPersonFullName(person)}`}
-                                        />
+                                            {hasRancheria && (
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    max={remainingDiasFor(personSk)}
+                                                    value={dias === undefined || Number.isNaN(dias) ? '' : dias}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value;
+                                                        // Permite vaciar el campo para reescribir (p. ej. borrar "1" y poner "20").
+                                                        setRancheriaDias(personSk, raw === '' ? NaN : clampDias(personSk, parseInt(raw, 10)));
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (dias === undefined || Number.isNaN(dias)) setRancheriaDias(personSk, 1);
+                                                    }}
+                                                    className="h-6 w-16 px-1 text-xs flex-shrink-0"
+                                                    title={(() => { const r = remainingDiasFor(personSk); return r !== undefined ? `Máximo ${r} día(s) para esta persona` : undefined; })()}
+                                                    aria-label={`Días de ranchería de ${getPersonFullName(person)}`}
+                                                />
+                                            )}
+                                        </>
                                     )}
 
                                     <button
@@ -265,6 +314,13 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     </div>
                 )}
 
+                {maxDias !== undefined && usedRancheriaDias > 0 && (
+                    <p className={`text-xs ${rancheriaExceedsMax ? 'text-danger' : 'text-muted-foreground'}`}>
+                        Ranchería: {usedRancheriaDias} / {maxDias} día(s)
+                        {rancheriaExceedsMax && ' — supera la duración de la comisión'}
+                    </p>
+                )}
+
                 <Select
                     value=""
                     onValueChange={(value) => {
@@ -274,7 +330,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     }}
                     disabled={personLoading || availablePersons.length === 0}
                 >
-                    <SelectTrigger className={errors.personas ? 'border-danger' : ''}>
+                    <SelectTrigger className={`w-full ${errors.personas ? 'border-danger' : ''}`}>
                         <SelectValue placeholder={
                             personLoading
                                 ? "Cargando personas..."
@@ -314,7 +370,7 @@ export default function RegisterPersonToComisionForm({ onClose }: RegisterPerson
                     onClick={handleSubmit(onSubmit)}
                     className="w-full"
                     size="lg"
-                    disabled={isSubmitting || selectedPersonas.length === 0}
+                    disabled={isSubmitting || selectedPersonas.length === 0 || rancheriaExceedsMax}
                 >
                     {isSubmitting ? 'Guardando...' : 'Guardar'}
                 </Button>
