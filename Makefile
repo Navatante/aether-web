@@ -198,7 +198,10 @@ dist: build-prod build-bootstrap-prod
 	rm -rf $(DIST_DIR)
 	mkdir -p $(DIST_DIR)/aether-web
 	cp $(BIN) $(BOOTSTRAP_BIN) $(DIST_DIR)/aether-web/
-	cp -r migrations $(DIST_DIR)/aether-web/
+	# -L: desreferencia los symlinks de los seeds privados (0002/0003 → repo aether-data)
+	# para empaquetar su CONTENIDO real. Sin -L, GNU cp copia el enlace y el tarball
+	# llevaría symlinks colgados que romperían `migrate` en la VM de producción.
+	cp -rL migrations $(DIST_DIR)/aether-web/
 	cp -r deploy $(DIST_DIR)/aether-web/
 	cd $(DIST_DIR) && tar -czf $(TARBALL) aether-web/
 	@echo "==> $(DIST_DIR)/$(TARBALL)"
