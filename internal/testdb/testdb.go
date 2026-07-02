@@ -165,8 +165,16 @@ func seedBase(t *testing.T, ctx context.Context, dsn string) {
 	}
 }
 
-// CreatePerson inserta una persona de pruebas y devuelve su person_sk.
+// CreatePerson inserta una persona de pruebas en la escuadrilla base
+// (EscuadrillaID) y devuelve su person_sk.
 func CreatePerson(t *testing.T, ctx context.Context, pool *pgxpool.Pool, user, permissionLevel string) int32 {
+	t.Helper()
+	return CreatePersonInEscuadrilla(t, ctx, pool, user, permissionLevel, EscuadrillaID)
+}
+
+// CreatePersonInEscuadrilla inserta una persona de pruebas en la escuadrilla
+// dada (para tests de aislamiento RLS entre escuadrillas).
+func CreatePersonInEscuadrilla(t *testing.T, ctx context.Context, pool *pgxpool.Pool, user, permissionLevel string, esc int32) int32 {
 	t.Helper()
 	const q = `
 		INSERT INTO detall.person (
@@ -183,8 +191,23 @@ func CreatePerson(t *testing.T, ctx context.Context, pool *pgxpool.Pool, user, p
 			$2, $3
 		) RETURNING person_sk`
 	var sk int32
-	if err := pool.QueryRow(ctx, q, user, permissionLevel, EscuadrillaID).Scan(&sk); err != nil {
+	if err := pool.QueryRow(ctx, q, user, permissionLevel, esc).Scan(&sk); err != nil {
 		t.Fatalf("testdb: crear persona: %v", err)
+	}
+	return sk
+}
+
+// CreateEscuadrilla inserta una escuadrilla adicional (para tests de RLS) y
+// devuelve su escuadrilla_sk.
+func CreateEscuadrilla(t *testing.T, ctx context.Context, pool *pgxpool.Pool, code string) int32 {
+	t.Helper()
+	const q = `
+		INSERT INTO detall.escuadrilla (escuadrilla_code, escuadrilla_name, escuadrilla_creation_date)
+		VALUES ($1::text, 'Escuadrilla ' || $1::text, '2020-01-01')
+		RETURNING escuadrilla_sk`
+	var sk int32
+	if err := pool.QueryRow(ctx, q, code).Scan(&sk); err != nil {
+		t.Fatalf("testdb: crear escuadrilla: %v", err)
 	}
 	return sk
 }
