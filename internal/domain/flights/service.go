@@ -28,6 +28,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -54,13 +55,9 @@ const (
 	projectileMag58 = 2
 )
 
-// Límites de paginación del listado. defaultListLimit se aplica cuando el
-// cliente no pide tamaño; maxListLimit acota un Limit arbitrariamente grande
-// para que una sola request no arrastre una página enorme.
-const (
-	defaultListLimit = 10
-	maxListLimit     = 100
-)
+// defaultListLimit se aplica cuando el cliente no pide tamaño de página; el
+// techo lo pone httpx.ClampLimit.
+const defaultListLimit = 10
 
 // fp es la clave (flight_sk, person_sk) para indexar las filas hijas por
 // vuelo y persona.
@@ -474,12 +471,7 @@ func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListR
 	if err != nil {
 		return ListResult{}, err
 	}
-	if p.Limit <= 0 {
-		p.Limit = defaultListLimit
-	}
-	if p.Limit > maxListLimit {
-		p.Limit = maxListLimit
-	}
+	p.Limit = httpx.ClampLimit(p.Limit, defaultListLimit)
 
 	q := queries.New(s.pool)
 	rows, err := q.ListFlights(ctx, queries.ListFlightsParams{

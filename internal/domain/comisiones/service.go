@@ -20,6 +20,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -180,9 +181,7 @@ func (s *Service) List(ctx context.Context, esc int32, p QueryParams) (ComisionQ
 	if err != nil {
 		return ComisionQueryResult{}, err
 	}
-	if p.Limit <= 0 {
-		p.Limit = 10
-	}
+	p.Limit = httpx.ClampLimit(p.Limit, 10)
 
 	rows, err := s.q.ListComisiones(ctx, queries.ListComisionesParams{
 		ComisionEscuadrillaFk: esc,
@@ -252,9 +251,7 @@ func (s *Service) ListWithPeople(ctx context.Context, esc int32, p QueryParams) 
 	if err != nil {
 		return ComisionWithPeopleResult{}, err
 	}
-	if p.Limit <= 0 {
-		p.Limit = 50
-	}
+	p.Limit = httpx.ClampLimit(p.Limit, 50)
 
 	rows, err := s.q.ListComisiones(ctx, queries.ListComisionesParams{
 		ComisionEscuadrillaFk: esc,

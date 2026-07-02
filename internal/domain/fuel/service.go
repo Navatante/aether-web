@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -56,10 +57,7 @@ func monthBounds(year, month int) (pgtype.Date, pgtype.Date) {
 func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (FuelListResponse, error) {
 	from, to := monthBounds(p.Year, p.Month)
 
-	limit := p.Limit
-	if limit <= 0 {
-		limit = 25
-	}
+	limit := httpx.ClampLimit(p.Limit, 25)
 
 	rows, err := s.q.ListFuel(ctx, queries.ListFuelParams{
 		AircraftEscuadrillaFk: esc,

@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -102,9 +103,7 @@ func (s *Service) Delete(ctx context.Context, esc int32, id int32) error {
 // ===== LIST =====
 
 func (s *Service) List(ctx context.Context, esc int32, p ListQueryParams) (ListResult, error) {
-	if p.Limit <= 0 {
-		p.Limit = 20
-	}
+	p.Limit = httpx.ClampLimit(p.Limit, 20)
 
 	q := queries.New(s.pool)
 	rows, err := q.ListGroundSchool(ctx, queries.ListGroundSchoolParams{
