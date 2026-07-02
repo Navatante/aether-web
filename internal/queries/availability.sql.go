@@ -22,15 +22,15 @@ SELECT
     a.absence_remark
 FROM detall.absence a
 JOIN detall.absence_reason r ON a.absence_reason_fk = r.absence_reason_sk
-WHERE a.absence_start_date <= $2  -- month_end
-  AND a.absence_end_date   >= $1  -- month_start
+WHERE a.absence_start_date <= $1
+  AND a.absence_end_date   >= $2
   AND a.absence_escuadrilla_fk = $3
 `
 
 type AvailabilityAbsencesParams struct {
-	AbsenceEndDate       pgtype.Date `json:"absence_end_date"`
-	AbsenceStartDate     pgtype.Date `json:"absence_start_date"`
-	AbsenceEscuadrillaFk int32       `json:"absence_escuadrilla_fk"`
+	MonthEnd      pgtype.Date `json:"month_end"`
+	MonthStart    pgtype.Date `json:"month_start"`
+	EscuadrillaFk int32       `json:"escuadrilla_fk"`
 }
 
 type AvailabilityAbsencesRow struct {
@@ -43,10 +43,11 @@ type AvailabilityAbsencesRow struct {
 	AbsenceRemark    *string     `json:"absence_remark"`
 }
 
-// Filtra ausencias que se solapan con el mes [start, end].
-// $1 = month_start, $2 = month_end, $3 = escuadrilla.
+// Filtra ausencias que se solapan con el mes [month_start, month_end].
+// sqlc.arg() fuerza nombres semánticos: sin él, sqlc nombraba los params por
+// la columna del WHERE y quedaban invertidos respecto a su significado.
 func (q *Queries) AvailabilityAbsences(ctx context.Context, arg AvailabilityAbsencesParams) ([]AvailabilityAbsencesRow, error) {
-	rows, err := q.db.Query(ctx, availabilityAbsences, arg.AbsenceEndDate, arg.AbsenceStartDate, arg.AbsenceEscuadrillaFk)
+	rows, err := q.db.Query(ctx, availabilityAbsences, arg.MonthEnd, arg.MonthStart, arg.EscuadrillaFk)
 	if err != nil {
 		return nil, err
 	}
@@ -84,15 +85,15 @@ SELECT
 FROM detall.person_comision jpc
 JOIN detall.comision c       ON jpc.comision_fk = c.comision_sk
 JOIN detall.comision_lugar l ON c.comision_lugar_fk = l.comision_lugar_sk
-WHERE c.comision_start_date <= $2  -- month_end
-  AND c.comision_end_date   >= $1  -- month_start
+WHERE c.comision_start_date <= $1
+  AND c.comision_end_date   >= $2
   AND c.comision_escuadrilla_fk = $3
 `
 
 type AvailabilityComisionesParams struct {
-	ComisionEndDate       pgtype.Date `json:"comision_end_date"`
-	ComisionStartDate     pgtype.Date `json:"comision_start_date"`
-	ComisionEscuadrillaFk int32       `json:"comision_escuadrilla_fk"`
+	MonthEnd      pgtype.Date `json:"month_end"`
+	MonthStart    pgtype.Date `json:"month_start"`
+	EscuadrillaFk int32       `json:"escuadrilla_fk"`
 }
 
 type AvailabilityComisionesRow struct {
@@ -104,9 +105,9 @@ type AvailabilityComisionesRow struct {
 	ComisionLugar     string      `json:"comision_lugar"`
 }
 
-// $1 = month_start, $2 = month_end, $3 = escuadrilla.
+// Comisiones que se solapan con el mes [month_start, month_end].
 func (q *Queries) AvailabilityComisiones(ctx context.Context, arg AvailabilityComisionesParams) ([]AvailabilityComisionesRow, error) {
-	rows, err := q.db.Query(ctx, availabilityComisiones, arg.ComisionEndDate, arg.ComisionStartDate, arg.ComisionEscuadrillaFk)
+	rows, err := q.db.Query(ctx, availabilityComisiones, arg.MonthEnd, arg.MonthStart, arg.EscuadrillaFk)
 	if err != nil {
 		return nil, err
 	}

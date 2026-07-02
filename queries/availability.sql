@@ -18,8 +18,9 @@ WHERE p.person_current_flag = TRUE
 ORDER BY p.order_position;
 
 -- name: AvailabilityAbsences :many
--- Filtra ausencias que se solapan con el mes [start, end].
--- $1 = month_start, $2 = month_end, $3 = escuadrilla.
+-- Filtra ausencias que se solapan con el mes [month_start, month_end].
+-- sqlc.arg() fuerza nombres semánticos: sin él, sqlc nombraba los params por
+-- la columna del WHERE y quedaban invertidos respecto a su significado.
 SELECT
     a.absence_sk,
     a.absence_start_date,
@@ -30,12 +31,12 @@ SELECT
     a.absence_remark
 FROM detall.absence a
 JOIN detall.absence_reason r ON a.absence_reason_fk = r.absence_reason_sk
-WHERE a.absence_start_date <= $2  -- month_end
-  AND a.absence_end_date   >= $1  -- month_start
-  AND a.absence_escuadrilla_fk = $3;
+WHERE a.absence_start_date <= sqlc.arg(month_end)
+  AND a.absence_end_date   >= sqlc.arg(month_start)
+  AND a.absence_escuadrilla_fk = sqlc.arg(escuadrilla_fk);
 
 -- name: AvailabilityComisiones :many
--- $1 = month_start, $2 = month_end, $3 = escuadrilla.
+-- Comisiones que se solapan con el mes [month_start, month_end].
 SELECT
     jpc.person_comision_sk,
     jpc.person_fk,
@@ -46,9 +47,9 @@ SELECT
 FROM detall.person_comision jpc
 JOIN detall.comision c       ON jpc.comision_fk = c.comision_sk
 JOIN detall.comision_lugar l ON c.comision_lugar_fk = l.comision_lugar_sk
-WHERE c.comision_start_date <= $2  -- month_end
-  AND c.comision_end_date   >= $1  -- month_start
-  AND c.comision_escuadrilla_fk = $3;
+WHERE c.comision_start_date <= sqlc.arg(month_end)
+  AND c.comision_end_date   >= sqlc.arg(month_start)
+  AND c.comision_escuadrilla_fk = sqlc.arg(escuadrilla_fk);
 
 -- name: ResolveAbsenceReason :one
 -- absence_reason del request puede venir como nombre o como id numérico.

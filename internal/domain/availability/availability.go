@@ -112,23 +112,18 @@ func (s *Service) Get(ctx context.Context, esc int32, month, year int) (Availabi
 	if err != nil {
 		return AvailabilityResult{}, err
 	}
-	// Cuidado: sqlc nombra los param fields por la columna comparada en el
-	// WHERE (a.absence_start_date <= $2, a.absence_end_date >= $1), NO por
-	// la semántica del valor. El binding real es: $1 = AbsenceEndDate field,
-	// $2 = AbsenceStartDate field. Por eso pasamos pgStart en EndDate y
-	// pgEnd en StartDate — invertido respecto al nombre del campo.
 	absRows, err := s.q.AvailabilityAbsences(ctx, queries.AvailabilityAbsencesParams{
-		AbsenceEndDate:       pgStart, // $1 = month_start
-		AbsenceStartDate:     pgEnd,   // $2 = month_end
-		AbsenceEscuadrillaFk: esc,
+		MonthStart:    pgStart,
+		MonthEnd:      pgEnd,
+		EscuadrillaFk: esc,
 	})
 	if err != nil {
 		return AvailabilityResult{}, err
 	}
 	comRows, err := s.q.AvailabilityComisiones(ctx, queries.AvailabilityComisionesParams{
-		ComisionEndDate:       pgStart, // $1 = month_start
-		ComisionStartDate:     pgEnd,   // $2 = month_end
-		ComisionEscuadrillaFk: esc,
+		MonthStart:    pgStart,
+		MonthEnd:      pgEnd,
+		EscuadrillaFk: esc,
 	})
 	if err != nil {
 		return AvailabilityResult{}, err

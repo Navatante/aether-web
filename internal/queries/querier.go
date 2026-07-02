@@ -56,10 +56,11 @@ type Querier interface {
 	AdiestramientoPapeletasRealizadas(ctx context.Context, arg AdiestramientoPapeletasRealizadasParams) ([]AdiestramientoPapeletasRealizadasRow, error)
 	// Por persona (filtrada por rol/escuadrilla): full_name, CRP, días sin volar/real/simulador.
 	AdiestramientoPersonas(ctx context.Context, arg AdiestramientoPersonasParams) ([]AdiestramientoPersonasRow, error)
-	// Filtra ausencias que se solapan con el mes [start, end].
-	// $1 = month_start, $2 = month_end, $3 = escuadrilla.
+	// Filtra ausencias que se solapan con el mes [month_start, month_end].
+	// sqlc.arg() fuerza nombres semánticos: sin él, sqlc nombraba los params por
+	// la columna del WHERE y quedaban invertidos respecto a su significado.
 	AvailabilityAbsences(ctx context.Context, arg AvailabilityAbsencesParams) ([]AvailabilityAbsencesRow, error)
-	// $1 = month_start, $2 = month_end, $3 = escuadrilla.
+	// Comisiones que se solapan con el mes [month_start, month_end].
 	AvailabilityComisiones(ctx context.Context, arg AvailabilityComisionesParams) ([]AvailabilityComisionesRow, error)
 	// ============================================================
 	// Availability (Hito 4, lote 3)
