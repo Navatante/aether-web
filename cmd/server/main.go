@@ -100,6 +100,16 @@ func run(logger *slog.Logger) error {
 	e.Use(middleware.RequestID())
 	e.Use(requestLogger(logger))
 	e.Use(middleware.BodyLimit("2M"))
+	// Cabeceras de seguridad: nosniff, X-Frame-Options (la app no se embebe en
+	// iframes) y Referrer-Policy. HSTS solo cuando hay TLS delante (mismo flag
+	// que la cookie Secure): por HTTP los navegadores lo ignoran.
+	secureCfg := middleware.DefaultSecureConfig
+	secureCfg.XFrameOptions = "DENY"
+	secureCfg.ReferrerPolicy = "same-origin"
+	if cfg.CookieSecure {
+		secureCfg.HSTSMaxAge = int((365 * 24 * time.Hour).Seconds())
+	}
+	e.Use(middleware.SecureWithConfig(secureCfg))
 
 	dashboardHandlers := dashboard.NewHandlers(dashboard.NewService(pool))
 	lookupsHandlers := lookups.NewHandlers(lookups.NewService(pool))
@@ -121,7 +131,14 @@ func run(logger *slog.Logger) error {
 	fuelHandlers := fuel.NewHandlers(fuel.NewService(pool))
 	flightSafetyHandlers := flightsafety.NewHandlers(flightsafety.NewService(pool))
 
-	api := e.Group("/api/v1")
+	// Las respuestas de la API llevan datos personales: ni el navegador ni un
+	// proxy intermedio deben cachearlas. Los assets de la SPA quedan fuera.
+	api := e.Group("/api/v1", func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Response().Header().Set("Cache-Control", "no-store")
+			return next(c)
+		}
+	})
 	api.GET("/health", healthHandler(pool))
 	httpx.RegisterFrontendLogs(api, logger)
 	authHandlers.Register(api)
