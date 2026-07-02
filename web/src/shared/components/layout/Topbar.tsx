@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 
 export function Topbar() {
-  const { nk, escuadrillaId, permissionLevel } = useUserData();
+  const { nk, permissionLevel } = useUserData();
   const { logout } = useUser();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [crewPanelOpen, setCrewPanelOpen] = useState(false);
@@ -41,11 +41,6 @@ export function Topbar() {
             </div>
 
             <div className="ml-auto flex items-center gap-10">
-
-                <div className="select-none cursor-default text-danger">
-                    {/*TODO esta linea es debug para comprobar que se carga bien la escuadrilla al principio*/}
-                    {escuadrillaId ? "🛠️ App en desarrollo" : "Escuadrilla no cargada"}
-                </div>
 
               {nk !== null && (
                   <Sheet open={crewPanelOpen} onOpenChange={setCrewPanelOpen}>
