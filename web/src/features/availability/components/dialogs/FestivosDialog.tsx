@@ -270,10 +270,11 @@ export default function FestivosDialog({ open, onOpenChange }: FestivosDialogPro
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Fecha</Label>
+                                <Label htmlFor="festivo-fecha">Fecha</Label>
                                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                                     <PopoverTrigger render={
                                         <Button
+                                            id="festivo-fecha"
                                             variant="outline"
                                             className={cn(
                                                 "w-full justify-start text-left font-normal",

@@ -62,12 +62,12 @@ export function SuperuserButton() {
                     <div className="space-y-6 py-2">
                         {/* Selección de persona */}
                         <div className="space-y-2">
-                            <Label>Persona</Label>
+                            <Label htmlFor="su-persona-trigger">Persona</Label>
                             <Select
                                 value={su.selectedId != null ? String(su.selectedId) : null}
                                 onValueChange={(v) => su.setSelectedId(v != null ? Number(v) : null)}
                             >
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="su-persona-trigger" className="w-full">
                                     {/* El value interno es el sk (para la consulta), pero en el
                                         trigger mostramos empleo + apellidos de la persona elegida. */}
                                     <SelectValue>
@@ -98,14 +98,14 @@ export function SuperuserButton() {
 
                         {/* Nivel de permiso */}
                         <div className="space-y-2">
-                            <Label>Nivel de permiso</Label>
+                            <Label htmlFor="su-nivel-trigger">Nivel de permiso</Label>
                             <div className="flex gap-2">
                                 <Select
                                     value={su.level || null}
                                     onValueChange={(v) => su.setLevel(v ?? "")}
                                     disabled={!su.selected}
                                 >
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger id="su-nivel-trigger" className="w-full">
                                         <SelectValue placeholder="Selecciona un nivel" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -127,10 +127,11 @@ export function SuperuserButton() {
 
                         {/* Contraseña: reseteo al valor por defecto */}
                         <div className="space-y-2">
-                            <Label>Contraseña</Label>
+                            <Label htmlFor="su-reset-password">Contraseña</Label>
                             <AlertDialog>
                                 <AlertDialogTrigger render={
                                     <Button
+                                        id="su-reset-password"
                                         variant="outline"
                                         className="w-full"
                                         disabled={!su.selected || su.savingPassword}

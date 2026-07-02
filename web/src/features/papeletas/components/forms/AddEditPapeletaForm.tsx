@@ -196,7 +196,7 @@ export function AddEditPapeletaForm({
 
                             {/* Plan - Dinámico desde hook */}
                             <div className="space-y-1">
-                                <Label>Plan</Label>
+                                <Label htmlFor="papeleta-plan">Plan</Label>
                                 <Controller
                                     name="papeleta_plan"
                                     control={control}
@@ -206,6 +206,7 @@ export function AddEditPapeletaForm({
                                         return (
                                             <Select
                                                 {...field}
+                                                inputId="papeleta-plan"
                                                 value={selected}
                                                 onChange={(opt) => onChange(opt?.value ?? null)}
                                                 options={planOptions}
@@ -226,7 +227,7 @@ export function AddEditPapeletaForm({
 
                             {/* Bloque - Dinámico desde hook */}
                             <div className="space-y-1">
-                                <Label>Bloque</Label>
+                                <Label htmlFor="papeleta-bloque">Bloque</Label>
                                 <Controller
                                     name="papeleta_block"
                                     control={control}
@@ -236,6 +237,7 @@ export function AddEditPapeletaForm({
                                         return (
                                             <Select
                                                 {...field}
+                                                inputId="papeleta-bloque"
                                                 value={selected}
                                                 onChange={(opt) => onChange(opt?.value ?? '')}
                                                 options={bloqueOptions}
