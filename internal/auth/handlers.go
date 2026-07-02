@@ -25,20 +25,26 @@ func NewHandlers(svc *Service, sessionTTL time.Duration, cookieSecure bool) *Han
 	}
 }
 
-// Register monta /auth/login, /auth/logout y /auth/me bajo `g`.
-func (h *Handlers) Register(g *echo.Group) {
-	// Freno anti fuerza-bruta por IP: ráfaga de 5 intentos, luego 1 cada 2s.
-	loginLimiter := middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
+// newCredentialLimiter frena fuerza bruta por IP en endpoints que verifican
+// contraseñas: ráfaga de 3 intentos, luego 1 cada 5s. Cada endpoint recibe su
+// propia instancia (buckets independientes) para que agotar el de login no
+// bloquee un cambio de contraseña legítimo.
+func newCredentialLimiter() echo.MiddlewareFunc {
+	return middleware.RateLimiterWithConfig(middleware.RateLimiterConfig{
 		Store: middleware.NewRateLimiterMemoryStoreWithConfig(middleware.RateLimiterMemoryStoreConfig{
-			Rate:      rate.Limit(0.5),
-			Burst:     5,
+			Rate:      rate.Limit(0.2),
+			Burst:     3,
 			ExpiresIn: 10 * time.Minute,
 		}),
 	})
-	g.POST("/auth/login", h.Login, loginLimiter)
+}
+
+// Register monta /auth/login, /auth/logout y /auth/me bajo `g`.
+func (h *Handlers) Register(g *echo.Group) {
+	g.POST("/auth/login", h.Login, newCredentialLimiter())
 	g.POST("/auth/logout", h.Logout)
 	g.GET("/auth/me", h.Me)
-	g.POST("/auth/change-password", h.ChangePassword, RequireAuth(h.svc))
+	g.POST("/auth/change-password", h.ChangePassword, RequireAuth(h.svc), newCredentialLimiter())
 }
 
 type loginReq struct {
