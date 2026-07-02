@@ -1,0 +1,13 @@
+[Unit]
+Description=aether-web — programa el backup diario de PostgreSQL
+
+[Timer]
+# De madrugada, con jitter para no coincidir con otras tareas del servidor.
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=15m
+# Si el servidor estaba apagado a esa hora, ejecuta al arrancar.
+Persistent=true
+Unit=aether-backup.service
+
+[Install]
+WantedBy=timers.target

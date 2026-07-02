@@ -6,9 +6,10 @@
 #   1. Backup del binario actual a /opt/aether-web/aether-web.previous
 #   2. Para el servicio
 #   3. Copia binarios y migrations nuevos
-#   4. Aplica migraciones pendientes
-#   5. Arranca el servicio
-#   6. Verifica /api/v1/health
+#   4. Backup de la BD (deploy/backup.sh)
+#   5. Aplica migraciones pendientes
+#   6. Arranca el servicio
+#   7. Verifica /api/v1/health
 #
 # Si el health falla, hace rollback al binario previo y aborta.
 #
@@ -60,21 +61,30 @@ cp -r "$SRC_DIR/migrations" "$INSTALL_DIR/migrations"
 chown -R root:root "$INSTALL_DIR/migrations"
 chmod -R go-w "$INSTALL_DIR/migrations"
 
-# unit y deploy (por si cambiaron)
+# units y deploy (por si cambiaron)
 install -m 0644 -o root -g root "$SCRIPT_DIR/$UNIT_NAME" "/etc/systemd/system/$UNIT_NAME"
+install -m 0644 -o root -g root "$SCRIPT_DIR/aether-backup.service" /etc/systemd/system/aether-backup.service
+install -m 0644 -o root -g root "$SCRIPT_DIR/aether-backup.timer"   /etc/systemd/system/aether-backup.timer
 rm -rf "$INSTALL_DIR/deploy"
 cp -r "$SCRIPT_DIR" "$INSTALL_DIR/deploy"
 systemctl daemon-reload
+# Idempotente: activa el backup diario también en instalaciones anteriores al timer.
+systemctl enable --now aether-backup.timer
 
-# 4) Migraciones
+# 4) Backup de la BD antes de migrar: si una migración rompe datos, hay
+#    un punto de restauración inmediato (ver "Backups" en el README).
+log "Backup de la base de datos previo a migraciones"
+"$INSTALL_DIR/deploy/backup.sh"
+
+# 5) Migraciones
 log "Aplicando migraciones pendientes"
 "$INSTALL_DIR/deploy/migrate-up.sh"
 
-# 5) Arrancar
+# 6) Arrancar
 log "Arrancando $UNIT_NAME"
 systemctl start "$UNIT_NAME"
 
-# 6) Verificar health
+# 7) Verificar health
 log "Comprobando $HEALTH_URL"
 ok=false
 for ((i=1; i<=HEALTH_TRIES; i++)); do

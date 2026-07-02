@@ -22,7 +22,11 @@ Debian/Ubuntu/RHEL con systemd.
 /etc/aether-web/
 └── env                     # AETHER_DATABASE_URL, AETHER_ADDR, AETHER_SESSION_TTL
 /etc/systemd/system/
-└── aether-web.service
+├── aether-web.service
+├── aether-backup.service   # oneshot: deploy/backup.sh (pg_dump)
+└── aether-backup.timer     # diario 03:30, Persistent=true
+/var/backups/aether-web/
+└── aether-YYYYmmdd-HHMMSS.dump   # retención 14 días
 ```
 
 ## Requisitos en el servidor
@@ -36,6 +40,7 @@ Debian/Ubuntu/RHEL con systemd.
     | sudo tar xz -C /usr/local/bin migrate
   ```
 - `curl` (para los health checks del update).
+- `pg_dump` / `pg_restore` (paquete `postgresql-client`), para los backups.
 
 ## Generar el tarball (en la máquina de build)
 
@@ -79,9 +84,10 @@ Después:
    ```bash
    sudo -u aether /opt/aether-web/aether-bootstrap …
    ```
-4. **Habilita y arranca el servicio**:
+4. **Habilita y arranca el servicio y el backup diario**:
    ```bash
    sudo systemctl enable --now aether-web
+   sudo systemctl enable --now aether-backup.timer
    sudo systemctl status aether-web
    curl http://127.0.0.1:8080/api/v1/health
    ```
@@ -100,10 +106,51 @@ sudo ./deploy/update.sh
 1. Guarda el binario actual como `.previous`.
 2. Para el servicio.
 3. Copia binarios + migrations nuevos.
-4. Aplica migraciones pendientes.
-5. Arranca el servicio.
-6. Comprueba `/api/v1/health` durante 20s.
-7. Si falla, hace **rollback automático** al binario anterior.
+4. Hace un backup de la BD (`deploy/backup.sh`).
+5. Aplica migraciones pendientes.
+6. Arranca el servicio.
+7. Comprueba `/api/v1/health` durante 20s.
+8. Si falla, hace **rollback automático** al binario anterior (la BD se
+   restaura a mano desde el dump del paso 4 si la migración fue la causa).
+
+## Backups
+
+`aether-backup.timer` ejecuta `deploy/backup.sh` cada noche (03:30 ± 15 min;
+`Persistent=true`, así que si el servidor estaba apagado se lanza al arrancar).
+Además `update.sh` hace un dump justo antes de aplicar migraciones.
+
+- **Destino:** `/var/backups/aether-web/aether-YYYYmmdd-HHMMSS.dump`
+  (formato custom de `pg_dump`, comprimido, perms 600).
+- **Retención:** 14 días (dumps más antiguos se borran en cada ejecución).
+- **Overrides** (variables de entorno al invocar el script a mano):
+  `AETHER_BACKUP_DIR`, `AETHER_BACKUP_RETENTION_DAYS`.
+- **Backup manual:** `sudo /opt/aether-web/deploy/backup.sh`
+- **Comprobar el timer:** `systemctl list-timers aether-backup.timer` y
+  `journalctl -u aether-backup -n 20`.
+
+> El dump queda en el mismo servidor: copia periódicamente
+> `/var/backups/aether-web/` a otra máquina o disco (rsync, robocopy desde
+> Windows, etc.). Un backup en el mismo disco no protege frente a fallo de
+> hardware.
+
+### Restaurar
+
+Con el servicio parado, sobre la misma BD (borra y recrea los objetos):
+
+```bash
+sudo systemctl stop aether-web
+# Carga la DSN sin imprimirla:
+set -a; source /etc/aether-web/env; set +a
+pg_restore --clean --if-exists --no-owner \
+  --dbname "$AETHER_DATABASE_URL" \
+  /var/backups/aether-web/aether-YYYYmmdd-HHMMSS.dump
+sudo systemctl start aether-web
+curl http://127.0.0.1:8080/api/v1/health
+```
+
+Para ensayar una restauración sin tocar producción, restaura sobre una BD
+vacía de otro nombre (`createdb aether_restore` + `--dbname` apuntando a ella).
+Conviene ensayarlo al menos una vez: un backup no verificado no es un backup.
 
 ## Diagnóstico
 

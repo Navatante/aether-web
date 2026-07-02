@@ -73,9 +73,11 @@ else
   log "$ETC_DIR/env ya existe, lo dejo intacto."
 fi
 
-# 5) Unit systemd
-log "Instalando $UNIT_NAME"
+# 5) Units systemd (servicio + backup diario)
+log "Instalando $UNIT_NAME y aether-backup.{service,timer}"
 install -m 0644 -o root -g root "$SCRIPT_DIR/$UNIT_NAME" "/etc/systemd/system/$UNIT_NAME"
+install -m 0644 -o root -g root "$SCRIPT_DIR/aether-backup.service" /etc/systemd/system/aether-backup.service
+install -m 0644 -o root -g root "$SCRIPT_DIR/aether-backup.timer"   /etc/systemd/system/aether-backup.timer
 systemctl daemon-reload
 
 # 6) Resumen
@@ -90,8 +92,9 @@ Pasos siguientes:
   3. Crea el primer usuario admin:
        sudo -u $SERVICE_USER $INSTALL_DIR/aether-bootstrap <argumentos>
      (ver $INSTALL_DIR/aether-bootstrap --help)
-  4. Habilita y arranca el servicio:
+  4. Habilita y arranca el servicio y el backup diario:
        systemctl enable --now $UNIT_NAME
+       systemctl enable --now aether-backup.timer
   5. Comprueba:
        systemctl status $UNIT_NAME
        journalctl -u $UNIT_NAME -f

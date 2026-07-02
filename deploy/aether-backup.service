@@ -1,0 +1,28 @@
+[Unit]
+Description=aether-web — backup diario de PostgreSQL (pg_dump)
+Documentation=file:///opt/aether-web/deploy/README.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Corre como root: necesita leer /etc/aether-web/env (600 root) y escribir en
+# /var/backups/aether-web (0700). El dump sale con perms 0600.
+ExecStart=/opt/aether-web/deploy/backup.sh
+
+# Endurecimiento compatible con un script oneshot que escribe en /var/backups
+# (ProtectSystem=full deja /var escribible; el propio script crea el directorio).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+UMask=0077
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=aether-backup
