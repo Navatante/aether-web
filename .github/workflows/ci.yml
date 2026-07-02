@@ -19,7 +19,8 @@ jobs:
           database-utils/Aether.db
           database-utils/person_users.json
           migrations/0002_seed_lookups.up.sql
-          migrations/0004_seed_productive_data.up.sql
+          migrations/0003_seed_productive_data.up.sql
+          migrations/0003_seed_productive_data.down.sql
           '
           fail=0
           for f in $FORBIDDEN; do
@@ -76,8 +77,12 @@ jobs:
           version: latest
       - name: Build
         run: go build ./...
-      - name: Tests
-        run: go test ./...
+      - name: Tests (con detector de data races)
+        run: go test -race ./...
+      # Vulnerabilidades conocidas en dependencias Go (solo las alcanzables
+      # desde el código, que es lo que analiza govulncheck).
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
       - name: Tipos TS generados al día (tygo)
         run: |
           go run github.com/gzuidhof/tygo@latest generate
@@ -98,6 +103,9 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install
         run: npm ci
+      # Vulnerabilidades conocidas en dependencias npm (falla solo con high/critical).
+      - name: npm audit
+        run: npm audit --audit-level=high
       - name: Lint
         run: npm run lint --if-present
       - name: Build (tsc + vite)

@@ -64,7 +64,7 @@ Operational detail in `web/CLAUDE.md`.
 
 ## Critical Rules
 
-- **GDPR — never version in this repo (public)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.up.sql`, `migrations/0004_seed_productive_data.up.sql`. These are symlinks to the private repo `aether-data` (default `~/aether-data`), **gitignored**: recreated per machine with `make link-private` (path overridable with `AETHER_DATA=`). CI has a leak-guard, but review `git status` before each push anyway. Never `git add -f`.
+- **GDPR — never version in this repo (public)**: `database-utils/Aether.db`, `database-utils/person_users.json`, `migrations/0002_seed_lookups.up.sql`, `migrations/0003_seed_productive_data.up.sql`. These are symlinks to the private repo `aether-data` (default `~/aether-data`), **gitignored**: recreated per machine with `make link-private` (path overridable with `AETHER_DATA=`). CI has a leak-guard, but review `git status` before each push anyway. Never `git add -f`.
 - **Do not edit generated code**: `internal/queries/` (sqlc) or `web/src/types/generated/` (tygo).
 - **Timestamps**: use `timestamptz`, never `TIMESTAMP` without timezone (real timezone bug; the auth/session schema lives consolidated in `0001_init_schema`).
 - Commits and pushes only when the user asks; the embedded frontend (`web/dist/`) is versioned — rebuild it (`cd web && npm run build`) before committing relevant frontend changes.
