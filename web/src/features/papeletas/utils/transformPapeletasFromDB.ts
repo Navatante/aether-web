@@ -1,9 +1,12 @@
 import { Papeleta } from "@/types/papeleta";
+import type { Papeleta as PapeletaDTO } from "@/types/generated/papeletas";
 
-const safeString = (val: any, def = "") => (typeof val === "string" ? val : def);
-const safeNumber = (val: any, def = 0) => (typeof val === "number" ? val : def);
+// Los safe* mantienen la defensa en runtime (el tipo generado describe el
+// contrato, no lo garantiza), pero sin `any`: la entrada es el DTO del backend.
+const safeString = (val: unknown, def = "") => (typeof val === "string" ? val : def);
+const safeNumber = (val: unknown, def = 0) => (typeof val === "number" ? val : def);
 
-export const transformPapeletasFromDB = (raw: any[]): Papeleta[] => {
+export const transformPapeletasFromDB = (raw: PapeletaDTO[]): Papeleta[] => {
     return raw.map((p) => ({
         papeleta_sk: safeNumber(p.papeleta_sk),
         papeleta_name: safeString(p.papeleta_name),

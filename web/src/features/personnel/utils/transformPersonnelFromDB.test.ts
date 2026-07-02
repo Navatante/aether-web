@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { transformPersonnelFromDB } from "./transformPersonnelFromDB";
+import type { PersonItem } from "@/types/generated/persons";
+
+// Entradas deliberadamente malformadas: el transform defiende en runtime
+// aunque el tipo generado prometa otra cosa.
+const asItems = (rows: unknown[]) => rows as PersonItem[];
 
 describe("transformPersonnelFromDB", () => {
     it("mapea los campos del shape de BD al modelo Person", () => {
-        const [p] = transformPersonnelFromDB([
+        const [p] = transformPersonnelFromDB(asItems([
             {
                 id: 7,
                 nk: "ABC",
@@ -25,7 +30,7 @@ describe("transformPersonnelFromDB", () => {
                 numeroEscalafon: 12,
                 activo: 1,
             },
-        ]);
+        ]));
         expect(p.person_sk).toBe(7);
         expect(p.person_nk).toBe("ABC");
         expect(p.person_user).toBe("jperez");
@@ -35,9 +40,9 @@ describe("transformPersonnelFromDB", () => {
     });
 
     it("aplica defaults seguros ante tipos inesperados y nulls", () => {
-        const [p] = transformPersonnelFromDB([
+        const [p] = transformPersonnelFromDB(asItems([
             { id: "no-numérico", nk: null, usuario: 42, activo: null, dni: "" },
-        ]);
+        ]));
         expect(p.person_sk).toBe(0);
         expect(p.person_nk).toBeNull(); // string vacío/null → null
         expect(p.person_user).toBe("");
@@ -46,13 +51,13 @@ describe("transformPersonnelFromDB", () => {
     });
 
     it("interpreta el bit activo en sus dos formatos (1/true) y el resto como false", () => {
-        const rows = transformPersonnelFromDB([
+        const rows = transformPersonnelFromDB(asItems([
             { activo: 1 },
             { activo: true },
             { activo: 0 },
             { activo: false },
             { activo: "1" },
-        ]);
+        ]));
         expect(rows.map((r) => r.person_active)).toEqual([true, true, false, false, false]);
     });
 

@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { transformPapeletasFromDB } from "./transformPapeletasFromDB";
+import type { Papeleta as PapeletaDTO } from "@/types/generated/papeletas";
+
+const asItems = (rows: unknown[]) => rows as PapeletaDTO[];
 
 describe("transformPapeletasFromDB", () => {
     it("mapea la papeleta y respeta papeleta_order = null", () => {
-        const [p] = transformPapeletasFromDB([
+        const [p] = transformPapeletasFromDB(asItems([
             {
                 papeleta_sk: 3,
                 papeleta_name: "NAV-01",
@@ -16,7 +19,7 @@ describe("transformPapeletasFromDB", () => {
                 papeleta_expiration: 180,
                 papeleta_order: null,
             },
-        ]);
+        ]));
         expect(p.papeleta_sk).toBe(3);
         expect(p.papeleta_name).toBe("NAV-01");
         expect(p.papeleta_expiration).toBe(180);
@@ -25,9 +28,9 @@ describe("transformPapeletasFromDB", () => {
     });
 
     it("aplica defaults seguros ante tipos inesperados", () => {
-        const [p] = transformPapeletasFromDB([
+        const [p] = transformPapeletasFromDB(asItems([
             { papeleta_sk: "3", papeleta_name: 42, papeleta_order: "1" },
-        ]);
+        ]));
         expect(p.papeleta_sk).toBe(0);
         expect(p.papeleta_name).toBe("");
         expect(p.papeleta_order).toBeNull();

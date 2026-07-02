@@ -2,7 +2,9 @@ import React, {useState, useTransition} from 'react';
 import {useApiPaginatedQuery, useApiMutation} from "@/lib/apiQuery";
 import {queryKeys} from "@/lib/queryKeys";
 import {transformPapeletasFromDB} from "../utils/transformPapeletasFromDB";
+import {downloadCSV} from "@/shared/utils/csvExport";
 import {Papeleta} from "@/types/papeleta";
+import type {Papeleta as PapeletaDTO} from "@/types/generated/papeletas";
 import {useEscuadrilla} from "@/providers";
 import {toast} from "sonner";
 import {ChevronDown, ChevronUp, Download, Edit, RefreshCw, TicketPlus} from "lucide-react";
@@ -40,7 +42,7 @@ const Papeletas = () => {
         isLoading,
         isFetching,
         refetch,
-    } = useApiPaginatedQuery<Papeleta>({
+    } = useApiPaginatedQuery<Papeleta, PapeletaDTO>({
         path: "/papeletas",
         queryKey: queryKeys.papeletas.list(escId ?? 0, {}),
         transform: transformPapeletasFromDB,
@@ -117,11 +119,6 @@ const Papeletas = () => {
             return;
         }
 
-        const escapeCSV = (value: any): string => {
-            const str = String(value ?? "");
-            return `"${str.replace(/"/g, '""')}"`;
-        };
-
         const headers = [
             "ID", "Nombre", "Descripción", "Plan", "Bloque", "CRP",
             "Tiempo de vuelo", "Vigencia"
@@ -139,24 +136,7 @@ const Papeletas = () => {
             p.papeleta_expiration
         ]);
 
-        const csvContent = [
-            headers.map(escapeCSV).join(";"),
-            ...rows.map(row => row.map(escapeCSV).join(";"))
-        ].join("\n");
-
-        const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        const fechaFormateada = new Date()
-            .toLocaleDateString('es-ES')
-            .split('/')
-            .join('-');
-        link.download = `papeletas_${fechaFormateada}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        downloadCSV("papeletas", headers, rows);
 
         toast.success(`Exportados ${filteredPapeletas.length} registros a CSV en la carpeta de Descargas`);
     };

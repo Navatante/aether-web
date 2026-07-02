@@ -1,14 +1,17 @@
 import { Person } from "@/types/person";
+import type { PersonItem } from "@/types/generated/persons";
 
-const safeString = (val: any, def = "") => (typeof val === "string" ? val : def);
-const safeNumber = (val: any, def = 0) => (typeof val === "number" ? val : def);
+// Los safe* mantienen la defensa en runtime (el tipo generado describe el
+// contrato, no lo garantiza), pero sin `any`: la entrada es el DTO del backend.
+const safeString = (val: unknown, def = "") => (typeof val === "string" ? val : def);
+const safeNumber = (val: unknown, def = 0) => (typeof val === "number" ? val : def);
 
-const safeBitToBoolean = (val: any, def = false): boolean => {
+const safeBitToBoolean = (val: unknown, def = false): boolean => {
     if (val === null || val === undefined) return def;
     return val === 1 || val === true;
 };
 
-export const transformPersonnelFromDB = (raw: any[]): Person[] => {
+export const transformPersonnelFromDB = (raw: PersonItem[]): Person[] => {
     return raw.map((p) => ({
         person_sk: safeNumber(p.id),
         person_nk: safeString(p.nk) || null,

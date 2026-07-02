@@ -5,8 +5,10 @@ import React, { useState, useTransition } from 'react';
 import { useApiPaginatedQuery, useApiMutation } from "@/lib/apiQuery";
 import { queryKeys } from "@/lib/queryKeys";
 import { useConfirmationDialog } from "@/shared/hooks";
+import { downloadCSV } from "@/shared/utils/csvExport";
 import { transformPersonnelFromDB } from "../utils/transformPersonnelFromDB";
 import { Person } from "@/types/person";
+import type { PersonItem } from "@/types/generated/persons";
 import { useEscuadrilla, useUser } from "@/providers";
 import { toast } from "sonner";
 import { type PersonFormValues, CUERPOS } from "../components";
@@ -32,7 +34,7 @@ export function usePersonnel() {
         isLoading,
         isFetching,
         refetch,
-    } = useApiPaginatedQuery<Person>({
+    } = useApiPaginatedQuery<Person, PersonItem>({
         path: "/persons",
         queryKey: queryKeys.personnel.list(escId ?? 0, {}),
         transform: transformPersonnelFromDB,
@@ -158,11 +160,6 @@ export function usePersonnel() {
             return;
         }
 
-        const escapeCSV = (value: any): string => {
-            const str = String(value ?? "");
-            return `"${str.replace(/"/g, '""')}"`;
-        };
-
         const headers = [
             "ID", "Código", "Usuario", "Empleo", "Cuerpo", "Especialidad",
             "Nombre", "Apellido1", "Apellido2", "Teléfono", "DNI", "Localidad",
@@ -192,25 +189,7 @@ export function usePersonnel() {
             p.person_active ? "Activo" : "Inactivo"
         ]);
 
-        const csvContent = [
-            headers.map(escapeCSV).join(";"),
-            ...rows.map(row => row.map(escapeCSV).join(";"))
-        ].join("\n");
-
-        const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        const fechaFormateada = new Date()
-            .toLocaleDateString('es-ES')
-            .split('/')
-            .join('-');
-
-        link.download = `personal_${fechaFormateada}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        downloadCSV("personal", headers, rows);
 
         toast.success(`Exportados ${filteredPersonnel.length} registros a CSV en la carpeta de Descargas`);
     };
