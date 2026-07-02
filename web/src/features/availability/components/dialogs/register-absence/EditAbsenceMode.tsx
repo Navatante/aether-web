@@ -80,16 +80,18 @@ export function EditAbsenceMode({
                 {/* Fechas */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                        <Label>Fecha inicio</Label>
+                        <Label htmlFor="absence-edit-start">Fecha inicio</Label>
                         <DatePicker
+                            id="absence-edit-start"
                             date={editStartDate}
                             onSelect={setEditStartDate}
                             placeholder="Inicio"
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label>Fecha fin</Label>
+                        <Label htmlFor="absence-edit-end">Fecha fin</Label>
                         <DatePicker
+                            id="absence-edit-end"
                             date={editEndDate}
                             onSelect={setEditEndDate}
                             placeholder="Fin"

@@ -69,16 +69,18 @@ export function CreateAbsenceMode({
                 {/* Fechas */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                        <Label>Fecha inicio</Label>
+                        <Label htmlFor="absence-start">Fecha inicio</Label>
                         <DatePicker
+                            id="absence-start"
                             date={formData.startDate}
                             onSelect={(date) => setFormData({ ...formData, startDate: date })}
                             placeholder="Inicio"
                         />
                     </div>
                     <div className="grid gap-2">
-                        <Label>Fecha fin</Label>
+                        <Label htmlFor="absence-end">Fecha fin</Label>
                         <DatePicker
+                            id="absence-end"
                             date={formData.endDate}
                             onSelect={(date) => setFormData({ ...formData, endDate: date })}
                             placeholder="Fin"

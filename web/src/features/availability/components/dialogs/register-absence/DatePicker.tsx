@@ -18,9 +18,11 @@ interface DatePickerProps {
     date: Date | undefined;
     onSelect: (date: Date | undefined) => void;
     placeholder?: string;
+    /** id del botón trigger, para emparejarlo con un <Label htmlFor>. */
+    id?: string;
 }
 
-export function DatePicker({ date, onSelect, placeholder = "Seleccionar fecha" }: DatePickerProps) {
+export function DatePicker({ date, onSelect, placeholder = "Seleccionar fecha", id }: DatePickerProps) {
     const [open, setOpen] = useState(false);
 
     const handleSelect = (selectedDate: Date | undefined) => {
@@ -32,6 +34,7 @@ export function DatePicker({ date, onSelect, placeholder = "Seleccionar fecha" }
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger render={
                 <Button
+                    id={id}
                     variant="outline"
                     className={cn(
                         "w-full justify-start text-left font-normal",
