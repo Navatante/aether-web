@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -40,6 +41,13 @@ export default defineConfig({
         emptyOutDir: true,
     },
     esbuild: { target: "es2022" },
+    // Tests unitarios (vitest): `npm test`. jsdom para poder testear hooks y
+    // componentes; los *.test.ts(x) viven junto al código que prueban.
+    test: {
+        environment: "jsdom",
+        setupFiles: "./src/test/setup.ts",
+        include: ["src/**/*.test.{ts,tsx}"],
+    },
     server: {
         port: 5173,
         strictPort: true,
