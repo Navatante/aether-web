@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/config"
 	"github.com/14esc/aether-web/internal/db"
 )
 
@@ -63,7 +64,7 @@ func main() {
 	// el nivel sin tocar las credenciales).
 	pwd := *password
 	if pwd == "" {
-		pwd = os.Getenv("AETHER_BOOTSTRAP_PASSWORD")
+		pwd = config.BootstrapPassword()
 	}
 	if pwd == "" && *level == "" {
 		fmt.Fprint(os.Stderr, "Contraseña para ", *username, ": ")
@@ -80,9 +81,9 @@ func main() {
 		os.Exit(2)
 	}
 
-	dsn := os.Getenv("AETHER_DATABASE_URL")
-	if dsn == "" {
-		fmt.Fprintln(os.Stderr, "error: AETHER_DATABASE_URL no está definida")
+	dsn, err := config.DatabaseURL()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(2)
 	}
 

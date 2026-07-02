@@ -33,21 +33,38 @@ type Config struct {
 	TrustedProxy bool
 }
 
+// DatabaseURL lee y valida solo el DSN (AETHER_DATABASE_URL). Para los CLIs
+// (bootstrap) que no necesitan el resto de la configuración del servidor.
+func DatabaseURL() (string, error) {
+	dsn := os.Getenv("AETHER_DATABASE_URL")
+	if dsn == "" {
+		return "", errors.New("AETHER_DATABASE_URL no está definida (DSN de PostgreSQL, p.ej. postgres://user:pass@host:5432/aether)")
+	}
+	return dsn, nil
+}
+
+// BootstrapPassword devuelve AETHER_BOOTSTRAP_PASSWORD (contraseña que el CLI
+// de bootstrap acepta por entorno; vacía si no está definida).
+func BootstrapPassword() string {
+	return os.Getenv("AETHER_BOOTSTRAP_PASSWORD")
+}
+
 // Load lee el entorno y valida. Falla (en vez de usar defaults silenciosos)
 // si falta configuración crítica como el DSN de la base de datos.
 func Load() (Config, error) {
+	dsn, err := DatabaseURL()
+	if err != nil {
+		return Config{}, err
+	}
 	cfg := Config{
 		Addr:         os.Getenv("AETHER_ADDR"),
-		DatabaseURL:  os.Getenv("AETHER_DATABASE_URL"),
+		DatabaseURL:  dsn,
 		SessionTTL:   defaultSessionTTL,
 		CookieSecure: os.Getenv("AETHER_COOKIE_SECURE") == "true",
 		TrustedProxy: os.Getenv("AETHER_TRUSTED_PROXY") == "true",
 	}
 	if cfg.Addr == "" {
 		cfg.Addr = defaultAddr
-	}
-	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("AETHER_DATABASE_URL no está definida (DSN de PostgreSQL, p.ej. postgres://user:pass@host:5432/aether)")
 	}
 
 	if raw := os.Getenv("AETHER_SESSION_TTL"); raw != "" {
