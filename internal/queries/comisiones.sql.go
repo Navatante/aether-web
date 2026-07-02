@@ -392,6 +392,7 @@ func (q *Queries) InsertPersonToComision(ctx context.Context, arg InsertPersonTo
 
 const listComisionPeople = `-- name: ListComisionPeople :many
 SELECT
+    pc.comision_fk,
     pc.person_comision_sk,
     BTRIM(p.person_rank || ' ' || p.person_last_name_1 || ' ' || p.person_last_name_2)::text AS nombre,
     p.order_position AS orden,
@@ -399,21 +400,23 @@ SELECT
 FROM detall.person_comision pc
 JOIN detall.v_person_ordered p ON pc.person_fk = p.person_sk
 LEFT JOIN detall.person_comision_rancheria pcr ON pcr.person_comision_fk = pc.person_comision_sk
-WHERE pc.comision_fk = $1
-ORDER BY p.order_position
+WHERE pc.comision_fk = ANY($1::int[])
+ORDER BY pc.comision_fk, p.order_position
 `
 
 type ListComisionPeopleRow struct {
+	ComisionFk       int32  `json:"comision_fk"`
 	PersonComisionSk int32  `json:"person_comision_sk"`
 	Nombre           string `json:"nombre"`
 	Orden            int64  `json:"orden"`
 	RancheriaDias    int32  `json:"rancheria_dias"`
 }
 
-// Personas asignadas a una comisión, ordenadas por la vista canónica.
-// rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
-func (q *Queries) ListComisionPeople(ctx context.Context, comisionFk int32) ([]ListComisionPeopleRow, error) {
-	rows, err := q.db.Query(ctx, listComisionPeople, comisionFk)
+// Personas asignadas a las comisiones de una página, en una sola query (bulk,
+// como las tablas hijas de flights); Go agrupa por comision_fk. Ordenadas por
+// la vista canónica. rancheria_dias = 0 si la persona no hizo ranchería.
+func (q *Queries) ListComisionPeople(ctx context.Context, dollar_1 []int32) ([]ListComisionPeopleRow, error) {
+	rows, err := q.db.Query(ctx, listComisionPeople, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -422,6 +425,7 @@ func (q *Queries) ListComisionPeople(ctx context.Context, comisionFk int32) ([]L
 	for rows.Next() {
 		var i ListComisionPeopleRow
 		if err := rows.Scan(
+			&i.ComisionFk,
 			&i.PersonComisionSk,
 			&i.Nombre,
 			&i.Orden,
@@ -439,6 +443,7 @@ func (q *Queries) ListComisionPeople(ctx context.Context, comisionFk int32) ([]L
 
 const listComisionPeopleExpanded = `-- name: ListComisionPeopleExpanded :many
 SELECT
+    pc.comision_fk,
     p.person_sk,
     p.person_nk,
     p.person_rank,
@@ -447,11 +452,12 @@ SELECT
     p.person_last_name_2
 FROM detall.person_comision pc
 JOIN detall.person p ON pc.person_fk = p.person_sk
-WHERE pc.comision_fk = $1
-ORDER BY p.person_rank, p.person_name
+WHERE pc.comision_fk = ANY($1::int[])
+ORDER BY pc.comision_fk, p.person_rank, p.person_name
 `
 
 type ListComisionPeopleExpandedRow struct {
+	ComisionFk      int32   `json:"comision_fk"`
 	PersonSk        int32   `json:"person_sk"`
 	PersonNk        *string `json:"person_nk"`
 	PersonRank      string  `json:"person_rank"`
@@ -460,9 +466,9 @@ type ListComisionPeopleExpandedRow struct {
 	PersonLastName2 string  `json:"person_last_name_2"`
 }
 
-// Variante con campos separados (espejo de get_comision_people en Rust).
-func (q *Queries) ListComisionPeopleExpanded(ctx context.Context, comisionFk int32) ([]ListComisionPeopleExpandedRow, error) {
-	rows, err := q.db.Query(ctx, listComisionPeopleExpanded, comisionFk)
+// Variante con campos separados (espejo de get_comision_people en Rust), bulk.
+func (q *Queries) ListComisionPeopleExpanded(ctx context.Context, dollar_1 []int32) ([]ListComisionPeopleExpandedRow, error) {
+	rows, err := q.db.Query(ctx, listComisionPeopleExpanded, dollar_1)
 	if err != nil {
 		return nil, err
 	}
@@ -471,6 +477,7 @@ func (q *Queries) ListComisionPeopleExpanded(ctx context.Context, comisionFk int
 	for rows.Next() {
 		var i ListComisionPeopleExpandedRow
 		if err := rows.Scan(
+			&i.ComisionFk,
 			&i.PersonSk,
 			&i.PersonNk,
 			&i.PersonRank,
@@ -588,17 +595,20 @@ SELECT
     cl.comision_name                                       AS lugar,
     (c.comision_end_date - c.comision_start_date + 1)::int AS dias
 FROM detall.person_comision pc
+JOIN detall.person        p  ON pc.person_fk      = p.person_sk
 JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
 JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 WHERE pc.person_fk = $1
   AND ct.name = $2
+  AND p.person_escuadrilla_fk = $3
 ORDER BY c.comision_start_date DESC
 `
 
 type ListPersonComisionesByTypeParams struct {
-	PersonFk int32  `json:"person_fk"`
-	Name     string `json:"name"`
+	PersonFk            int32  `json:"person_fk"`
+	Name                string `json:"name"`
+	PersonEscuadrillaFk int32  `json:"person_escuadrilla_fk"`
 }
 
 type ListPersonComisionesByTypeRow struct {
@@ -615,9 +625,11 @@ type ListPersonComisionesByTypeRow struct {
 // persona (lo que se muestra al pinchar una celda en "Días de comisión").
 // Espejan la aritmética de DiasComision para que el sumatorio de `dias` cuadre.
 // Categorías "no caducan": dias = duración total de la comisión.
-// $1 = person_sk, $2 = comision_type.name.
+// $1 = person_sk, $2 = comision_type.name, $3 = escuadrilla de la sesión.
+// RLS: person_sk viene de un query param del cliente; el JOIN a person con
+// person_escuadrilla_fk impide leer el desglose de personas de otra escuadrilla.
 func (q *Queries) ListPersonComisionesByType(ctx context.Context, arg ListPersonComisionesByTypeParams) ([]ListPersonComisionesByTypeRow, error) {
-	rows, err := q.db.Query(ctx, listPersonComisionesByType, arg.PersonFk, arg.Name)
+	rows, err := q.db.Query(ctx, listPersonComisionesByType, arg.PersonFk, arg.Name, arg.PersonEscuadrillaFk)
 	if err != nil {
 		return nil, err
 	}
@@ -656,6 +668,7 @@ SELECT
     (LEAST(c.comision_end_date, w.fecha_fin)
      - GREATEST(c.comision_start_date, w.fecha_inicio) + 1)::int AS dias
 FROM detall.person_comision pc
+JOIN detall.person        p  ON pc.person_fk      = p.person_sk
 JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
 JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
@@ -664,13 +677,15 @@ WHERE pc.person_fk = $1
   AND ct.name = $2
   AND c.comision_start_date <= w.fecha_fin
   AND c.comision_end_date   >= w.fecha_inicio
+  AND p.person_escuadrilla_fk = $4
 ORDER BY c.comision_start_date DESC
 `
 
 type ListPersonComisionesByTypeWindowedParams struct {
-	PersonFk int32       `json:"person_fk"`
-	Name     string      `json:"name"`
-	Column3  pgtype.Date `json:"column_3"`
+	PersonFk            int32       `json:"person_fk"`
+	Name                string      `json:"name"`
+	Column3             pgtype.Date `json:"column_3"`
+	PersonEscuadrillaFk int32       `json:"person_escuadrilla_fk"`
 }
 
 type ListPersonComisionesByTypeWindowedRow struct {
@@ -683,9 +698,15 @@ type ListPersonComisionesByTypeWindowedRow struct {
 }
 
 // Categorías "sí caducan" (OMP/UNADEST/UNAEMB): dias = solapamiento con
-// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name, $3 = fechaFin.
+// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name,
+// $3 = fechaFin, $4 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
 func (q *Queries) ListPersonComisionesByTypeWindowed(ctx context.Context, arg ListPersonComisionesByTypeWindowedParams) ([]ListPersonComisionesByTypeWindowedRow, error) {
-	rows, err := q.db.Query(ctx, listPersonComisionesByTypeWindowed, arg.PersonFk, arg.Name, arg.Column3)
+	rows, err := q.db.Query(ctx, listPersonComisionesByTypeWindowed,
+		arg.PersonFk,
+		arg.Name,
+		arg.Column3,
+		arg.PersonEscuadrillaFk,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -720,12 +741,19 @@ SELECT
     cl.comision_name AS lugar,
     r.dias::int      AS dias
 FROM detall.person_comision pc
+JOIN detall.person         p  ON pc.person_fk        = p.person_sk
 JOIN detall.comision       c  ON pc.comision_fk      = c.comision_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 JOIN detall.person_comision_rancheria r ON r.person_comision_fk = pc.person_comision_sk
 WHERE pc.person_fk = $1
+  AND p.person_escuadrilla_fk = $2
 ORDER BY c.comision_start_date DESC
 `
+
+type ListPersonRancheriaParams struct {
+	PersonFk            int32 `json:"person_fk"`
+	PersonEscuadrillaFk int32 `json:"person_escuadrilla_fk"`
+}
 
 type ListPersonRancheriaRow struct {
 	ComisionSk        int32       `json:"comision_sk"`
@@ -737,9 +765,9 @@ type ListPersonRancheriaRow struct {
 }
 
 // Ranchería: dias = person_comision_rancheria.dias (independiente del tipo).
-// $1 = person_sk.
-func (q *Queries) ListPersonRancheria(ctx context.Context, personFk int32) ([]ListPersonRancheriaRow, error) {
-	rows, err := q.db.Query(ctx, listPersonRancheria, personFk)
+// $1 = person_sk, $2 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
+func (q *Queries) ListPersonRancheria(ctx context.Context, arg ListPersonRancheriaParams) ([]ListPersonRancheriaRow, error) {
+	rows, err := q.db.Query(ctx, listPersonRancheria, arg.PersonFk, arg.PersonEscuadrillaFk)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 )
 
 // ============================================================
@@ -67,14 +68,6 @@ func toPersonID(v any) (int32, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func parseIDParam(c echo.Context, key string) (int32, error) {
-	n, err := strconv.ParseInt(c.Param(key), 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
 }
 
 // ----- Listing -----
@@ -138,7 +131,8 @@ func (h *Handlers) DiasComision(c echo.Context) error {
 }
 
 func (h *Handlers) DiasComisionBreakdown(c echo.Context) error {
-	if _, ok := currentEsc(c); !ok {
+	esc, ok := currentEsc(c)
+	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
 	person, err := strconv.Atoi(c.QueryParam("person"))
@@ -146,7 +140,7 @@ func (h *Handlers) DiasComisionBreakdown(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid person")
 	}
 	items, err := h.svc.DiasComisionBreakdown(
-		c.Request().Context(), int32(person), c.QueryParam("categoria"), c.QueryParam("fechaFin"))
+		c.Request().Context(), esc, int32(person), c.QueryParam("categoria"), c.QueryParam("fechaFin"))
 	if errors.Is(err, ErrInvalidInput) {
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
 	}
@@ -176,7 +170,7 @@ func (h *Handlers) Update(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -193,7 +187,7 @@ func (h *Handlers) Delete(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -208,7 +202,7 @@ func (h *Handlers) AssignPeople(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	comisionSk, herr := parseIDParam(c, "id")
+	comisionSk, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -266,11 +260,11 @@ func (h *Handlers) RemovePerson(c echo.Context) error {
 	if _, ok := currentEsc(c); !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	comisionSk, herr := parseIDParam(c, "id")
+	comisionSk, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
-	personSk, herr := parseIDParam(c, "personId")
+	personSk, herr := httpx.IDParam(c, "personId")
 	if herr != nil {
 		return herr
 	}
@@ -283,7 +277,7 @@ func (h *Handlers) DeletePersonComisionBySk(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -309,7 +303,7 @@ func (h *Handlers) UpdateLugar(c echo.Context) error {
 	if _, ok := currentEsc(c); !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -325,7 +319,7 @@ func (h *Handlers) DeleteLugar(c echo.Context) error {
 	if _, ok := currentEsc(c); !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}

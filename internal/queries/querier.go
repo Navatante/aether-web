@@ -452,11 +452,12 @@ type Querier interface {
 	// El rango de fechas filtra por f.flight_date (la toma/aprox. hereda la fecha del vuelo).
 	// ============================================================
 	LandingsApproachesByPilot(ctx context.Context, arg LandingsApproachesByPilotParams) ([]LandingsApproachesByPilotRow, error)
-	// Personas asignadas a una comisión, ordenadas por la vista canónica.
-	// rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
-	ListComisionPeople(ctx context.Context, comisionFk int32) ([]ListComisionPeopleRow, error)
-	// Variante con campos separados (espejo de get_comision_people en Rust).
-	ListComisionPeopleExpanded(ctx context.Context, comisionFk int32) ([]ListComisionPeopleExpandedRow, error)
+	// Personas asignadas a las comisiones de una página, en una sola query (bulk,
+	// como las tablas hijas de flights); Go agrupa por comision_fk. Ordenadas por
+	// la vista canónica. rancheria_dias = 0 si la persona no hizo ranchería.
+	ListComisionPeople(ctx context.Context, dollar_1 []int32) ([]ListComisionPeopleRow, error)
+	// Variante con campos separados (espejo de get_comision_people en Rust), bulk.
+	ListComisionPeopleExpanded(ctx context.Context, dollar_1 []int32) ([]ListComisionPeopleExpandedRow, error)
 	// =============== Comisión listings ===============
 	// Paginado + filtros opcionales. Convención:
 	//   $2 = comision_sk filtro (0 → sin filtro)
@@ -517,14 +518,17 @@ type Querier interface {
 	// persona (lo que se muestra al pinchar una celda en "Días de comisión").
 	// Espejan la aritmética de DiasComision para que el sumatorio de `dias` cuadre.
 	// Categorías "no caducan": dias = duración total de la comisión.
-	// $1 = person_sk, $2 = comision_type.name.
+	// $1 = person_sk, $2 = comision_type.name, $3 = escuadrilla de la sesión.
+	// RLS: person_sk viene de un query param del cliente; el JOIN a person con
+	// person_escuadrilla_fk impide leer el desglose de personas de otra escuadrilla.
 	ListPersonComisionesByType(ctx context.Context, arg ListPersonComisionesByTypeParams) ([]ListPersonComisionesByTypeRow, error)
 	// Categorías "sí caducan" (OMP/UNADEST/UNAEMB): dias = solapamiento con
-	// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name, $3 = fechaFin.
+	// [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name,
+	// $3 = fechaFin, $4 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
 	ListPersonComisionesByTypeWindowed(ctx context.Context, arg ListPersonComisionesByTypeWindowedParams) ([]ListPersonComisionesByTypeWindowedRow, error)
 	// Ranchería: dias = person_comision_rancheria.dias (independiente del tipo).
-	// $1 = person_sk.
-	ListPersonRancheria(ctx context.Context, personFk int32) ([]ListPersonRancheriaRow, error)
+	// $1 = person_sk, $2 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
+	ListPersonRancheria(ctx context.Context, arg ListPersonRancheriaParams) ([]ListPersonRancheriaRow, error)
 	// ============================================================
 	// Persons (Hito 4, lote 3)
 	//

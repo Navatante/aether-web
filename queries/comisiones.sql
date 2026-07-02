@@ -84,9 +84,11 @@ WHERE c.comision_escuadrilla_fk = $1
   AND ($4::date IS NULL OR c.comision_end_date   <= $4);
 
 -- name: ListComisionPeople :many
--- Personas asignadas a una comisión, ordenadas por la vista canónica.
--- rancheria_dias = 0 si la persona no hizo ranchería en esta comisión.
+-- Personas asignadas a las comisiones de una página, en una sola query (bulk,
+-- como las tablas hijas de flights); Go agrupa por comision_fk. Ordenadas por
+-- la vista canónica. rancheria_dias = 0 si la persona no hizo ranchería.
 SELECT
+    pc.comision_fk,
     pc.person_comision_sk,
     BTRIM(p.person_rank || ' ' || p.person_last_name_1 || ' ' || p.person_last_name_2)::text AS nombre,
     p.order_position AS orden,
@@ -94,12 +96,13 @@ SELECT
 FROM detall.person_comision pc
 JOIN detall.v_person_ordered p ON pc.person_fk = p.person_sk
 LEFT JOIN detall.person_comision_rancheria pcr ON pcr.person_comision_fk = pc.person_comision_sk
-WHERE pc.comision_fk = $1
-ORDER BY p.order_position;
+WHERE pc.comision_fk = ANY($1::int[])
+ORDER BY pc.comision_fk, p.order_position;
 
 -- name: ListComisionPeopleExpanded :many
--- Variante con campos separados (espejo de get_comision_people en Rust).
+-- Variante con campos separados (espejo de get_comision_people en Rust), bulk.
 SELECT
+    pc.comision_fk,
     p.person_sk,
     p.person_nk,
     p.person_rank,
@@ -108,8 +111,8 @@ SELECT
     p.person_last_name_2
 FROM detall.person_comision pc
 JOIN detall.person p ON pc.person_fk = p.person_sk
-WHERE pc.comision_fk = $1
-ORDER BY p.person_rank, p.person_name;
+WHERE pc.comision_fk = ANY($1::int[])
+ORDER BY pc.comision_fk, p.person_rank, p.person_name;
 
 
 -- =============== comision_lugar CRUD ===============
@@ -333,7 +336,9 @@ ORDER BY p.order_position, p.person_last_name_1, p.person_last_name_2;
 
 -- name: ListPersonComisionesByType :many
 -- Categorías "no caducan": dias = duración total de la comisión.
--- $1 = person_sk, $2 = comision_type.name.
+-- $1 = person_sk, $2 = comision_type.name, $3 = escuadrilla de la sesión.
+-- RLS: person_sk viene de un query param del cliente; el JOIN a person con
+-- person_escuadrilla_fk impide leer el desglose de personas de otra escuadrilla.
 SELECT
     c.comision_sk,
     c.comision_code,
@@ -342,16 +347,19 @@ SELECT
     cl.comision_name                                       AS lugar,
     (c.comision_end_date - c.comision_start_date + 1)::int AS dias
 FROM detall.person_comision pc
+JOIN detall.person        p  ON pc.person_fk      = p.person_sk
 JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
 JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 WHERE pc.person_fk = $1
   AND ct.name = $2
+  AND p.person_escuadrilla_fk = $3
 ORDER BY c.comision_start_date DESC;
 
 -- name: ListPersonComisionesByTypeWindowed :many
 -- Categorías "sí caducan" (OMP/UNADEST/UNAEMB): dias = solapamiento con
--- [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name, $3 = fechaFin.
+-- [fechaFin-365, fechaFin]. $1 = person_sk, $2 = comision_type.name,
+-- $3 = fechaFin, $4 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
 WITH ventana AS (
     SELECT $3::date AS fecha_fin, ($3::date - 365) AS fecha_inicio
 )
@@ -364,6 +372,7 @@ SELECT
     (LEAST(c.comision_end_date, w.fecha_fin)
      - GREATEST(c.comision_start_date, w.fecha_inicio) + 1)::int AS dias
 FROM detall.person_comision pc
+JOIN detall.person        p  ON pc.person_fk      = p.person_sk
 JOIN detall.comision      c  ON pc.comision_fk    = c.comision_sk
 JOIN detall.comision_type ct ON c.comision_type_fk = ct.comision_type_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
@@ -372,11 +381,12 @@ WHERE pc.person_fk = $1
   AND ct.name = $2
   AND c.comision_start_date <= w.fecha_fin
   AND c.comision_end_date   >= w.fecha_inicio
+  AND p.person_escuadrilla_fk = $4
 ORDER BY c.comision_start_date DESC;
 
 -- name: ListPersonRancheria :many
 -- Ranchería: dias = person_comision_rancheria.dias (independiente del tipo).
--- $1 = person_sk.
+-- $1 = person_sk, $2 = escuadrilla de la sesión (RLS, ver ListPersonComisionesByType).
 SELECT
     c.comision_sk,
     c.comision_code,
@@ -385,8 +395,10 @@ SELECT
     cl.comision_name AS lugar,
     r.dias::int      AS dias
 FROM detall.person_comision pc
+JOIN detall.person         p  ON pc.person_fk        = p.person_sk
 JOIN detall.comision       c  ON pc.comision_fk      = c.comision_sk
 JOIN detall.comision_lugar cl ON c.comision_lugar_fk = cl.comision_lugar_sk
 JOIN detall.person_comision_rancheria r ON r.person_comision_fk = pc.person_comision_sk
 WHERE pc.person_fk = $1
+  AND p.person_escuadrilla_fk = $2
 ORDER BY c.comision_start_date DESC;

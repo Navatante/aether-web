@@ -204,11 +204,29 @@ func (s *Service) List(ctx context.Context, esc int32, p QueryParams) (ComisionQ
 		return ComisionQueryResult{}, err
 	}
 
-	items := make([]ComisionListItem, 0, len(rows))
-	for _, r := range rows {
-		participantes, err := s.listPeople(ctx, r.ComisionSk)
+	// Participantes de toda la página en una sola query (evita el N+1) y
+	// agrupados por comisión en Go, como las tablas hijas de flights.
+	byComision := make(map[int32][]ComisionParticipante, len(rows))
+	if len(rows) > 0 {
+		peopleRows, err := s.q.ListComisionPeople(ctx, comisionSks(rows))
 		if err != nil {
 			return ComisionQueryResult{}, err
+		}
+		for _, pr := range peopleRows {
+			byComision[pr.ComisionFk] = append(byComision[pr.ComisionFk], ComisionParticipante{
+				PersonComisionSk: pr.PersonComisionSk,
+				Nombre:           pr.Nombre,
+				Orden:            pr.Orden,
+				RancheriaDias:    pr.RancheriaDias,
+			})
+		}
+	}
+
+	items := make([]ComisionListItem, 0, len(rows))
+	for _, r := range rows {
+		participantes := byComision[r.ComisionSk]
+		if participantes == nil {
+			participantes = []ComisionParticipante{} // JSON `[]`, no `null`
 		}
 		items = append(items, ComisionListItem{
 			ComisionSk:    r.ComisionSk,
@@ -227,21 +245,13 @@ func (s *Service) List(ctx context.Context, esc int32, p QueryParams) (ComisionQ
 	return ComisionQueryResult{Items: items, TotalCount: total}, nil
 }
 
-func (s *Service) listPeople(ctx context.Context, comisionSk int32) ([]ComisionParticipante, error) {
-	rows, err := s.q.ListComisionPeople(ctx, comisionSk)
-	if err != nil {
-		return nil, err
+// comisionSks extrae los SKs de la página listada para el bulk-fetch de hijos.
+func comisionSks(rows []queries.ListComisionesRow) []int32 {
+	sks := make([]int32, len(rows))
+	for i, r := range rows {
+		sks[i] = r.ComisionSk
 	}
-	out := make([]ComisionParticipante, 0, len(rows))
-	for _, r := range rows {
-		out = append(out, ComisionParticipante{
-			PersonComisionSk: r.PersonComisionSk,
-			Nombre:           r.Nombre,
-			Orden:            r.Orden,
-			RancheriaDias:    r.RancheriaDias,
-		})
-	}
-	return out, nil
+	return sks
 }
 
 func (s *Service) ListWithPeople(ctx context.Context, esc int32, p QueryParams) (ComisionWithPeopleResult, error) {
@@ -274,19 +284,27 @@ func (s *Service) ListWithPeople(ctx context.Context, esc int32, p QueryParams) 
 		return ComisionWithPeopleResult{}, err
 	}
 
-	items := make([]ComisionWithPeopleItem, 0, len(rows))
-	for _, r := range rows {
-		people, err := s.q.ListComisionPeopleExpanded(ctx, r.ComisionSk)
+	// Mismo bulk-fetch que List: una query para las personas de toda la página.
+	peopleByComision := make(map[int32][]Person, len(rows))
+	if len(rows) > 0 {
+		peopleRows, err := s.q.ListComisionPeopleExpanded(ctx, comisionSks(rows))
 		if err != nil {
 			return ComisionWithPeopleResult{}, err
 		}
-		ppl := make([]Person, 0, len(people))
-		for _, p := range people {
-			ppl = append(ppl, Person{
-				PersonSk: p.PersonSk, PersonNk: p.PersonNk,
-				PersonRank: p.PersonRank, PersonName: p.PersonName,
-				PersonLastName1: p.PersonLastName1, PersonLastName2: p.PersonLastName2,
+		for _, pr := range peopleRows {
+			peopleByComision[pr.ComisionFk] = append(peopleByComision[pr.ComisionFk], Person{
+				PersonSk: pr.PersonSk, PersonNk: pr.PersonNk,
+				PersonRank: pr.PersonRank, PersonName: pr.PersonName,
+				PersonLastName1: pr.PersonLastName1, PersonLastName2: pr.PersonLastName2,
 			})
+		}
+	}
+
+	items := make([]ComisionWithPeopleItem, 0, len(rows))
+	for _, r := range rows {
+		ppl := peopleByComision[r.ComisionSk]
+		if ppl == nil {
+			ppl = []Person{} // JSON `[]`, no `null`
 		}
 		items = append(items, ComisionWithPeopleItem{
 			ComisionSk:              r.ComisionSk,
@@ -593,8 +611,10 @@ var nonWindowedComisionTypes = map[string]bool{
 
 // DiasComisionBreakdown devuelve las comisiones que componen el total de una
 // categoría para una persona. Espeja la aritmética de DiasComision para que el
-// sumatorio de días cuadre con la celda mostrada.
-func (s *Service) DiasComisionBreakdown(ctx context.Context, person int32, categoria, fechaFin string) ([]ComisionBreakdownItem, error) {
+// sumatorio de días cuadre con la celda mostrada. `esc` acota a la escuadrilla
+// de la sesión: el person_sk viene de un query param del cliente y sin este
+// filtro se podría leer el desglose de personas de otra escuadrilla.
+func (s *Service) DiasComisionBreakdown(ctx context.Context, esc int32, person int32, categoria, fechaFin string) ([]ComisionBreakdownItem, error) {
 	fin := time.Now().UTC()
 	if fechaFin != "" {
 		t, err := time.Parse("2006-01-02", fechaFin)
@@ -607,7 +627,9 @@ func (s *Service) DiasComisionBreakdown(ctx context.Context, person int32, categ
 	var rows []ComisionBreakdownItem
 	switch {
 	case categoria == "Ranchería":
-		rs, err := s.q.ListPersonRancheria(ctx, person)
+		rs, err := s.q.ListPersonRancheria(ctx, queries.ListPersonRancheriaParams{
+			PersonFk: person, PersonEscuadrillaFk: esc,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -616,9 +638,10 @@ func (s *Service) DiasComisionBreakdown(ctx context.Context, person int32, categ
 		}
 	case windowedComisionTypes[categoria]:
 		rs, err := s.q.ListPersonComisionesByTypeWindowed(ctx, queries.ListPersonComisionesByTypeWindowedParams{
-			PersonFk: person,
-			Name:     categoria,
-			Column3:  pgtype.Date{Time: fin, Valid: true},
+			PersonFk:            person,
+			Name:                categoria,
+			Column3:             pgtype.Date{Time: fin, Valid: true},
+			PersonEscuadrillaFk: esc,
 		})
 		if err != nil {
 			return nil, err
@@ -628,8 +651,9 @@ func (s *Service) DiasComisionBreakdown(ctx context.Context, person int32, categ
 		}
 	case nonWindowedComisionTypes[categoria]:
 		rs, err := s.q.ListPersonComisionesByType(ctx, queries.ListPersonComisionesByTypeParams{
-			PersonFk: person,
-			Name:     categoria,
+			PersonFk:            person,
+			Name:                categoria,
+			PersonEscuadrillaFk: esc,
 		})
 		if err != nil {
 			return nil, err
