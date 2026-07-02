@@ -2,10 +2,10 @@
 // Ambas variantes son idénticas salvo configuración (título, roles, bloques,
 // selector de queryKey y de qué campo CRP mostrar): se parametriza con
 // `AdiestramientoVariant` y cada página es un wrapper fino que pasa su config.
+// Solo render: el estado, los filtros y la query viven en useAdiestramiento.
 
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 
-import type { QueryKey } from '@tanstack/react-query';
 import { Search, Loader2, X, RefreshCw } from 'lucide-react';
 import {
     Tooltip,
@@ -31,70 +31,18 @@ import {
     stickyFirstColClass,
 } from "@/shared/components/common";
 import {ToggleButton} from "@/shared/components/common/ToggleButton.tsx";
-import { useApiQuery } from "@/lib/apiQuery";
-import { useEscuadrilla } from "@/providers";
-import { BlockBadge, PlanDividerRow, byPlanThenName } from "@/features/training/blocks";
+import { BlockBadge, PlanDividerRow } from "@/features/training/blocks";
 import {cn} from "@/lib/utils.ts";
+import {
+    ESTADO_LABEL,
+    PERIOD_OPTIONS,
+    useAdiestramiento,
+    type AdiestramientoVariant,
+    type PapeletaRealizada,
+    type StatusFilter,
+} from "../hooks/useAdiestramiento";
 
-// Types
-interface Papeleta {
-    papeleta_sk: number;
-    papeleta_name: string;
-    papeleta_description: string;
-    papeleta_block: string;
-    papeleta_plan: string;
-    papeleta_order: number | null;
-    // El backend devuelve el CRP en un campo distinto según el rol; la variante
-    // elige cuál leer vía `crpValue`.
-    papeleta_pilot_crp_value?: number;
-    papeleta_dv_crp_value?: number;
-    papeleta_expiration: number;
-}
-
-interface PapeletaRealizada {
-    session_fk: number;
-    dias_transcurridos: number;
-    dias_restantes: number;
-    estado: 'Vigente' | 'Alerta' | 'Expirado';
-}
-
-interface Persona {
-    person_sk: number;
-    person_nk: string;
-    full_name: string;
-    crp: number;
-    dias_sin_volar: number;
-    dias_sin_vuelo_real: number;
-    dias_sin_simulador: number;
-    order_position: number;
-    papeletas_realizadas: PapeletaRealizada[] | null;
-}
-
-interface PapeletasPersonasData {
-    papeletas: Papeleta[];
-    crp_medio: number;
-    airflow_medio: number;
-    personas: Persona[];
-}
-
-type StatusFilter = 'Todos los estados' | 'Vigente' | 'Alerta' | 'Expirado';
-
-// Periodo de vuelo (operations.period): filtra las celdas por papeleta_crew_count_period_fk.
-// 0 = todos; 1 = Día, 2 = Noche convencional (NC), 3 = GVN.
-type PeriodFilter = 0 | 1 | 2 | 3;
-
-const PERIOD_OPTIONS: { value: PeriodFilter; label: string; activeClass: string }[] = [
-    { value: 0, label: 'All', activeClass: 'bg-primary text-primary-foreground' },
-    { value: 1, label: 'Día', activeClass: 'bg-info text-info-foreground' },
-    { value: 2, label: 'NC', activeClass: 'bg-danger text-danger-foreground' },
-    { value: 3, label: 'GVN', activeClass: 'bg-success text-success-foreground' },
-];
-
-const ESTADO_LABEL: Record<string, string> = {
-    Expirado: '⚠️ Expirado',
-    Alerta: '⏰ Próximo a vencer',
-    Vigente: '✅ Vigente',
-};
+export type { AdiestramientoVariant } from "../hooks/useAdiestramiento";
 
 function getStatusColor(estado: string | null): string {
     switch (estado) {
@@ -158,138 +106,32 @@ function StatusCell({ status }: StatusCellProps) {
     );
 }
 
-export interface AdiestramientoVariant {
-    /** Título de la página. */
-    title: string;
-    /** Roles que pide el endpoint (CSV). */
-    roles: string;
-    /** Bloques que pide el endpoint (CSV). */
-    bloques: string;
-    /** Selector de queryKey del factory (pilotos | dotaciones). */
-    queryKey: (escId: number, args: Record<string, unknown>) => QueryKey;
-    /** Campo CRP a mostrar en el tooltip de cada papeleta. */
-    crpValue: (p: Papeleta) => number | undefined;
-}
-
 export function AdiestramientoPage({ variant }: { variant: AdiestramientoVariant }) {
-    const { id: escId } = useEscuadrilla();
-    const [periodFilter, setPeriodFilter] = useState<PeriodFilter>(0);
-    const adiestramientoArgs = {
-        roles: variant.roles,
-        bloques: variant.bloques,
-        periodo: String(periodFilter),
-    };
-    const { data, isLoading, error: queryError, refetch } = useApiQuery<PapeletasPersonasData>(
-        'GET',
-        '/training/adiestramiento',
-        { query: adiestramientoArgs },
-        variant.queryKey(escId ?? 0, adiestramientoArgs),
-    );
-    const error = queryError?.message ?? null;
-
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>('Todos los estados');
-    const [selectedPersonas, setSelectedPersonas] = useState<Set<string>>(new Set());
-    const [selectedPlan, setSelectedPlan] = useState<string>('Todos los planes');
-    const [selectedBlock, setSelectedBlock] = useState<string>('Todos los bloques');
-
-    const handleRefresh = async () => {
-        setIsRefreshing(true);
-        await refetch();
-        setIsRefreshing(false);
-    };
-
-    // Obtener planes y bloques únicos
-    const { uniquePlans, uniqueBlocks } = (() => {
-        if (!data) return { uniquePlans: [], uniqueBlocks: [] };
-
-        const plans = [...new Set((data.papeletas ?? []).map(p => p.papeleta_plan))].sort();
-        const blocks = [...new Set((data.papeletas ?? []).map(p => p.papeleta_block))].sort();
-
-        return { uniquePlans: plans, uniqueBlocks: blocks };
-    })();
-
-    // Obtener estado de una papeleta para una persona
-    const getPapeletaStatus = (persona: Persona, papeletaSk: number): PapeletaRealizada | null => {
-        if (!persona.papeletas_realizadas) return null;
-        return persona.papeletas_realizadas.find(pr => pr.session_fk === papeletaSk) || null;
-    };
-
-    // Toggle persona seleccionada
-    const togglePersona = (personNk: string) => {
-        setSelectedPersonas(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(personNk)) {
-                newSet.delete(personNk);
-            } else {
-                newSet.add(personNk);
-            }
-            return newSet;
-        });
-    };
-
-    // Personas visibles (filtradas por selección)
-    const visiblePersonas = (() => {
-        if (!data) return [];
-        if (selectedPersonas.size === 0) return data.personas ?? [];
-        return (data.personas ?? []).filter(p => selectedPersonas.has(p.person_nk));
-    })();
-
-    // Papeletas filtradas
-    const filteredPapeletas = (() => {
-        if (!data) return [];
-
-        let result = (data.papeletas ?? []).filter(papeleta => {
-            // Filtro por periodo según prefijo del nombre:
-            //   Día → oculta 'G-' y 'N-'; NC → oculta 'G-'; GVN → oculta 'N-'.
-            const name = papeleta.papeleta_name;
-            if (periodFilter === 1 && (name.startsWith('G-') || name.startsWith('N-'))) {
-                return false;
-            }
-            if (periodFilter === 2 && name.startsWith('G-')) {
-                return false;
-            }
-            if (periodFilter === 3 && name.startsWith('N-')) {
-                return false;
-            }
-
-            // Filtro de búsqueda (nombre y descripción)
-            if (searchTerm) {
-                const term = searchTerm.toLowerCase();
-                const matchesName = papeleta.papeleta_name.toLowerCase().includes(term);
-                const matchesDescription = papeleta.papeleta_description.toLowerCase().includes(term);
-                if (!matchesName && !matchesDescription) {
-                    return false;
-                }
-            }
-
-            // Filtro de plan
-            if (selectedPlan !== 'Todos los planes' && papeleta.papeleta_plan !== selectedPlan) {
-                return false;
-            }
-
-            // Filtro de bloque
-            if (selectedBlock !== 'Todos los bloques' && papeleta.papeleta_block !== selectedBlock) {
-                return false;
-            }
-
-            // Filtro de estado
-            if (statusFilter !== 'Todos los estados') {
-                const hasStatus = visiblePersonas.some(persona => {
-                    const status = getPapeletaStatus(persona, papeleta.papeleta_sk);
-                    return status?.estado === statusFilter;
-                });
-                if (!hasStatus) return false;
-            }
-
-            return true;
-        });
-
-        result = result.sort(byPlanThenName);
-
-        return result;
-    })();
+    const {
+        data,
+        isLoading,
+        error,
+        refetch,
+        isRefreshing,
+        handleRefresh,
+        searchTerm,
+        setSearchTerm,
+        statusFilter,
+        setStatusFilter,
+        selectedPlan,
+        setSelectedPlan,
+        selectedBlock,
+        setSelectedBlock,
+        selectedPersonas,
+        togglePersona,
+        periodFilter,
+        setPeriodFilter,
+        uniquePlans,
+        uniqueBlocks,
+        visiblePersonas,
+        filteredPapeletas,
+        getPapeletaStatus,
+    } = useAdiestramiento(variant);
 
     if (isLoading) {
         return (

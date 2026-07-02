@@ -1,4 +1,4 @@
-"use client"
+// Página de Esfuerzo: solo render. Estado, query y derivados en useEffort.
 import { Bar, BarChart, XAxis, YAxis, ReferenceLine } from "recharts"
 import {
     Card,
@@ -10,10 +10,6 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from "@/components/ui/chart"
-import { useState } from "react";
-import { useApiQuery } from "@/lib/apiQuery";
-import { useEscuadrilla } from "@/providers";
-import { queryKeys } from "@/lib/queryKeys";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {ActionButton, ToggleButtonGroup} from "@/shared/components/common";
@@ -23,13 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GradientTitle, PageControls } from "@/shared/components/common";
-
-// Tipos para los datos del stored procedure
-interface Esfuerzo {
-    full_name: string,
-    escala: string,
-    dias_esfuerzo: number
-}
+import { ESCALAS, useEffort } from "../hooks/useEffort";
 
 const chartConfig = {
     days: {
@@ -38,89 +28,18 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export default function Effort() {
-    const [fechaFin, setFechaFin] = useState<Date>(new Date());
-    const [escalaFilter, setEscalaFilter] = useState<Set<string>>(new Set());
-    const [calendarOpen, setCalendarOpen] = useState(false);
-
-    // Hook para datos
-    const [queryParams, setQueryParams] = useState({ fechaFin: format(new Date(), 'yyyy-MM-dd') });
-    const { id: escId } = useEscuadrilla();
-
-    // El backend devuelve { items: Esfuerzo[] }; useApiQuery devuelve el objeto crudo.
     const {
-        data: result,
+        fechaFin,
+        calendarOpen,
+        setCalendarOpen,
+        handleFechaChange,
+        escalaFilter,
+        toggleEscala,
+        chartData,
+        chartHeight,
         isFetching,
         refetch,
-    } = useApiQuery<{ items: Esfuerzo[] }>(
-        'GET',
-        '/esfuerzo',
-        { query: queryParams },
-        queryKeys.effort.list(escId ?? 0, queryParams),
-    );
-    const data: Esfuerzo[] = result?.items ?? [];
-
-    // Para cambiar la fecha
-    const handleFechaChange = (date: Date | undefined) => {
-        if (date) {
-            setFechaFin(date);
-            setQueryParams({ fechaFin: format(date, 'yyyy-MM-dd') });
-            setCalendarOpen(false);
-        }
-    };
-
-    // Escalas disponibles
-    const escalas = ['Oficiales', 'Suboficiales', 'Tropa y marinería'];
-
-    const chartData = (() => {
-        let filtered = [...data]
-
-        // Filtrar por escala
-        if (escalaFilter.size > 0) {
-            filtered = filtered.filter(p => escalaFilter.has(p.escala))
-        }
-
-        // Ordenar: primero por días (ascendente), luego por índice original invertido (para empates)
-        const withIndex = filtered.map((item, index) => ({ item, originalIndex: index }))
-
-        withIndex.sort((a, b) => {
-            const diasA = a.item.dias_esfuerzo
-            const diasB = b.item.dias_esfuerzo
-
-            if (diasA !== diasB) {
-                return diasA - diasB
-            }
-            return b.originalIndex - a.originalIndex
-        })
-
-        // Función para asignar color según los días
-        const getBarColor = (days: number) => {
-            if (days >= 210) return "var(--effort-high)"
-            if (days >= 168) return "var(--effort-mid)"
-            return "var(--effort-low)"
-        }
-
-        // Mapear al formato final con colores
-        return withIndex.map(({ item }) => ({
-            fullName: item.full_name,
-            days: item.dias_esfuerzo,
-            fill: getBarColor(item.dias_esfuerzo)
-        }))
-    })()
-
-    const chartHeight = chartData.length * 35;
-
-    // Toggle para filtros
-    const toggleEscala = (escala: string) => {
-        setEscalaFilter(prev => {
-            const next = new Set(prev)
-            if (next.has(escala)) {
-                next.delete(escala)
-            } else {
-                next.add(escala)
-            }
-            return next
-        })
-    }
+    } = useEffort();
 
     return (
         <div className="h-full flex flex-col p-6 pb-8">
@@ -174,7 +93,7 @@ export default function Effort() {
                             </div>
                             {/* Filtro por Escala */}
                             <ToggleButtonGroup
-                                items={escalas}
+                                items={ESCALAS}
                                 selectedItems={escalaFilter}
                                 onToggle={toggleEscala}
                             />
