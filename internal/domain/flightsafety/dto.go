@@ -80,8 +80,8 @@ type ExamHistoryItem struct {
 // MeResponse son los datos propios del tripulante (Panel del tripulante).
 // Cualquiera de los tres puede ser null si la persona no es personal vigente.
 type MeResponse struct {
-	Medical    *MedicalSummaryItem `json:"medical"`
-	Dunker     *ExamSummaryItem    `json:"dunker"`
+	Medical   *MedicalSummaryItem `json:"medical"`
+	Dunker    *ExamSummaryItem    `json:"dunker"`
 	Hypobaric *ExamSummaryItem    `json:"hypobaric"`
 }
 

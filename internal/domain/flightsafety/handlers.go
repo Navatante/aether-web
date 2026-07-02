@@ -3,11 +3,11 @@ package flightsafety
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 )
 
 type Handlers struct{ svc *Service }
@@ -116,7 +116,7 @@ func (h *Handlers) MedicalHistory(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	person, err := parsePathID(c, "personSk")
+	person, err := httpx.IDParam(c, "personSk")
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (h *Handlers) DunkerHistory(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	person, err := parsePathID(c, "personSk")
+	person, err := httpx.IDParam(c, "personSk")
 	if err != nil {
 		return err
 	}
@@ -148,7 +148,7 @@ func (h *Handlers) HypobaricHistory(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	person, err := parsePathID(c, "personSk")
+	person, err := httpx.IDParam(c, "personSk")
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func (h *Handlers) MedicalUpdate(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func (h *Handlers) MedicalDelete(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func (h *Handlers) DunkerUpdate(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -242,7 +242,7 @@ func (h *Handlers) DunkerDelete(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (h *Handlers) HypobaricUpdate(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (h *Handlers) HypobaricDelete(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parsePathID(c, "id")
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -297,14 +297,6 @@ func (h *Handlers) HypobaricDelete(c echo.Context) error {
 // ============================================================
 // Util
 // ============================================================
-
-func parsePathID(c echo.Context, name string) (int32, error) {
-	n, err := strconv.ParseInt(c.Param(name), 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid "+name)
-	}
-	return int32(n), nil
-}
 
 // writeInsert mapea el resultado de un alta a HTTP.
 func writeInsert(c echo.Context, res InsertResult, err error) error {

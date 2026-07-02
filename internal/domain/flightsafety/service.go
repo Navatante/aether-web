@@ -398,7 +398,7 @@ func (s *Service) InsertHypobaric(ctx context.Context, esc int32, p ExamPayload)
 		HypobaricResult:        p.Result,
 		HypobaricScheduledDate: scheduled,
 		HypobaricExpiryDate:    expiry,
-		PersonEscuadrillaFk:     esc,
+		PersonEscuadrillaFk:    esc,
 	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return InsertResult{}, fmt.Errorf("%w: la persona no pertenece a tu escuadrilla", ErrInvalidInput)
@@ -420,7 +420,7 @@ func (s *Service) UpdateHypobaric(ctx context.Context, esc, id int32, p ExamPayl
 		HypobaricResult:        p.Result,
 		HypobaricScheduledDate: scheduled,
 		HypobaricExpiryDate:    expiry,
-		PersonEscuadrillaFk:     esc,
+		PersonEscuadrillaFk:    esc,
 	})
 	if err != nil {
 		return err

@@ -22,6 +22,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -510,7 +511,7 @@ func (h *Handlers) Update(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseID(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -540,7 +541,7 @@ func (h *Handlers) setFlag(c echo.Context, active bool) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseID(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -598,7 +599,7 @@ func (h *Handlers) SuperuserSetPassword(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseID(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -619,7 +620,7 @@ func (h *Handlers) SuperuserSetPermissionLevel(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseID(c, "id")
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -642,15 +643,6 @@ func (h *Handlers) SuperuserSetPermissionLevel(c echo.Context) error {
 }
 
 // ===== Helpers =====
-
-func parseID(c echo.Context, key string) (int32, error) {
-	raw := c.Param(key)
-	n, err := strconv.ParseInt(raw, 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
-}
 
 func parseDate(s string) (pgtype.Date, error) {
 	t, err := time.Parse("2006-01-02", s)

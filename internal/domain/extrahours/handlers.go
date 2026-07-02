@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 )
 
 // ============================================================
@@ -52,7 +53,7 @@ func (h *Handlers) Update(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -77,7 +78,7 @@ func (h *Handlers) Delete(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -115,7 +116,7 @@ func (h *Handlers) ListByPerson(c echo.Context) error {
 	if u == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	personSk, herr := parseIDParam(c)
+	personSk, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -124,12 +125,4 @@ func (h *Handlers) ListByPerson(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, items)
-}
-
-func parseIDParam(c echo.Context) (int32, error) {
-	n, err := strconv.ParseInt(c.Param("id"), 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
 }

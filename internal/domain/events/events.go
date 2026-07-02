@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -14,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 	"github.com/14esc/aether-web/internal/queries"
 )
 
@@ -168,7 +168,7 @@ func (h *Handlers) Create(c echo.Context) error {
 }
 
 func (h *Handlers) Update(c echo.Context) error {
-	id, herr := parseID(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -191,7 +191,7 @@ func (h *Handlers) Update(c echo.Context) error {
 }
 
 func (h *Handlers) Delete(c echo.Context) error {
-	id, herr := parseID(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -208,15 +208,6 @@ func (h *Handlers) Delete(c echo.Context) error {
 }
 
 // ===== Helpers =====
-
-func parseID(c echo.Context) (int32, error) {
-	raw := c.Param("id")
-	n, err := strconv.ParseInt(raw, 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
-}
 
 func isUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError

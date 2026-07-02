@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 )
 
 // ============================================================
@@ -58,7 +58,7 @@ func (h *Handlers) DeleteCrew(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -83,7 +83,7 @@ func (h *Handlers) DeleteNotCrew(c echo.Context) error {
 	if !ok {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, herr := parseIDParam(c)
+	id, herr := httpx.IDParam(c, "id")
 	if herr != nil {
 		return herr
 	}
@@ -106,14 +106,6 @@ func currentEsc(c echo.Context) (int32, bool) {
 		return 0, false
 	}
 	return int32(u.EscuadrillaID), true
-}
-
-func parseIDParam(c echo.Context) (int32, error) {
-	n, err := strconv.ParseInt(c.Param("id"), 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
 }
 
 func parseOptionalDate(s string) (pgtype.Date, error) {

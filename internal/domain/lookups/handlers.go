@@ -3,11 +3,11 @@ package lookups
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/14esc/aether-web/internal/auth"
+	"github.com/14esc/aether-web/internal/httpx"
 )
 
 type Handlers struct {
@@ -171,7 +171,7 @@ func (h *Handlers) AddDepartureArrivalPlace(c echo.Context) error {
 }
 
 func (h *Handlers) DeleteDepartureArrivalPlace(c echo.Context) error {
-	id, err := parseID(c)
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (h *Handlers) DeleteAircraft(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parseID(c)
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (h *Handlers) UpdateAircraftCurrentFlag(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parseID(c)
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (h *Handlers) UpdateEscuadrillaCapba(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parseID(c)
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -306,7 +306,7 @@ func (h *Handlers) DeleteEscuadrillaCapba(c echo.Context) error {
 	if user == nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
-	id, err := parseID(c)
+	id, err := httpx.IDParam(c, "id")
 	if err != nil {
 		return err
 	}
@@ -318,15 +318,6 @@ func (h *Handlers) DeleteEscuadrillaCapba(c echo.Context) error {
 // ============================================================================
 // Util
 // ============================================================================
-
-func parseID(c echo.Context) (int32, error) {
-	raw := c.Param("id")
-	n, err := strconv.ParseInt(raw, 10, 32)
-	if err != nil || n <= 0 {
-		return 0, echo.NewHTTPError(http.StatusBadRequest, "invalid id")
-	}
-	return int32(n), nil
-}
 
 func mapErrToHTTP(err error, m map[error]int, successCode int) error {
 	if err == nil {
