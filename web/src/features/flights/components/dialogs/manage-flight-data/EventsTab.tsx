@@ -134,9 +134,9 @@ export function EventsTab({
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label>Nombre del evento</Label>
+                        <Label htmlFor="event-name-trigger">Nombre del evento</Label>
                         <Select value={eventName} onValueChange={(value) => setEventName(value ?? '')} disabled={namesLoading}>
-                            <SelectTrigger>
+                            <SelectTrigger id="event-name-trigger">
                                 <SelectValue placeholder={namesLoading ? 'Cargando...' : 'Selecciona un nombre'} />
                             </SelectTrigger>
                             <SelectContent>
