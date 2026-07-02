@@ -105,6 +105,12 @@ func (s *Service) Logout(ctx context.Context, token string) error {
 
 // Validate busca la sesión por token, comprueba expires_at, actualiza
 // last_seen_at y devuelve el User asociado — todo en un único round-trip.
+//
+// Decisión consciente: el token NO se rota por request y expires_at NO
+// desliza (se fija en el login: creación + TTL). Así un token robado caduca
+// como mucho a las TTL horas, sin las carreras que introduce la rotación con
+// pestañas/requests paralelos. Mitigaciones ya en vigor: token hasheado en BD,
+// cookie HttpOnly y purga horaria de sesiones caducadas.
 func (s *Service) Validate(ctx context.Context, token string) (*User, error) {
 	if token == "" {
 		return nil, ErrSessionNotFound

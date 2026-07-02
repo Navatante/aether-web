@@ -162,7 +162,8 @@ journalctl -u aether-web -n 100 --no-pager
 # Logs en vivo
 journalctl -u aether-web -f
 
-# Health
+# Health (público a propósito: lo usan update.sh, el frontend pre-login y
+# la monitorización; solo expone ok/db_down)
 curl -i http://127.0.0.1:8080/api/v1/health
 # {"status":"ok"}        → BD accesible
 # {"status":"db_down"}   → revisa AETHER_DATABASE_URL / red / pg_hba

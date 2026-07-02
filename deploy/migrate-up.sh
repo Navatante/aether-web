@@ -31,4 +31,17 @@ if [[ -z "${AETHER_DATABASE_URL:-}" ]]; then
   exit 1
 fi
 
-exec migrate -path "$MIGRATIONS_DIR" -database "$AETHER_DATABASE_URL" up
+migrate -path "$MIGRATIONS_DIR" -database "$AETHER_DATABASE_URL" up
+
+# Validación post-migración: si una migración falló a medias, golang-migrate
+# deja la versión marcada como "dirty" y el esquema queda inconsistente.
+# Mejor abortar aquí (update.sh ni siquiera arrancará el binario nuevo) que
+# descubrirlo con errores SQL en producción. Recuperación: restaurar el dump
+# pre-migración (ver "Backups" en README) o `migrate ... force <version>`
+# tras arreglar a mano.
+VERSION_OUT=$(migrate -path "$MIGRATIONS_DIR" -database "$AETHER_DATABASE_URL" version 2>&1)
+if echo "$VERSION_OUT" | grep -qi dirty; then
+  echo "!! Esquema en estado dirty tras migrar: $VERSION_OUT" >&2
+  exit 1
+fi
+echo "==> Esquema OK en versión: $VERSION_OUT"

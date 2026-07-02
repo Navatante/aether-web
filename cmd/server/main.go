@@ -139,6 +139,10 @@ func run(logger *slog.Logger) error {
 			return next(c)
 		}
 	})
+	// /health es público a propósito: lo consumen sin sesión el health check
+	// de deploy/update.sh, el DatabaseProvider del frontend (pantalla de
+	// "BD caída" antes del login) y cualquier monitorización. Solo expone
+	// ok/db_down, sin detalle interno.
 	api.GET("/health", healthHandler(pool))
 	httpx.RegisterFrontendLogs(api, logger)
 	authHandlers.Register(api)
